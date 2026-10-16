@@ -830,119 +830,126 @@
         }
 
         function startCountdown(idx) {
-            stopRepeatingAlarm(idx);
-            clearInterval(timerData[idx].interval);
-            let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
-            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
+    stopRepeatingAlarm(idx);
+    clearInterval(timerData[idx].interval);
+    let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
+    if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
-            let totalSeconds = mins * 60;
-            let endTime = Date.now() + (totalSeconds * 1000);
+    let totalSeconds = mins * 60;
+    let endTime = Date.now() + (totalSeconds * 1000);
 
-            timerData[idx].setMinutes = mins;
-            timerData[idx].seconds = totalSeconds;
-            timerData[idx].isCountdown = true;
-            
-            localStorage.setItem(`timer_end_${idx}`, endTime);
-            localStorage.setItem(`timer_mins_${idx}`, mins);
-            localStorage.setItem(`timer_type_${idx}`, 'countdown');
+    timerData[idx].setMinutes = mins;
+    timerData[idx].seconds = totalSeconds;
+    timerData[idx].isCountdown = true;
+    
+    localStorage.setItem(`timer_end_${idx}`, endTime);
+    localStorage.setItem(`timer_mins_${idx}`, mins);
+    localStorage.setItem(`timer_type_${idx}`, 'countdown');
 
-            document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
-            document.getElementById("time-" + idx).classList.remove('finished');
+    document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+    document.getElementById("time-" + idx).classList.remove('finished');
 
+    updateDisplay(idx);
+    updateLiveBill(idx);
+
+    timerData[idx].interval = setInterval(() => {
+        let now = Date.now();
+        let remainingSeconds = Math.round((endTime - now) / 1000);
+
+        if (remainingSeconds > 0) {
+            timerData[idx].seconds = remainingSeconds;
             updateDisplay(idx);
             updateLiveBill(idx);
+        } else {
+            clearInterval(timerData[idx].interval);
+            timerData[idx].interval = null;
+            timerData[idx].seconds = 0;
+            
+            localStorage.removeItem(`timer_end_${idx}`);
+            localStorage.removeItem(`timer_type_${idx}`);
+
+            document.getElementById("time-" + idx).innerText = "00:00:00";
+            document.getElementById("time-" + idx).classList.add('finished');
+            
+            // تشغيل التنبيه المتكرر وإظهار الرسالة المنبثقة
+            startRepeatingAlarm(idx);
+            alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+        }
+    }, 1000);
+}
+
+        function restoreTimers() {
+    devices.forEach((dev, idx) => {
+        let type = localStorage.getItem(`timer_type_${idx}`);
+        
+        if (type === 'countdown') {
+            let endTime = parseInt(localStorage.getItem(`timer_end_${idx}`)) || 0;
+            let mins = parseInt(localStorage.getItem(`timer_mins_${idx}`)) || 60;
+            let now = Date.now();
+            let remainingSeconds = Math.round((endTime - now) / 1000);
+
+            if(document.getElementById(`input-mins-${idx}`)) {
+                document.getElementById(`input-mins-${idx}`).value = mins;
+            }
+
+            if (remainingSeconds > 0) {
+                timerData[idx].setMinutes = mins;
+                timerData[idx].seconds = remainingSeconds;
+                timerData[idx].isCountdown = true;
+                document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+
+                updateDisplay(idx);
+                updateLiveBill(idx);
+
+                timerData[idx].interval = setInterval(() => {
+                    let curNow = Date.now();
+                    let remSec = Math.round((endTime - curNow) / 1000);
+
+                    if (remSec > 0) {
+                        timerData[idx].seconds = remSec;
+                        updateDisplay(idx);
+                        updateLiveBill(idx);
+                    } else {
+                        clearInterval(timerData[idx].interval);
+                        timerData[idx].interval = null;
+                        timerData[idx].seconds = 0;
+
+                        localStorage.removeItem(`timer_end_${idx}`);
+                        localStorage.removeItem(`timer_type_${idx}`);
+
+                        document.getElementById("time-" + idx).innerText = "00:00:00";
+                        document.getElementById("time-" + idx).classList.add('finished');
+                        
+                        startRepeatingAlarm(idx);
+                        alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                    }
+                }, 1000);
+            } else {
+                localStorage.removeItem(`timer_end_${idx}`);
+                localStorage.removeItem(`timer_type_${idx}`);
+                document.getElementById("time-" + idx).innerText = "00:00:00";
+                document.getElementById("time-" + idx).classList.add('finished');
+                
+                startRepeatingAlarm(idx);
+                alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+            }
+        } 
+        else if (type === 'stopwatch') {
+            let startTime = parseInt(localStorage.getItem(`timer_start_${idx}`)) || Date.now();
+            timerData[idx].isCountdown = false;
+            document.getElementById("card-" + idx).style.border = "1px solid #334155";
 
             timerData[idx].interval = setInterval(() => {
                 let now = Date.now();
-                let remainingSeconds = Math.round((endTime - now) / 1000);
+                let elapsedSeconds = Math.floor((now - startTime) / 1000);
+                timerData[idx].seconds = elapsedSeconds;
 
-                if (remainingSeconds > 0) {
-                    timerData[idx].seconds = remainingSeconds;
-                    updateDisplay(idx);
-                    updateLiveBill(idx);
-                } else {
-                    clearInterval(timerData[idx].interval);
-                    timerData[idx].interval = null;
-                    timerData[idx].seconds = 0;
-                    
-                    localStorage.removeItem(`timer_end_${idx}`);
-                    localStorage.removeItem(`timer_type_${idx}`);
-
-                    document.getElementById("time-" + idx).innerText = "00:00:00";
-                    document.getElementById("time-" + idx).classList.add('finished');
-                    startRepeatingAlarm(idx);
-                }
+                updateDisplay(idx);
+                updateLiveBill(idx);
             }, 1000);
         }
-
-        function restoreTimers() {
-            devices.forEach((dev, idx) => {
-                let type = localStorage.getItem(`timer_type_${idx}`);
-                
-                if (type === 'countdown') {
-                    let endTime = parseInt(localStorage.getItem(`timer_end_${idx}`)) || 0;
-                    let mins = parseInt(localStorage.getItem(`timer_mins_${idx}`)) || 60;
-                    let now = Date.now();
-                    let remainingSeconds = Math.round((endTime - now) / 1000);
-
-                    if(document.getElementById(`input-mins-${idx}`)) {
-                        document.getElementById(`input-mins-${idx}`).value = mins;
-                    }
-
-                    if (remainingSeconds > 0) {
-                        timerData[idx].setMinutes = mins;
-                        timerData[idx].seconds = remainingSeconds;
-                        timerData[idx].isCountdown = true;
-                        document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
-
-                        updateDisplay(idx);
-                        updateLiveBill(idx);
-
-                        timerData[idx].interval = setInterval(() => {
-                            let curNow = Date.now();
-                            let remSec = Math.round((endTime - curNow) / 1000);
-
-                            if (remSec > 0) {
-                                timerData[idx].seconds = remSec;
-                                updateDisplay(idx);
-                                updateLiveBill(idx);
-                            } else {
-                                clearInterval(timerData[idx].interval);
-                                timerData[idx].interval = null;
-                                timerData[idx].seconds = 0;
-
-                                localStorage.removeItem(`timer_end_${idx}`);
-                                localStorage.removeItem(`timer_type_${idx}`);
-
-                                document.getElementById("time-" + idx).innerText = "00:00:00";
-                                document.getElementById("time-" + idx).classList.add('finished');
-                                startRepeatingAlarm(idx);
-                            }
-                        }, 1000);
-                    } else {
-                        localStorage.removeItem(`timer_end_${idx}`);
-                        localStorage.removeItem(`timer_type_${idx}`);
-                        document.getElementById("time-" + idx).innerText = "00:00:00";
-                        document.getElementById("time-" + idx).classList.add('finished');
-                        startRepeatingAlarm(idx);
-                    }
-                } 
-                else if (type === 'stopwatch') {
-                    let startTime = parseInt(localStorage.getItem(`timer_start_${idx}`)) || Date.now();
-                    timerData[idx].isCountdown = false;
-                    document.getElementById("card-" + idx).style.border = "1px solid #334155";
-
-                    timerData[idx].interval = setInterval(() => {
-                        let now = Date.now();
-                        let elapsedSeconds = Math.floor((now - startTime) / 1000);
-                        timerData[idx].seconds = elapsedSeconds;
-
-                        updateDisplay(idx);
-                        updateLiveBill(idx);
-                    }, 1000);
-                }
-            });
-        }
+    });
+}
 
         function updateDisplay(idx) {
             let s = timerData[idx].seconds;
