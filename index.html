@@ -166,9 +166,9 @@
         }
 
         .timer-display { font-size: 2.2rem; font-family: monospace; text-align: center; margin: 10px 0; color: #fde047; }
-        .timer-display.finished { color: var(--danger); animation: blink 1s infinite; }
+        .timer-display.finished { color: var(--danger); animation: blink 0.6s infinite; }
 
-        @keyframes blink { 50% { opacity: 0.3; } }
+        @keyframes blink { 50% { opacity: 0.2; } }
 
         .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
         .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
@@ -321,7 +321,6 @@
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
             
-            <!-- خانة واحدة منسدلة للتصفير اختر منها ما تريد -->
             <select class="tool-select-danger" id="reset-selector" onchange="handleResetSelection(this)">
                 <option value="" disabled selected>🧹 خيارات التصفير...</option>
                 <option value="day">تصفير يوم محدد</option>
@@ -512,6 +511,7 @@
         let timerData = {};
         let allMonthsData = {};
         let currentActiveMonthKey = "2026-10";
+        let alarmIntervals = {}; // لتنظيم التنبيه الصوتي المتكرر
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
@@ -561,10 +561,9 @@
             return allMonthsData[currentActiveMonthKey];
         }
 
-        // التعامل مع خيارات القائمة المنسدلة الموحدة للتصفير
         function handleResetSelection(selectElem) {
             let val = selectElem.value;
-            selectElem.selectedIndex = 0; // إعادة القائمة للافتراضي
+            selectElem.selectedIndex = 0;
 
             if (val === "day") {
                 let dayNum = prompt("أدخل رقم اليوم المراد تصفيره (من 1 إلى 31):");
@@ -657,21 +656,40 @@
             });
         }
 
-        function playAlertSound() {
+        // صوت إنذار واحد
+        function playSingleBeep() {
             try {
                 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 let oscillator = audioCtx.createOscillator();
                 let gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(950, audioCtx.currentTime);
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.8);
+                oscillator.stop(audioCtx.currentTime + 0.4);
             } catch(e) {}
         }
 
+        // بدء إنذار صوتي متكرر
+        function startRepeatingAlarm(idx) {
+            stopRepeatingAlarm(idx); // إيقاف أي تكرار سابق لنفس الجهاز
+            playSingleBeep();
+            alarmIntervals[idx] = setInterval(() => {
+                playSingleBeep();
+            }, 1200); // يتكرر كل 1.2 ثانية
+        }
+
+        // إيقاف الإنذار المتكرر
+        function stopRepeatingAlarm(idx) {
+            if (alarmIntervals[idx]) {
+                clearInterval(alarmIntervals[idx]);
+                alarmIntervals[idx] = null;
+            }
+        }
+
         function startStopwatch(idx) {
+            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             timerData[idx].isCountdown = false;
             document.getElementById("card-" + idx).style.border = "1px solid #334155";
@@ -685,6 +703,7 @@
         }
 
         function startCountdown(idx) {
+            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
@@ -707,8 +726,10 @@
                     clearInterval(timerData[idx].interval);
                     timerData[idx].interval = null;
                     document.getElementById("time-" + idx).classList.add('finished');
-                    playAlertSound();
-                    alert("⚠️ انتهى وقت الجهاز: " + devices[idx].name + "!");
+                    
+                    // تشغيل التنبيه الصوتي المتكرر عند انتهاء الوقت
+                    startRepeatingAlarm(idx);
+                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                 }
             }, 1000);
         }
@@ -722,6 +743,7 @@
         }
 
         function stopTimer(idx) {
+            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             timerData[idx].interval = null;
         }
@@ -752,6 +774,7 @@
         }
 
         function checkout(idx) {
+            stopRepeatingAlarm(idx); // إيقاف صوت الإنذار فور الإغلاق
             let psCost = calculateTimeCost(idx);
             let drinksCost = timerData[idx].drinks;
             let indomieCost = timerData[idx].indomie;
@@ -988,7 +1011,6 @@
             netProfitElem.innerText = netProfit + ' ج.م';
             netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
 
-            // حساب إجمالي وإيرادات كل شهور السنة
             let yearTotalIncome = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
             summaryBody.innerHTML = '';
@@ -1059,7 +1081,7 @@
                 allMonthsData: allMonthsData
             };
 
-            const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+            const blob = newBlob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const now = new Date();
