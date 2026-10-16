@@ -411,4 +411,312 @@
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
-                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input
+                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
+            </div>
+        </div>
+        <h3 style="margin-top:20px;">سجل الحركات المالية للشهر</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>النوع</th>
+                    <th>البيان / الوصف</th>
+                    <th>المبلغ</th>
+                </tr>
+            </thead>
+            <tbody id="finance-table-body"></tbody>
+        </table>
+    </div>
+
+    <!-- 4. الخامات والمشتريات -->
+    <div id="inventory" class="tab-content">
+        <h2>📦 صفحة الخامات والمشتريات للشهر الحالي</h2>
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>🛒 تسجيل عملية شراء جديدة</h3>
+            <form id="purchaseForm" onsubmit="addNewPurchase(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: center;">
+                <input type="text" id="pItemName" placeholder="اسم الخامة / الصنف" required style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);">
+                <select id="pCategory" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);">
+                    <option value="مشروبات">مشروبات</option>
+                    <option value="أندومي">أندومي</option>
+                    <option value="بقالة وسناكس">بقالة وسناكس</option>
+                    <option value="خامات وصيانة">خامات وصيانة صالة</option>
+                </select>
+                <input type="number" id="pQuantity" placeholder="الكمية" required style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);">
+                <input type="number" id="pCost" placeholder="إجمالي التكلفة (ج.م)" required style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);">
+                <button type="submit" class="btn btn-start" style="padding: 8px 15px; cursor: pointer;">➕ تسجيل وخصم من الخزينة</button>
+            </form>
+        </div>
+
+        <h3>📋 جدول المشتريات والتحكم بها (تعديل / حذف)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>التاريخ</th>
+                    <th>الصنف</th>
+                    <th>التصنيف</th>
+                    <th>الكمية</th>
+                    <th>التكلفة الإجمالية</th>
+                    <th>إجراءات التحكم</th>
+                </tr>
+            </thead>
+            <tbody id="purchasesTableBody">
+                <!-- تعبئة تلقائية -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- النافذة المنبثقة لتعديل عملية شراء -->
+    <div id="editPurchaseModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:#38bdf8;">✏️ تعديل عملية شراء</h3>
+            <input type="hidden" id="editPurchaseId">
+            <label>اسم الصنف:</label>
+            <input type="text" id="editPItemName">
+            <label>التصنيف:</label>
+            <select id="editPCategory">
+                <option value="مشروبات">مشروبات</option>
+                <option value="أندومي">أندومي</option>
+                <option value="بقالة وسناكس">بقالة وسناكس</option>
+                <option value="خامات وصيانة">خامات وصيانة صالة</option>
+            </select>
+            <label>الكمية:</label>
+            <input type="number" id="editPQuantity">
+            <label>التكلفة الجديدة (ج.م):</label>
+            <input type="number" id="editPCost">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-start" style="flex:1;" onclick="saveEditedPurchase()">حفظ التعديل</button>
+                <button class="btn btn-stop" style="flex:1;" onclick="closeEditModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. جرد الشهر والسنة -->
+    <div id="reports" class="tab-content">
+        <h2>📊 تقارير الأرباح للشهر والسنة الكاملة</h2>
+        <div class="grid">
+            <div class="card" style="text-align:center;">
+                <h3 id="current-month-report-title">إيرادات الشهر الحالي</h3>
+                <div class="money-display" id="gross-income" style="color:#38bdf8;">0 ج.م</div>
+            </div>
+            <div class="card" style="text-align:center;">
+                <h3>إجمالي المصروفات والمشتريات للشهر</h3>
+                <div class="money-display" id="total-expenses" style="color:#ef4444;">0 ج.م</div>
+            </div>
+            <div class="card" style="text-align:center; grid-column: 1 / -1;">
+                <h3>💎 صافي ربح الشهر الحالي</h3>
+                <div class="money-display" id="net-monthly-profit">0 ج.م</div>
+            </div>
+            <div class="card" style="text-align:center; grid-column: 1 / -1; background: #0f172a; border: 2px solid #3b82f6;">
+                <h3 style="color: #fde047; font-size: 1.5rem;">🌟 إجمالي إيرادات وأرباح السنة كاملة (2026)</h3>
+                <div class="money-display" id="year-total-profit" style="color: #fde047; font-size: 2.5rem;">0 ج.م</div>
+                <p style="color:#94a3b8; margin-top:5px;">(مجموع إيرادات جميع شهور السنة مجمعة)</p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px; color: #38bdf8;">📑 ملخص إيرادات شهور السنة (2026)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>الشهر</th>
+                    <th>إجمالي الإيرادات</th>
+                    <th>إجمالي المصروفات والمشتريات</th>
+                    <th>صافي الربح</th>
+                </tr>
+            </thead>
+            <tbody id="yearly-summary-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        const devices = [
+            { name: "eljoker", rate: 20 },
+            { name: "salah", rate: 30 },
+            { name: "cres", rate: 20 },
+            { name: "messi", rate: 20 },
+            { name: "pubg (R)", rate: 20 },
+            { name: "pubg L", rate: 20 }
+        ];
+        
+        const monthNames = [
+            "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+            "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+        ];
+
+        let timerData = {};
+        let allMonthsData = {};
+        let currentActiveMonthKey = "2026-10";
+        let alarmIntervals = {};
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('theme-btn').innerText = isLight ? '☀️ المظهر الفاتح' : '🌙 المظهر الداكن';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        function switchTab(evt, tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (evt && evt.target) evt.target.classList.add('active');
+            if (tabId === 'reports') updateReports();
+            if (tabId === 'inventory') renderPurchasesTable();
+        }
+
+        function initMonthSelector() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            currentActiveMonthKey = `${year}-${month}`;
+
+            const select = document.getElementById('month-select');
+            select.value = currentActiveMonthKey;
+
+            if (!select.value) {
+                currentActiveMonthKey = "2026-10";
+                select.value = currentActiveMonthKey;
+            }
+        }
+
+        function changeActiveMonth() {
+            const select = document.getElementById('month-select');
+            currentActiveMonthKey = select.value;
+            loadMonthDataToUI();
+        }
+
+        function getActiveMonthData() {
+            if (!allMonthsData[currentActiveMonthKey]) {
+                allMonthsData[currentActiveMonthKey] = {
+                    totalCash: 0,
+                    expensesCount: 0,
+                    financeRecords: [],
+                    dailyData: {},
+                    purchases: {}
+                };
+            }
+            return allMonthsData[currentActiveMonthKey];
+        }
+
+        function handleResetSelection(selectElem) {
+            let val = selectElem.value;
+            selectElem.selectedIndex = 0;
+
+            if (val === "day") {
+                let dayNum = prompt("أدخل رقم اليوم المراد تصفيره (من 1 إلى 31):");
+                if (!dayNum) return;
+                let day = parseInt(dayNum);
+                if (isNaN(day) || day < 1 || day > 31) {
+                    return alert("❌ رقم يوم غير صحيح!");
+                }
+                let selectText = document.getElementById('month-select').selectedOptions[0].text;
+                if (confirm(`⚠️ هل أنت متأكد من تصفير بيانات (يوم ${day}) في شهر (${selectText})؟`)) {
+                    let monthData = getActiveMonthData();
+                    if (monthData.dailyData && monthData.dailyData[day]) {
+                        monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+                        saveToFirebase();
+                        loadMonthDataToUI();
+                        alert(`✅ تم تصفير يوم ${day} بنجاح.`);
+                    } else {
+                        alert("لا توجد بيانات مسجلة لهذا اليوم لتصفيرها.");
+                    }
+                }
+            } 
+            else if (val === "month") {
+                let selectText = document.getElementById('month-select').selectedOptions[0].text;
+                if (confirm(`🧹 هل أنت متأكد من تصفير وإعادة ضبط بيانات شهر (${selectText})؟`)) {
+                    allMonthsData[currentActiveMonthKey] = {
+                        totalCash: 0,
+                        expensesCount: 0,
+                        financeRecords: [],
+                        dailyData: {},
+                        purchases: {}
+                    };
+                    saveToFirebase();
+                    loadMonthDataToUI();
+                    alert(`✅ تم تصفير شهر ${selectText} بنجاح.`);
+                }
+            } 
+            else if (val === "all") {
+                if (confirm("⚠️ تحذير شديد:\nسيتم مسح بيانات جميع الشهور وتصفير النظام بالكامل!\nهل أنت متأكد؟")) {
+                    allMonthsData = {};
+                    saveToFirebase();
+                    loadMonthDataToUI();
+                    alert("✅ تم تصفير النظام بالكامل.");
+                }
+            }
+        }
+
+        function initDevices() {
+            const container = document.getElementById('devices-grid');
+            container.innerHTML = '';
+            
+            devices.forEach((dev, idx) => {
+                timerData[idx] = { 
+                    seconds: 0, 
+                    setMinutes: 0, 
+                    interval: null, 
+                    isCountdown: false, 
+                    drinks: 0, indomie: 0, grocery: 0 
+                };
+                
+                container.innerHTML += `
+                    <div class="card" id="card-${idx}">
+                        <div class="device-title">${dev.name}</div>
+                        <div class="rate-box">
+                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})">
+                        </div>
+                        
+                        <div class="controls-box">
+                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1">
+                            <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
+                        </div>
+
+                        <div class="timer-display" id="time-${idx}">00:00:00</div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-start" onclick="startStopwatch(${idx})">وقت مفتوح</button>
+                            <button class="btn btn-stop" onclick="stopTimer(${idx})">إيقاف مؤقت</button>
+                            <button class="btn btn-add" onclick="checkout(${idx})">إغلاق وتصدير للحسابات</button>
+                        </div>
+                        
+                        <div class="item-inputs">
+                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                        </div>
+
+                        <div class="bill-preview" id="bill-total-${idx}">
+                            إجمالي الفاتورة الحالية: 0 ج.م
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function playSingleBeep() {
+            try {
+                let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let oscillator = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(950, audioCtx.currentTime);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.4);
+            } catch(e) {}
+        }
+
+        function startRepeatingAlarm(idx) {
+            stopRepeatingAlarm(idx);
+            playSingleBeep
