@@ -169,7 +169,6 @@
         .btn-start { background: var(--success); }
         .btn-stop { background: var(--danger); }
         .btn-add { background: var(--warning); color: #000; }
-        .btn-timer { background: #8b5cf6; }
 
         .controls-box {
             background: var(--input-bg);
@@ -234,36 +233,6 @@
         }
 
         th { background: #0284c7; color: #fff; }
-        
-        .add-input-group {
-            display: flex;
-            gap: 4px;
-            justify-content: center;
-            align-items: center;
-        }
-        .add-input-group input {
-            width: 50px;
-            padding: 4px;
-            background: var(--input-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            text-align: center;
-            border-radius: 4px;
-        }
-        .action-btn {
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            border: none;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-        .btn-plus { background: #10ac84; }
-        .btn-minus { background: #ee5253; }
 
         .inventory-row {
             display: flex;
@@ -275,13 +244,6 @@
             padding: 8px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-        }
-        .inventory-row input {
-            padding: 6px;
-            background: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
         }
 
         .stats-box {
@@ -304,7 +266,7 @@
             font-weight: bold;
         }
 
-        /* نافذة التنبيه المودال للمنبه */
+        /* نافذة التنبيه المودال للمنبه المتكرر */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -337,6 +299,7 @@
         </div>
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
+            <button class="tool-btn danger" onclick="resetTodayData()">🗑️ تصفير اليوم الحالي</button>
             <button class="tool-btn danger" onclick="resetActiveMonth()">🧹 تصفير الشهر</button>
             <button class="tool-btn danger" onclick="resetAllSystem()">⚠️ تصفير كامل</button>
             <button class="tool-btn" onclick="exportData()">📥 تصدير</button>
@@ -386,106 +349,4 @@
         <table>
             <thead>
                 <tr>
-                    <th>اليوم</th>
-                    <th>البلايستيشن</th>
-                    <th>المشروبات</th>
-                    <th>الأندومي</th>
-                    <th>البقالة</th>
-                    <th>الإجمالي اليومي</th>
-                </tr>
-            </thead>
-            <tbody id="daily-table-body"></tbody>
-        </table>
-    </div>
-
-    <!-- 3. الخزينة والماليات -->
-    <div id="finance" class="tab-content">
-        <div class="stats-box">
-            <h3 id="net-cash-title">💰 صافي الخزينة لشهر المعروض</h3>
-            <div class="money-display" id="net-cash-display">0 ج.م</div>
-        </div>
-    </div>
-
-    <!-- 4. المخامات والمشتريات -->
-    <div id="inventory" class="tab-content">
-        <div class="card">
-            <h3>إدارة المخزن والمشتريات</h3>
-            <div id="inventory-container"></div>
-        </div>
-    </div>
-
-    <!-- 5. التقارير -->
-    <div id="reports" class="tab-content">
-        <div class="stats-box">
-            <h3>📊 تقرير الأرباح الشهرية والسنوية</h3>
-            <div id="reports-content" style="font-size: 1.2rem; font-weight: bold;">جاري التحميل...</div>
-        </div>
-    </div>
-
-    <!-- نافذة منبه انتهاء الوقت التفاعلية -->
-    <div class="modal-overlay" id="alarm-modal">
-        <div class="modal-content">
-            <h2>⏰ تنبيه انتهاء الوقت!</h2>
-            <p id="alarm-device-name" style="font-size: 1.2rem; font-weight: bold; margin: 15px 0;">انتهى وقت الجهاز</p>
-            <p>الجهاز يصدر تنبيهات متكررة. يرجى مراجعة العميل وأخذ الموافقة للإيقاف.</p>
-            <button class="btn btn-stop" style="padding: 12px 25px; font-size: 1.1rem; margin-top: 10px;" onclick="dismissAlarm()">موافقة وإيقاف التنبيه</button>
-        </div>
-    </div>
-
-    <script>
-        // إعدادات Firebase (ويمكن استخدام التخزين المحلي الاحتياطي)
-        const firebaseConfig = {
-            databaseURL: "https://Mostafa-Yosef-Default-Rtdb.firebaseio.com"
-        };
-        
-        let db = null;
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            db = firebase.database();
-        } catch (e) {
-            console.warn("تعذر الاتصال السحابي، جاري استخدام التخزين المحلي.");
-            document.getElementById('cloud-status').innerText = '💻 وضع محلي';
-        }
-
-        // بيانات أجهزة البلايستيشن
-        const devicesCount = 6;
-        let devicesData = {};
-        for(let i=1; i<=devicesCount; i++) {
-            devicesData[`dev_${i}`] = {
-                id: i,
-                name: `جهاز ${i}`,
-                type: i <= 4 ? 'PS4' : 'PS5',
-                singleRate: i <= 4 ? 20 : 30,
-                multiRate: i <= 4 ? 25 : 35,
-                status: 'off',
-                mode: 'single',
-                startTime: null,
-                targetMinutes: 0,
-                elapsedSeconds: 0,
-                items: { drinks: 0, indomie: 0, grocery: 0 },
-                alarmTriggered: false
-            };
-        }
-
-        let currentMonthKey = "2026-10";
-        let dbData = { months: {} };
-        let activeAlarmDeviceId = null;
-        let audioContext = null;
-        let alarmInterval = null;
-
-        // تهيئة أصوات التنبيه باستخدام Web Audio API (أفضل صوت تنبيه بدون الحاجة لملفات خارجية)
-        function playBeep() {
-            try {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                let osc = audioContext.createOscillator();
-                let gain = audioContext.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = 880; // تردد عالي وواضح
-                gain.
+                    <th>اليوم
