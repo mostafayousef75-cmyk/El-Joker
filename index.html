@@ -680,6 +680,10 @@
             if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
                 allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
             }
+            // التأكد من دعم كلا المسميين القديم والجديد لعدم حدوث خطأ
+            if (allMonthsData[currentActiveMonthKey].purchasedItems.drinks && !allMonthsData[currentActiveMonthKey].purchasedItems.drink) {
+                allMonthsData[currentActiveMonthKey].purchasedItems.drink = allMonthsData[currentActiveMonthKey].purchasedItems.drinks;
+            }
             return allMonthsData[currentActiveMonthKey];
         }
 
@@ -1205,6 +1209,10 @@
             let nameInput = document.getElementById(`name-${categoryKey}`);
             let priceInput = document.getElementById(`price-${categoryKey}`);
             
+            if (!nameInput || !priceInput) {
+                return alert("خطأ في تحديد خانات الإدخال لهذا القسم!");
+            }
+
             let itemName = nameInput.value.trim();
             let itemPrice = parseFloat(priceInput.value) || 0;
 
@@ -1217,6 +1225,7 @@
 
             let monthData = getActiveMonthData();
             if(!monthData.purchasedItems) monthData.purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
+            if(!monthData.purchasedItems[categoryKey]) monthData.purchasedItems[categoryKey] = [];
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
             let newItem = {
@@ -1494,9 +1503,8 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                testResult = e.target.result;
                 try {
-                    const imported = JSON.parse(testResult);
+                    const imported = JSON.parse(e.target.result);
                     allMonthsData = imported.allMonthsData || {};
                     if(imported.adminPassword) adminPassword = imported.adminPassword;
                     
