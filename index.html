@@ -314,8 +314,8 @@
         </div>
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
-            <button class="tool-btn danger" onclick="resetActiveMonth()">🧹 تصفير الشهر الحالي</button>
-            <button class="tool-btn danger" onclick="resetAllSystem()">⚠️ مسح وتصفير كل النظام</button>
+            <button class="tool-btn danger" onclick="resetActiveMonth()">🧹 تصفير بيانات الشهر</button>
+            <button class="tool-btn danger" onclick="resetAllSystem()">⚠️ تصفير كامل للنظام</button>
             <button class="tool-btn" onclick="exportData()">📥 تصدير</button>
             <button class="tool-btn" onclick="document.getElementById('import-file').click()">📤 استيراد</button>
             <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
@@ -531,10 +531,9 @@
             return allMonthsData[currentActiveMonthKey];
         }
 
-        // 🧹 وظيفة تصفير الشهر الحالي فقط
         function resetActiveMonth() {
             let selectText = document.getElementById('month-select').selectedOptions[0].text;
-            if (confirm(`⚠️ هل أنت متأكد من تصفير وإعادة ضبط بيانات شهر (${selectText}) فقط؟`)) {
+            if (confirm(`🧹 هل أنت متأكد من تصفير وإعادة ضبط بيانات شهر (${selectText})؟`)) {
                 allMonthsData[currentActiveMonthKey] = {
                     totalCash: 0,
                     expensesCount: 0,
@@ -547,13 +546,12 @@
             }
         }
 
-        // ⚠️ وظيفة مسح وتصفير كل النظام بالكامل
         function resetAllSystem() {
-            if (confirm("⚠️ تحذير شديد:\nسيتم مسح جميع بيانات كل الشهور وإعادة النظام للوضع الافتراضي تماماً!\nهل تريد المتابعة؟")) {
+            if (confirm("⚠️ تحذير: سيتم مسح بيانات جميع الشهور وتصفير النظام بالكامل! هل أنت متأكد؟")) {
                 allMonthsData = {};
                 saveToFirebase();
                 loadMonthDataToUI();
-                alert("✅ تم تصفير وإعادة ضبط النظام بالكامل بنجاح.");
+                alert("✅ تم تصفير النظام بالكامل.");
             }
         }
 
@@ -733,8 +731,301 @@
             document.getElementById("other-" + idx).value = 0;
             updateLiveBill(idx);
 
-            alert("✅ تم إغلاق وتصدير الفاتورة بنجاح للشهر الحالي وتحديث الخزينة!");
+            alert("✅ تم إغلاق وتصدير الفاتورة بنجاح لشهر الحالي وتحديث الخزينة!");
         }
 
         function initDailyTable() {
-            const tbody = document
+            const tbody = document.getElementById('daily-table-body');
+            tbody.innerHTML = '';
+
+            let monthData = getActiveMonthData();
+            if (!monthData.dailyData) monthData.dailyData = {};
+
+            for (let i = 1; i <= 31; i++) {
+                if(!monthData.dailyData[i]) {
+                    monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0, other: 0 };
+                }
+                
+                let d = monthData.dailyData[i];
+                let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>يوم ${i}</b></td>
+                        <td>${createCellHTML(i, 'ps', d.ps)}</td>
+                        <td>${createCellHTML(i, 'drink', d.drink)}</td>
+                        <td>${createCellHTML(i, 'indomie', d.indomie)}</td>
+                        <td>${createCellHTML(i, 'grocery', d.grocery)}</td>
+                        <td>${createCellHTML(i, 'other', d.other)}</td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.1rem;">${rowTotal}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function createCellHTML(day, key, val) {
+            return `
+                <div class="add-input-group">
+                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px;">${val || 0}</span>
+                    <input type="number" id="input-${day}-${key}" placeholder="قيمة">
+                    <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
+                    <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
+                </div>
+            `;
+        }
+
+        function handleDailyInput(day, key, isAdd) {
+            let inputField = document.getElementById(`input-${day}-${key}`);
+            let val = parseFloat(inputField.value) || 0;
+            if(val <= 0) return;
+
+            let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة', other: 'أخرى' };
+            let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
+
+            addValueToDailyAndFinance(day, key, val, desc, isAdd);
+            inputField.value = '';
+        }
+
+        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true) {
+            let monthData = getActiveMonthData();
+            if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0, other: 0 };
+            if(!monthData.financeRecords) monthData.financeRecords = [];
+
+            if(isAdd) {
+                monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) + val;
+                monthData.totalCash = (monthData.totalCash || 0) + val;
+                monthData.financeRecords.unshift({ type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
+            } else {
+                monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) - val;
+                monthData.totalCash = (monthData.totalCash || 0) - val;
+                monthData.financeRecords.unshift({ type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
+            }
+
+            let span = document.getElementById(`val-${day}-${key}`);
+            if(span) span.innerText = monthData.dailyData[day][key];
+
+            let d = monthData.dailyData[day];
+            let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
+            let totalCell = document.getElementById(`total-day-${day}`);
+            if(totalCell) totalCell.innerText = rowTotal;
+
+            updateFinanceUI();
+            saveToFirebase();
+        }
+
+        function addFinance(type) {
+            let descInput = document.getElementById(type === 'in' ? 'in-desc' : 'out-desc');
+            let amountInput = document.getElementById(type === 'in' ? 'in-amount' : 'out-amount');
+            let desc = descInput.value || (type === 'in' ? 'توريد نقدي' : 'صرف نقدي');
+            let amount = parseFloat(amountInput.value) || 0;
+
+            if(amount <= 0) return alert("الرجاء إدخال مبلغ صحيح!");
+
+            let monthData = getActiveMonthData();
+            if(!monthData.financeRecords) monthData.financeRecords = [];
+
+            if(type === 'in') {
+                monthData.totalCash = (monthData.totalCash || 0) + amount;
+                monthData.financeRecords.unshift({ type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
+            } else {
+                monthData.totalCash = (monthData.totalCash || 0) - amount;
+                monthData.expensesCount = (monthData.expensesCount || 0) + amount;
+                monthData.financeRecords.unshift({ type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
+            }
+
+            descInput.value = '';
+            amountInput.value = '';
+            updateFinanceUI();
+            saveToFirebase();
+        }
+
+        function updateFinanceUI() {
+            let monthData = getActiveMonthData();
+            let cash = monthData.totalCash || 0;
+            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
+            
+            document.getElementById('net-cash-title').innerText = `💰 صافي الخزينة لشهر (${selectedMonthText})`;
+            document.getElementById('net-cash').innerText = cash + ' ج.م';
+
+            let tbody = document.getElementById('finance-table-body');
+            tbody.innerHTML = '';
+            
+            let records = monthData.financeRecords || [];
+            records.forEach(rec => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
+                        <td>${rec.desc}</td>
+                        <td style="font-weight:bold;">${rec.amount} ج.م</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addInventoryRow(containerId, sectionName) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'inventory-row';
+            div.innerHTML = `
+                <input type="text" placeholder="اسم الصنف" class="inv-name" style="flex:2; min-width:110px;">
+                <input type="number" placeholder="السعر" class="inv-price" style="flex:1; min-width:70px;">
+                <button class="action-btn btn-plus" onclick="payInventoryItem(this, '${sectionName}')">🛒 شراء وخصم</button>
+                <button class="action-btn btn-minus" onclick="this.parentElement.remove()">🗑️ حذف</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function payInventoryItem(btn, sectionName) {
+            let row = btn.parentElement;
+            let nameInput = row.querySelector('.inv-name');
+            let priceInput = row.querySelector('.inv-price');
+            
+            let itemName = nameInput.value.trim() || 'خامة ' + sectionName;
+            let itemPrice = parseFloat(priceInput.value) || 0;
+
+            if (itemPrice <= 0) {
+                return alert("الرجاء إدخال سعر صحيح لشراء الخامة!");
+            }
+
+            let monthData = getActiveMonthData();
+            if(!monthData.financeRecords) monthData.financeRecords = [];
+
+            monthData.totalCash = (monthData.totalCash || 0) - itemPrice;
+            monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
+
+            monthData.financeRecords.unshift({ 
+                type: 'منصرف (خامات)', 
+                desc: `شراء خامات (${sectionName}): ${itemName}`, 
+                amount: itemPrice, 
+                color: '#ef4444' 
+            });
+
+            updateFinanceUI();
+            saveToFirebase();
+            alert(`تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م وخصمها من خزينة الشهر!`);
+            
+            nameInput.value = '';
+            priceInput.value = '';
+        }
+
+        function updateReports() {
+            let monthData = getActiveMonthData();
+            let monthGrossIncome = 0;
+            
+            if (monthData.dailyData) {
+                for (let i = 1; i <= 31; i++) {
+                    let d = monthData.dailyData[i] || {};
+                    let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
+                    monthGrossIncome += dayTotal;
+                }
+            }
+
+            let monthExpenses = monthData.expensesCount || 0;
+            let netProfit = monthGrossIncome - monthExpenses;
+
+            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
+            document.getElementById('current-month-report-title').innerText = `إيرادات الشهر الحالي (${selectedMonthText})`;
+            document.getElementById('gross-income').innerText = monthGrossIncome + ' ج.م';
+            document.getElementById('total-expenses').innerText = monthExpenses + ' ج.م';
+            
+            let netProfitElem = document.getElementById('net-monthly-profit');
+            netProfitElem.innerText = netProfit + ' ج.م';
+            netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
+
+            let yearTotalIncome = 0;
+            for (let mKey in allMonthsData) {
+                if (mKey.startsWith("2026")) {
+                    let mObj = allMonthsData[mKey];
+                    if (mObj && mObj.dailyData) {
+                        for (let day in mObj.dailyData) {
+                            let d = mObj.dailyData[day];
+                            yearTotalIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
+                        }
+                    }
+                }
+            }
+            document.getElementById('year-total-profit').innerText = yearTotalIncome + ' ج.م';
+        }
+
+        function loadMonthDataToUI() {
+            initDailyTable();
+            updateFinanceUI();
+            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
+            document.getElementById('daily-title-text').innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
+            if(document.getElementById('reports').classList.contains('active')) {
+                updateReports();
+            }
+        }
+
+        function saveToFirebase() {
+            const dataToSave = {
+                allMonthsData: allMonthsData || {}
+            };
+            db.ref('ps_lounge_data').set(dataToSave).catch(err => console.log(err));
+        }
+
+        function loadFromFirebase() {
+            db.ref('ps_lounge_data').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if(data && data.allMonthsData) {
+                    allMonthsData = data.allMonthsData;
+                }
+                initMonthSelector();
+                loadMonthDataToUI();
+            }).catch((err) => {
+                console.log("خطأ جلب البيانات: ", err);
+                initMonthSelector();
+                loadMonthDataToUI();
+            });
+        }
+
+        function exportData() {
+            const dataToExport = {
+                allMonthsData: allMonthsData
+            };
+
+            const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const now = new Date();
+            a.href = url;
+            a.download = `PS_Backup_${now.getFullYear()}_${now.getMonth()+1}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    allMonthsData = imported.allMonthsData || {};
+                    
+                    saveToFirebase();
+                    loadMonthDataToUI();
+                    alert("✅ تم استيراد ملف البيانات بنجاح!");
+                } catch(err) {
+                    alert("❌ خطأ: الملف المرفق غير صالح!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        window.onload = () => {
+            const theme = localStorage.getItem('theme');
+            if(theme === 'light') toggleTheme();
+
+            initDevices();
+            loadFromFirebase();
+
+            addInventoryRow('inv-ps', 'البلايستيشن');
+            addInventoryRow('inv-drinks', 'المشروبات');
+            addInventoryRow('inv-indomie', 'الأندومي');
+            addInventoryRow('inv-grocery', 'البقالة');
+        };
+    </script>
+</body>
+</html>
