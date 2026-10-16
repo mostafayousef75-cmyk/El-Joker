@@ -54,7 +54,7 @@
 
         .top-tools {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -71,6 +71,11 @@
             align-items: center;
             gap: 6px;
             font-size: 0.9rem;
+        }
+
+        .tool-btn.danger {
+            border-color: var(--danger);
+            color: var(--danger);
         }
 
         .month-selector-bar {
@@ -309,8 +314,10 @@
         </div>
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
-            <button class="tool-btn" onclick="exportData()">📥 تصدير النسخة الاحتياطية</button>
-            <button class="tool-btn" onclick="document.getElementById('import-file').click()">📤 استيراد ملف</button>
+            <button class="tool-btn danger" onclick="resetActiveMonth()">🧹 تصفير الشهر الحالي</button>
+            <button class="tool-btn danger" onclick="resetAllSystem()">⚠️ مسح وتصفير كل النظام</button>
+            <button class="tool-btn" onclick="exportData()">📥 تصدير</button>
+            <button class="tool-btn" onclick="document.getElementById('import-file').click()">📤 استيراد</button>
             <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
         </div>
     </div>
@@ -524,6 +531,32 @@
             return allMonthsData[currentActiveMonthKey];
         }
 
+        // 🧹 وظيفة تصفير الشهر الحالي فقط
+        function resetActiveMonth() {
+            let selectText = document.getElementById('month-select').selectedOptions[0].text;
+            if (confirm(`⚠️ هل أنت متأكد من تصفير وإعادة ضبط بيانات شهر (${selectText}) فقط؟`)) {
+                allMonthsData[currentActiveMonthKey] = {
+                    totalCash: 0,
+                    expensesCount: 0,
+                    financeRecords: [],
+                    dailyData: {}
+                };
+                saveToFirebase();
+                loadMonthDataToUI();
+                alert(`✅ تم تصفير شهر ${selectText} بنجاح.`);
+            }
+        }
+
+        // ⚠️ وظيفة مسح وتصفير كل النظام بالكامل
+        function resetAllSystem() {
+            if (confirm("⚠️ تحذير شديد:\nسيتم مسح جميع بيانات كل الشهور وإعادة النظام للوضع الافتراضي تماماً!\nهل تريد المتابعة؟")) {
+                allMonthsData = {};
+                saveToFirebase();
+                loadMonthDataToUI();
+                alert("✅ تم تصفير وإعادة ضبط النظام بالكامل بنجاح.");
+            }
+        }
+
         function initDevices() {
             const container = document.getElementById('devices-grid');
             container.innerHTML = '';
@@ -590,4 +623,118 @@
             clearInterval(timerData[idx].interval);
             timerData[idx].isCountdown = false;
             document.getElementById("card-" + idx).style.border = "1px solid #334155";
-            document.getElementById("time-" + idx).
+            document.getElementById("time-" + idx).classList.remove('finished');
+
+            timerData[idx].interval = setInterval(() => {
+                timerData[idx].seconds++;
+                updateDisplay(idx);
+                updateLiveBill(idx);
+            }, 1000);
+        }
+
+        function startCountdown(idx) {
+            clearInterval(timerData[idx].interval);
+            let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
+            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
+
+            timerData[idx].setMinutes = mins;
+            timerData[idx].seconds = mins * 60;
+            timerData[idx].isCountdown = true;
+            document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+            document.getElementById("time-" + idx).classList.remove('finished');
+
+            updateDisplay(idx);
+            updateLiveBill(idx);
+
+            timerData[idx].interval = setInterval(() => {
+                if (timerData[idx].seconds > 0) {
+                    timerData[idx].seconds--;
+                    updateDisplay(idx);
+                    updateLiveBill(idx);
+                } else {
+                    clearInterval(timerData[idx].interval);
+                    timerData[idx].interval = null;
+                    document.getElementById("time-" + idx).classList.add('finished');
+                    playAlertSound();
+                    alert("⚠️ انتهى وقت الجهاز: " + devices[idx].name + "!");
+                }
+            }, 1000);
+        }
+
+        function updateDisplay(idx) {
+            let s = timerData[idx].seconds;
+            let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
+            let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            let secs = String(s % 60).padStart(2, '0');
+            document.getElementById("time-" + idx).innerText = hrs + ":" + mins + ":" + secs;
+        }
+
+        function stopTimer(idx) {
+            clearInterval(timerData[idx].interval);
+            timerData[idx].interval = null;
+        }
+
+        function updateItems(idx) {
+            timerData[idx].drinks = parseFloat(document.getElementById("drink-" + idx).value) || 0;
+            timerData[idx].indomie = parseFloat(document.getElementById("indomie-" + idx).value) || 0;
+            timerData[idx].grocery = parseFloat(document.getElementById("grocery-" + idx).value) || 0;
+            timerData[idx].other = parseFloat(document.getElementById("other-" + idx).value) || 0;
+            updateLiveBill(idx);
+        }
+
+        function calculateTimeCost(idx) {
+            let currentRate = parseFloat(document.getElementById("rate-" + idx).value) || devices[idx].rate;
+            if (timerData[idx].isCountdown) {
+                let hours = timerData[idx].setMinutes / 60;
+                return Math.round(hours * currentRate);
+            } else {
+                let hours = timerData[idx].seconds / 3600;
+                return Math.round(hours * currentRate);
+            }
+        }
+
+        function updateLiveBill(idx) {
+            let psCost = calculateTimeCost(idx);
+            let itemsCost = timerData[idx].drinks + timerData[idx].indomie + timerData[idx].grocery + timerData[idx].other;
+            let grandTotal = psCost + itemsCost;
+            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة الحالية: " + grandTotal + " ج.م (وقت: " + psCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
+        }
+
+        function checkout(idx) {
+            stopTimer(idx);
+            let psCost = calculateTimeCost(idx);
+            let drinksCost = timerData[idx].drinks;
+            let indomieCost = timerData[idx].indomie;
+            let groceryCost = timerData[idx].grocery;
+            let otherCost = timerData[idx].other;
+            let grandTotal = psCost + drinksCost + indomieCost + groceryCost + otherCost;
+
+            if (grandTotal <= 0) {
+                return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
+            }
+
+            let currentDay = new Date().getDate();
+            if(currentDay > 31) currentDay = 31;
+
+            if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
+            if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
+            if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
+            if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
+            if (otherCost > 0) addValueToDailyAndFinance(currentDay, 'other', otherCost, 'إيراد آخر جهاز ' + devices[idx].name);
+
+            timerData[idx].seconds = 0;
+            timerData[idx].setMinutes = 0;
+            document.getElementById("time-" + idx).innerText = "00:00:00";
+            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
+            document.getElementById("time-" + idx).classList.remove('finished');
+            document.getElementById("drink-" + idx).value = 0;
+            document.getElementById("indomie-" + idx).value = 0;
+            document.getElementById("grocery-" + idx).value = 0;
+            document.getElementById("other-" + idx).value = 0;
+            updateLiveBill(idx);
+
+            alert("✅ تم إغلاق وتصدير الفاتورة بنجاح للشهر الحالي وتحديث الخزينة!");
+        }
+
+        function initDailyTable() {
+            const tbody = document
