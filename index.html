@@ -346,4 +346,69 @@
     <!-- شريط اختيار الشهر والسنة -->
     <div class="month-selector-bar">
         <div>
-            <span style="font-size: 1.1rem; font
+            <span style="font-size: 1.1rem; font-weight: bold; color: #38bdf8;">📅 اختر الشهر المطلوب: </span>
+            <select id="month-select" onchange="changeActiveMonth()">
+                <option value="2026-1">يناير 2026</option>
+                <option value="2026-2">فبراير 2026</option>
+                <option value="2026-3">مارس 2026</option>
+                <option value="2026-4">أبريل 2026</option>
+                <option value="2026-5">مايو 2026</option>
+                <option value="2026-6">يونيو 2026</option>
+                <option value="2026-7">يوليو 2026</option>
+                <option value="2026-8">أغسطس 2026</option>
+                <option value="2026-9">سبتمبر 2026</option>
+                <option value="2026-10">أكتوبر 2026</option>
+                <option value="2026-11">نوفمبر 2026</option>
+                <option value="2026-12">ديسمبر 2026</option>
+            </select>
+        </div>
+        <div id="current-active-indicator" style="font-weight: bold; color: #fde047;"></div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'timers')">⏱️ الأجهزة والمؤقتات</button>
+        <button class="tab-btn" onclick="switchTab(event, 'daily')">📅 السجل اليومي للشهر</button>
+        <button class="tab-btn" onclick="switchTab(event, 'finance')">💰 الخزينة والحسابات</button>
+        <button class="tab-btn" onclick="switchTab(event, 'inventory')">📦 الخامات والمشتريات</button>
+        <button class="tab-btn" onclick="switchTab(event, 'reports')">📊 جرد الشهر والسنة</button>
+    </div>
+
+    <!-- 1. الأجهزة والمؤقتات -->
+    <div id="timers" class="tab-content active">
+        <div class="grid" id="devices-grid"></div>
+    </div>
+
+    <!-- 2. السجل اليومي -->
+    <div id="daily" class="tab-content">
+        <h2 id="daily-title-text">سجل الإيرادات اليومية للشهر المحدد</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>اليوم</th>
+                    <th>البلايستيشن</th>
+                    <th>المشروبات</th>
+                    <th>الأندومي</th>
+                    <th>البقالة</th>
+                    <th>الإجمالي اليومي</th>
+                </tr>
+            </thead>
+            <tbody id="daily-table-body"></tbody>
+        </table>
+    </div>
+
+    <!-- 3. الخزينة والماليات -->
+    <div id="finance" class="tab-content">
+        <div class="stats-box">
+            <h3 id="net-cash-title">💰 صافي الخزينة لشهر المعروض</h3>
+            <div class="money-display" id="net-cash">0 ج.م</div>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h3>📥 تسجيل وارد (أموال داخلة)</h3>
+                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
+            </div>
+            <div class="card">
+                <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
+                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input
