@@ -949,7 +949,6 @@
             }, 1000);
         }
 
-        // دالة إعادة ضبط الوقت (Reset) بدون عمل فاتورة أو خصم/تسجيل أي إيراد
         function resetTimer(idx) {
             if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت الجهاز ${devices[idx].name}؟ ولن يتم إصدار أي فاتورة.`)) {
                 return;
@@ -1616,7 +1615,7 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                `try` {
+                try {
                     const imported = JSON.parse(e.target.result);
                     allMonthsData = imported.allMonthsData || {};
                     if(imported.adminPassword) adminPassword = imported.adminPassword;
