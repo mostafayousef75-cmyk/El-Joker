@@ -793,11 +793,11 @@
         }
 
         function stopRepeatingAlarm(idx) {
-            if (alarmIntervals[idx]) {
-                clearInterval(alarmIntervals[idx]);
-                alarmIntervals[idx] = null;
-            }
-        }
+    if (alarmIntervals[idx]) {
+        clearInterval(alarmIntervals[idx]);
+        alarmIntervals[idx] = null;
+    }
+}
 
         function startStopwatch(idx) {
             stopRepeatingAlarm(idx);
@@ -814,34 +814,37 @@
         }
 
         function startCountdown(idx) {
-            stopRepeatingAlarm(idx);
-            clearInterval(timerData[idx].interval);
-            let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
-            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
+    stopRepeatingAlarm(idx);
+    clearInterval(timerData[idx].interval);
+    let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
+    if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
-            timerData[idx].setMinutes = mins;
-            timerData[idx].seconds = mins * 60;
-            timerData[idx].isCountdown = true;
-            document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
-            document.getElementById("time-" + idx).classList.remove('finished');
+    timerData[idx].setMinutes = mins;
+    timerData[idx].seconds = mins * 60;
+    timerData[idx].isCountdown = true;
+    document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+    document.getElementById("time-" + idx).classList.remove('finished');
 
+    updateDisplay(idx);
+    updateLiveBill(idx);
+
+    timerData[idx].interval = setInterval(() => {
+        if (timerData[idx].seconds > 0) {
+            timerData[idx].seconds--;
             updateDisplay(idx);
             updateLiveBill(idx);
-
-            timerData[idx].interval = setInterval(() => {
-                if (timerData[idx].seconds > 0) {
-                    timerData[idx].seconds--;
-                    updateDisplay(idx);
-                    updateLiveBill(idx);
-                } else {
-                    clearInterval(timerData[idx].interval);
-                    timerData[idx].interval = null;
-                    document.getElementById("time-" + idx).classList.add('finished');
-                    startRepeatingAlarm(idx); // بدء تكرار الصوت مع ظهور الإشعار
-                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
-                }
-            }, 1000);
+        } else {
+            clearInterval(timerData[idx].interval);
+            timerData[idx].interval = null;
+            document.getElementById("time-" + idx).classList.add('finished');
+            
+            // تشغيل التنبيه المتكرر قبل ظهور الإشعار ليعمل في الخلفية مع الإشعار
+            startRepeatingAlarm(idx);
+            
+            alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
         }
+    }, 1000);
+}
 
         function updateDisplay(idx) {
             let s = timerData[idx].seconds;
@@ -852,10 +855,10 @@
         }
 
         function stopTimer(idx) {
-            stopRepeatingAlarm(idx); // إيقاف الصوت عند الضغط على إيقاف مؤقت أيضاً
-            clearInterval(timerData[idx].interval);
-            timerData[idx].interval = null;
-        }
+    stopRepeatingAlarm(idx);
+    clearInterval(timerData[idx].interval);
+    timerData[idx].interval = null;
+}
 
         function updateItems(idx) {
             timerData[idx].drinks = parseFloat(document.getElementById("drink-" + idx).value) || 0;
@@ -883,44 +886,44 @@
         }
 
         function checkout(idx) {
-            stopRepeatingAlarm(idx); // إيقاف الصوت المتكرر فور الضغط على زر إغلاق وتصدير
-            let psCost = calculateTimeCost(idx);
-            let drinksCost = timerData[idx].drinks;
-            let indomieCost = timerData[idx].indomie;
-            let groceryCost = timerData[idx].grocery;
-            let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
+    stopRepeatingAlarm(idx);
+    let psCost = calculateTimeCost(idx);
+    let drinksCost = timerData[idx].drinks;
+    let indomieCost = timerData[idx].indomie;
+    let groceryCost = timerData[idx].grocery;
+    let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
 
-            if (grandTotal <= 0) {
-                return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
-            }
+    if (grandTotal <= 0) {
+        return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
+    }
 
-            stopTimer(idx);
+    stopTimer(idx);
 
-            let currentDay = new Date().getDate();
-            if(currentDay > 31) currentDay = 31;
+    let currentDay = new Date().getDate();
+    if(currentDay > 31) currentDay = 31;
 
-            if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
-            if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
-            if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
-            if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
+    if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
+    if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
+    if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
+    if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
 
-            timerData[idx].seconds = 0;
-            timerData[idx].setMinutes = 0;
-            timerData[idx].drinks = 0;
-            timerData[idx].indomie = 0;
-            timerData[idx].grocery = 0;
+    timerData[idx].seconds = 0;
+    timerData[idx].setMinutes = 0;
+    timerData[idx].drinks = 0;
+    timerData[idx].indomie = 0;
+    timerData[idx].grocery = 0;
 
-            document.getElementById("time-" + idx).innerText = "00:00:00";
-            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
-            document.getElementById("time-" + idx).classList.remove('finished');
-            document.getElementById("drink-" + idx).value = 0;
-            document.getElementById("indomie-" + idx).value = 0;
-            document.getElementById("grocery-" + idx).value = 0;
-            
-            updateLiveBill(idx);
+    document.getElementById("time-" + idx).innerText = "00:00:00";
+    document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
+    document.getElementById("time-" + idx).classList.remove('finished');
+    document.getElementById("drink-" + idx).value = 0;
+    document.getElementById("indomie-" + idx).value = 0;
+    document.getElementById("grocery-" + idx).value = 0;
+    
+    updateLiveBill(idx);
 
-            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
-        }
+    alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
+}
 
         function initDailyTable() {
             const tbody = document.getElementById('daily-table-body');
