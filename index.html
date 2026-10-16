@@ -810,18 +810,29 @@ function stopRepeatingAlarm(idx) {
 }
 
         function startStopwatch(idx) {
-            stopRepeatingAlarm(idx);
-            clearInterval(timerData[idx].interval);
-            timerData[idx].isCountdown = false;
-            document.getElementById("card-" + idx).style.border = "1px solid #334155";
-            document.getElementById("time-" + idx).classList.remove('finished');
+    stopRepeatingAlarm(idx);
+    clearInterval(timerData[idx].interval);
+    
+    let startTime = Date.now();
+    timerData[idx].seconds = 0;
+    timerData[idx].isCountdown = false;
 
-            timerData[idx].interval = setInterval(() => {
-                timerData[idx].seconds++;
-                updateDisplay(idx);
-                updateLiveBill(idx);
-            }, 1000);
-        }
+    // حفظ وقت البدء في localStorage لكل جهاز
+    localStorage.setItem(`timer_start_${idx}`, startTime);
+    localStorage.setItem(`timer_type_${idx}`, 'stopwatch');
+
+    document.getElementById("card-" + idx).style.border = "1px solid #334155";
+    document.getElementById("time-" + idx).classList.remove('finished');
+
+    timerData[idx].interval = setInterval(() => {
+        let now = Date.now();
+        let elapsedSeconds = Math.floor((now - startTime) / 1000);
+        timerData[idx].seconds = elapsedSeconds;
+
+        updateDisplay(idx);
+        updateLiveBill(idx);
+    }, 1000);
+}
 
         function startCountdown(idx) {
     stopRepeatingAlarm(idx);
@@ -829,9 +840,18 @@ function stopRepeatingAlarm(idx) {
     let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
     if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
+    let totalSeconds = mins * 60;
+    let endTime = Date.now() + (totalSeconds * 1000); // حساب وقت الانتهاء بالمللي ثانية
+
     timerData[idx].setMinutes = mins;
-    timerData[idx].seconds = mins * 60;
+    timerData[idx].seconds = totalSeconds;
     timerData[idx].isCountdown = true;
+    
+    // حفظ وقت الانتهاء في localStorage لكل جهاز
+    localStorage.setItem(`timer_end_${idx}`, endTime);
+    localStorage.setItem(`timer_mins_${idx}`, mins);
+    localStorage.setItem(`timer_type_${idx}`, 'countdown');
+
     document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
     document.getElementById("time-" + idx).classList.remove('finished');
 
@@ -839,16 +859,24 @@ function stopRepeatingAlarm(idx) {
     updateLiveBill(idx);
 
     timerData[idx].interval = setInterval(() => {
-        if (timerData[idx].seconds > 0) {
-            timerData[idx].seconds--;
+        let now = Date.now();
+        let remainingSeconds = Math.round((endTime - now) / 1000);
+
+        if (remainingSeconds > 0) {
+            timerData[idx].seconds = remainingSeconds;
             updateDisplay(idx);
             updateLiveBill(idx);
         } else {
             clearInterval(timerData[idx].interval);
             timerData[idx].interval = null;
-            document.getElementById("time-" + idx).classList.add('finished');
+            timerData[idx].seconds = 0;
             
-            // تشغيل التنبيه المتكرر فور الانتهاء
+            // مسح الذاكرة المحلية عند انتهاء الوقت
+            localStorage.removeItem(`timer_end_${idx}`);
+            localStorage.removeItem(`timer_type_${idx}`);
+
+            document.getElementById("time-" + idx).innerText = "00:00:00";
+            document.getElementById("time-" + idx).classList.add('finished');
             startRepeatingAlarm(idx);
         }
     }, 1000);
@@ -868,6 +896,11 @@ function stopRepeatingAlarm(idx) {
         clearInterval(timerData[idx].interval);
         timerData[idx].interval = null;
     }
+    // مسح البيانات المحفوظة عند الإيقاف
+    localStorage.removeItem(`timer_end_${idx}`);
+    localStorage.removeItem(`timer_start_${idx}`);
+    localStorage.removeItem(`timer_type_${idx}`);
+    localStorage.removeItem(`timer_mins_${idx}`);
 }
 
         function updateItems(idx) {
@@ -906,6 +939,11 @@ function stopRepeatingAlarm(idx) {
     let groceryCost = timerData[idx].grocery;
     let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
 
+            localStorage.removeItem(`timer_end_${idx}`);
+    localStorage.removeItem(`timer_start_${idx}`);
+    localStorage.removeItem(`timer_type_${idx}`);
+    localStorage.removeItem(`timer_mins_${idx}`);
+            
     if (grandTotal <= 0) {
         return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
     }
@@ -1340,6 +1378,74 @@ function stopRepeatingAlarm(idx) {
             const theme = localStorage.getItem('theme');
             if(theme === 'light') toggleTheme();
 
+            function restoreTimers() {
+    devices.forEach((dev, idx) => {
+        let type = localStorage.getItem(`timer_type_${idx}`);
+        
+        if (type === 'countdown') {
+            let endTime = parseInt(localStorage.getItem(`timer_end_${idx}`)) || 0;
+            let mins = parseInt(localStorage.getItem(`timer_mins_${idx}`)) || 60;
+            let now = Date.now();
+            let remainingSeconds = Math.round((endTime - now) / 1000);
+
+            document.getElementById(`input-mins-${idx}`).value = mins;
+
+            if (remainingSeconds > 0) {
+                timerData[idx].setMinutes = mins;
+                timerData[idx].seconds = remainingSeconds;
+                timerData[idx].isCountdown = true;
+                document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+
+                updateDisplay(idx);
+                updateLiveBill(idx);
+
+                timerData[idx].interval = setInterval(() => {
+                    let curNow = Date.now();
+                    let remSec = Math.round((endTime - curNow) / 1000);
+
+                    if (remSec > 0) {
+                        timerData[idx].seconds = remSec;
+                        updateDisplay(idx);
+                        updateLiveBill(idx);
+                    } else {
+                        clearInterval(timerData[idx].interval);
+                        timerData[idx].interval = null;
+                        timerData[idx].seconds = 0;
+
+                        localStorage.removeItem(`timer_end_${idx}`);
+                        localStorage.removeItem(`timer_type_${idx}`);
+
+                        document.getElementById("time-" + idx).innerText = "00:00:00";
+                        document.getElementById("time-" + idx).classList.add('finished');
+                        startRepeatingAlarm(idx);
+                    }
+                }, 1000);
+            } else {
+                // إذا انتهى الوقت أثناء إغلاق الصفحة أو عمل Refresh
+                localStorage.removeItem(`timer_end_${idx}`);
+                localStorage.removeItem(`timer_type_${idx}`);
+                document.getElementById("time-" + idx).innerText = "00:00:00";
+                document.getElementById("time-" + idx).classList.add('finished');
+                startRepeatingAlarm(idx);
+            }
+        } 
+        else if (type === 'stopwatch') {
+            let startTime = parseInt(localStorage.getItem(`timer_start_${idx}`)) || Date.now();
+            timerData[idx].isCountdown = false;
+            document.getElementById("card-" + idx).style.border = "1px solid #334155";
+
+            timerData[idx].interval = setInterval(() => {
+                let now = Date.now();
+                let elapsedSeconds = Math.floor((now - startTime) / 1000);
+                timerData[idx].seconds = elapsedSeconds;
+
+                updateDisplay(idx);
+                updateLiveBill(idx);
+            }, 1000);
+        }
+    });
+}
+            
             initDevices();
             loadFromFirebase();
         };
