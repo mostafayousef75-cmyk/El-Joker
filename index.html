@@ -73,9 +73,16 @@
             font-size: 0.9rem;
         }
 
-        .tool-btn.danger {
-            border-color: var(--danger);
+        /* تنسيق قائمة خيارات التصفير الموحدة */
+        .reset-select {
+            background: var(--card-bg);
             color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
         .month-selector-bar {
@@ -299,9 +306,15 @@
         </div>
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
-            <button class="tool-btn danger" onclick="resetTodayData()">🗑️ تصفير اليوم الحالي</button>
-            <button class="tool-btn danger" onclick="resetActiveMonth()">🧹 تصفير الشهر</button>
-            <button class="tool-btn danger" onclick="resetAllSystem()">⚠️ تصفير كامل</button>
+            
+            <!-- قائمة خيارات التصفير الموحدة -->
+            <select class="reset-select" id="reset-options-select" onchange="handleResetSelection(this)">
+                <option value="" disabled selected>⚠️ خيارات التصفير...</option>
+                <option value="today">🗑️ تصفير اليوم الحالي</option>
+                <option value="month">🧹 تصفير الشهر الحالي</option>
+                <option value="all">⚠️ تصفير كامل للنظام</option>
+            </select>
+
             <button class="tool-btn" onclick="exportData()">📥 تصدير</button>
             <button class="tool-btn" onclick="document.getElementById('import-file').click()">📤 استيراد</button>
             <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
@@ -361,4 +374,488 @@
         </table>
     </div>
 
-    <!-- 3. الخ
+    <!-- 3. الخزينة والماليات -->
+    <div id="finance" class="tab-content">
+        <div class="stats-box">
+            <h3 id="net-cash-title">💰 صافي الخزينة لشهر المعروض</h3>
+            <div class="money-display" id="net-cash-display">0 ج.م</div>
+        </div>
+    </div>
+
+    <!-- 4. الخامات والمشتريات -->
+    <div id="inventory" class="tab-content">
+        <div class="card">
+            <h3>إدارة المخزن والمشتريات</h3>
+            <div id="inventory-container"></div>
+        </div>
+    </div>
+
+    <!-- 5. التقارير -->
+    <div id="reports" class="tab-content">
+        <div class="stats-box">
+            <h3>📊 تقرير الأرباح الشهرية والسنوية</h3>
+            <div id="reports-content" style="font-size: 1.2rem; font-weight: bold;">جاري التحميل...</div>
+        </div>
+    </div>
+
+    <!-- نافذة منبه انتهاء الوقت التفاعلية -->
+    <div class="modal-overlay" id="alarm-modal">
+        <div class="modal-content">
+            <h2>⏰ تنبيه انتهاء الوقت!</h2>
+            <p id="alarm-device-name" style="font-size: 1.2rem; font-weight: bold; margin: 15px 0;">انتهى وقت الجهاز</p>
+            <p>الجهاز يصدر تنبيهات متكررة. يرجى مراجعة العميل وأخذ الموافقة للإيقاف.</p>
+            <button class="btn btn-stop" style="padding: 12px 25px; font-size: 1.1rem; margin-top: 10px;" onclick="dismissAlarm()">موافقة وإيقاف التنبيه</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://Mostafa-Yosef-Default-Rtdb.firebaseio.com"
+        };
+        
+        let db = null;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+        } catch (e) {
+            console.warn("تعذر الاتصال السحابي، جاري استخدام التخزين المحلي.");
+            document.getElementById('cloud-status').innerText = '💻 وضع محلي';
+        }
+
+        const devicesCount = 6;
+        let devicesData = {};
+        for(let i=1; i<=devicesCount; i++) {
+            devicesData[`dev_${i}`] = {
+                id: i,
+                name: `جهاز ${i}`,
+                type: i <= 4 ? 'PS4' : 'PS5',
+                singleRate: i <= 4 ? 20 : 30,
+                multiRate: i <= 4 ? 25 : 35,
+                status: 'off',
+                mode: 'single',
+                startTime: null,
+                targetMinutes: 0,
+                elapsedSeconds: 0,
+                items: { drinks: 0, indomie: 0, grocery: 0 },
+                alarmTriggered: false
+            };
+        }
+
+        let currentMonthKey = "2026-10";
+        let dbData = { months: {} };
+        let activeAlarmDeviceId = null;
+        let audioContext = null;
+        let alarmInterval = null;
+
+        function playBeep() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                let osc = audioContext.createOscillator();
+                let gain = audioContext.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 880;
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.5);
+            } catch(e) { console.log(e); }
+        }
+
+        function startContinuousAlarm(deviceId) {
+            activeAlarmDeviceId = deviceId;
+            document.getElementById('alarm-device-name').innerText = `انتهى وقت الجهاز رقم ${deviceId}`;
+            document.getElementById('alarm-modal').style.display = 'flex';
+            
+            if(alarmInterval) clearInterval(alarmInterval);
+            playBeep();
+            alarmInterval = setInterval(() => {
+                playBeep();
+            }, 1200);
+        }
+
+        function dismissAlarm() {
+            if(alarmInterval) clearInterval(alarmInterval);
+            alarmInterval = null;
+            document.getElementById('alarm-modal').style.display = 'none';
+            if(activeAlarmDeviceId && devicesData[`dev_${activeAlarmDeviceId}`]) {
+                devicesData[`dev_${activeAlarmDeviceId}`].alarmTriggered = true;
+            }
+            activeAlarmDeviceId = null;
+            saveAndRender();
+        }
+
+        function initApp() {
+            const select = document.getElementById('month-select');
+            const today = new Date();
+            const currentYearMonth = `${today.getFullYear()}-${today.getMonth() + 1}`;
+            currentMonthKey = currentYearMonth;
+            if([...select.options].some(o => o.value === currentYearMonth)) {
+                select.value = currentYearMonth;
+            }
+            loadDataFromStorage();
+        }
+
+        function loadDataFromStorage() {
+            if(db) {
+                db.ref('mostafa_ps_system').once('value').then(snapshot => {
+                    const val = snapshot.val();
+                    if(val) dbData = val;
+                    processMonthData();
+                }).catch(() => {
+                    fallbackLocalLoad();
+                });
+            } else {
+                fallbackLocalLoad();
+            }
+        }
+
+        function fallbackLocalLoad() {
+            const local = localStorage.getItem('mostafa_ps_system_data');
+            if(local) dbData = JSON.parse(local);
+            processMonthData();
+        }
+
+        function saveDataToStorage() {
+            if(db) {
+                db.ref('mostafa_ps_system').set(dbData).catch(() => {
+                    localStorage.setItem('mostafa_ps_system_data', JSON.stringify(dbData));
+                });
+            } else {
+                localStorage.setItem('mostafa_ps_system_data', JSON.stringify(dbData));
+            }
+        }
+
+        function processMonthData() {
+            if(!dbData.months) dbData.months = {};
+            if(!dbData.months[currentMonthKey]) {
+                dbData.months[currentMonthKey] = {
+                    days: {},
+                    inventory: { "مشروبات غازية": {qty: 50, price: 10}, "أندومي": {qty: 30, price: 15} }
+                };
+            }
+            document.getElementById('current-active-indicator').innerText = `الشهر المختار حالياً: ${currentMonthKey}`;
+            renderDevices();
+            renderDailyTable();
+            renderFinance();
+            renderInventory();
+            renderReports();
+        }
+
+        function changeActiveMonth() {
+            currentMonthKey = document.getElementById('month-select').value;
+            processMonthData();
+        }
+
+        function switchTab(evt, tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('theme-btn').innerText = isLight ? '☀️ المظهر الفاتح' : '🌙 المظهر الداكن';
+        }
+
+        function renderDevices() {
+            const grid = document.getElementById('devices-grid');
+            grid.innerHTML = '';
+
+            for(let key in devicesData) {
+                let dev = devicesData[key];
+                let isRunning = dev.status === 'on';
+                let timerClass = (dev.targetMinutes > 0 && dev.elapsedSeconds >= dev.targetMinutes * 60) ? 'timer-display finished' : 'timer-display';
+                
+                let durationMinutes = Math.floor(dev.elapsedSeconds / 60);
+                let rate = dev.mode === 'single' ? dev.singleRate : dev.multiRate;
+                let playCost = Math.ceil((durationMinutes / 60) * rate);
+                let itemsCost = (dev.items.drinks * 10) + (dev.items.indomie * 15) + (dev.items.grocery * 5);
+                let totalBill = playCost + itemsCost;
+
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="device-title">${dev.name} (${dev.type})</div>
+                    <div class="rate-box">
+                        فردي: <input type="number" value="${dev.singleRate}" onchange="updateRate(${dev.id}, 'single', this.value)"> ج | 
+                        زوجي: <input type="number" value="${dev.multiRate}" onchange="updateRate(${dev.id}, 'multi', this.value)"> ج
+                    </div>
+                    <div class="${timerClass}" id="timer-${dev.id}">${formatTime(dev.elapsedSeconds)}</div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-start" onclick="startDevice(${dev.id})" ${isRunning ? 'disabled' : ''}>تشغيل</button>
+                        <button class="btn btn-stop" onclick="stopDevice(${dev.id})" ${!isRunning ? 'disabled' : ''}>إيقاف وتحاسب</button>
+                    </div>
+
+                    <div class="controls-box">
+                        النوع: 
+                        <select onchange="updateMode(${dev.id}, this.value)">
+                            <option value="single" ${dev.mode==='single'?'selected':''}>فردي</option>
+                            <option value="multi" ${dev.mode==='multi'?'selected':''}>زوجي</option>
+                        </select>
+                        | حدد وقت (د): <input type="number" value="${dev.targetMinutes || ''}" placeholder="اختياري" onchange="setTarget(${dev.id}, this.value)">
+                    </div>
+
+                    <div class="item-inputs">
+                        <div>مشروبات: <input type="number" value="${dev.items.drinks}" min="0" onchange="updateItem(${dev.id}, 'drinks', this.value)"></div>
+                        <div>أندومي: <input type="number" value="${dev.items.indomie}" min="0" onchange="updateItem(${dev.id}, 'indomie', this.value)"></div>
+                        <div>بقالة: <input type="number" value="${dev.items.grocery}" min="0" onchange="updateItem(${dev.id}, 'grocery', this.value)"></div>
+                    </div>
+
+                    <div class="bill-preview">الحساب الحالي: ${totalBill} جنيه</div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function formatTime(totalSecs) {
+            let hrs = Math.floor(totalSecs / 3600);
+            let mins = Math.floor((totalSecs % 3600) / 60);
+            let secs = totalSecs % 60;
+            return `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+        }
+
+        function updateRate(id, type, val) {
+            if(type === 'single') devicesData[`dev_${id}`].singleRate = Number(val);
+            else devicesData[`dev_${id}`].multiRate = Number(val);
+        }
+
+        function updateMode(id, mode) {
+            devicesData[`dev_${id}`].mode = mode;
+            renderDevices();
+        }
+
+        function setTarget(id, val) {
+            devicesData[`dev_${id}`].targetMinutes = Number(val);
+            devicesData[`dev_${id}`].alarmTriggered = false;
+        }
+
+        function updateItem(id, itemType, val) {
+            devicesData[`dev_${id}`].items[itemType] = Number(val);
+            renderDevices();
+        }
+
+        function startDevice(id) {
+            let dev = devicesData[`dev_${id}`];
+            dev.status = 'on';
+            dev.startTime = Date.now() - (dev.elapsedSeconds * 1000);
+            dev.alarmTriggered = false;
+            saveAndRender();
+        }
+
+        function stopDevice(id) {
+            let dev = devicesData[`dev_${id}`];
+            if(dev.status === 'off') return;
+
+            let durationMinutes = Math.floor(dev.elapsedSeconds / 60);
+            let rate = dev.mode === 'single' ? dev.singleRate : dev.multiRate;
+            let playCost = Math.ceil((durationMinutes / 60) * rate);
+            let drinksCost = dev.items.drinks * 10;
+            let indomieCost = dev.items.indomie * 15;
+            let groceryCost = dev.items.grocery * 5;
+            let total = playCost + drinksCost + indomieCost + groceryCost;
+
+            let todayStr = new Date().toISOString().split('T')[0];
+            let monthData = dbData.months[currentMonthKey];
+            if(!monthData.days[todayStr]) {
+                monthData.days[todayStr] = { ps: 0, drinks: 0, indomie: 0, grocery: 0 };
+            }
+            monthData.days[todayStr].ps += playCost;
+            monthData.days[todayStr].drinks += drinksCost;
+            monthData.days[todayStr].indomie += indomieCost;
+            monthData.days[todayStr].grocery += groceryCost;
+
+            dev.status = 'off';
+            dev.elapsedSeconds = 0;
+            dev.targetMinutes = 0;
+            dev.items = { drinks: 0, indomie: 0, grocery: 0 };
+            dev.alarmTriggered = false;
+
+            saveDataToStorage();
+            processMonthData();
+            alert(`تم إيقاف الجهاز وحساب إجمالي الحساب: ${total} جنيه`);
+        }
+
+        setInterval(() => {
+            let updated = false;
+            for(let key in devicesData) {
+                let dev = devicesData[key];
+                if(dev.status === 'on') {
+                    dev.elapsedSeconds = Math.floor((Date.now() - dev.startTime) / 1000);
+                    updated = true;
+
+                    if(dev.targetMinutes > 0 && (dev.elapsedSeconds >= dev.targetMinutes * 60) && !dev.alarmTriggered) {
+                        dev.alarmTriggered = true;
+                        startContinuousAlarm(dev.id);
+                    }
+                }
+            }
+            if(updated) {
+                for(let key in devicesData) {
+                    let dev = devicesData[key];
+                    let el = document.getElementById(`timer-${dev.id}`);
+                    if(el) {
+                        el.innerText = formatTime(dev.elapsedSeconds);
+                        if(dev.targetMinutes > 0 && dev.elapsedSeconds >= dev.targetMinutes * 60) {
+                            el.className = 'timer-display finished';
+                        }
+                    }
+                }
+            }
+        }, 1000);
+
+        function saveAndRender() {
+            saveDataToStorage();
+            renderDevices();
+        }
+
+        function renderDailyTable() {
+            const tbody = document.getElementById('daily-table-body');
+            tbody.innerHTML = '';
+            let monthData = dbData.months[currentMonthKey];
+            if(!monthData || !monthData.days) return;
+
+            let days = Object.keys(monthData.days).sort();
+            if(days.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد مسجلات لهذا الشهر بعد</td></tr>`;
+                return;
+            }
+
+            days.forEach(day => {
+                let d = monthData.days[day];
+                let total = d.ps + d.drinks + d.indomie + d.grocery;
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${day}</td>
+                    <td>${d.ps} ج</td>
+                    <td>${d.drinks} ج</td>
+                    <td>${d.indomie} ج</td>
+                    <td>${d.grocery} ج</td>
+                    <td style="font-weight: bold; color: #22c55e;">${total} ج</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderFinance() {
+            let monthData = dbData.months[currentMonthKey];
+            let totalMonth = 0;
+            if(monthData && monthData.days) {
+                for(let day in monthData.days) {
+                    let d = monthData.days[day];
+                    totalMonth += (d.ps + d.drinks + d.indomie + d.grocery);
+                }
+            }
+            document.getElementById('net-cash-title').innerText = `💰 صافي الخزينة لشهر ${currentMonthKey}`;
+            document.getElementById('net-cash-display').innerText = `${totalMonth} ج.م`;
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-container');
+            container.innerHTML = '';
+            let monthData = dbData.months[currentMonthKey];
+            if(!monthData || !monthData.inventory) return;
+
+            for(let item in monthData.inventory) {
+                let row = document.createElement('div');
+                row.className = 'inventory-row';
+                row.innerHTML = `
+                    <span>${item} | الكمية: <b>${monthData.inventory[item].qty}</b> | السعر: <b>${monthData.inventory[item].price}ج</b></span>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function renderReports() {
+            let monthData = dbData.months[currentMonthKey];
+            let totalMonth = 0;
+            if(monthData && monthData.days) {
+                for(let day in monthData.days) {
+                    let d = monthData.days[day];
+                    totalMonth += (d.ps + d.drinks + d.indomie + d.grocery);
+                }
+            }
+            document.getElementById('reports-content').innerHTML = `إجمالي إيرادات شهر ${currentMonthKey} هو: <span style="color: #22c55e;">${totalMonth} جنيه</span>`;
+        }
+
+        // معالجة اختيار خيار التصفير من القائمة الموحدة
+        function handleResetSelection(selectElem) {
+            const val = selectElem.value;
+            if(!val) return;
+
+            if(val === 'today') {
+                let todayStr = new Date().toISOString().split('T')[0];
+                if(confirm(`هل أنت متأكد من حذف وتصفير جميع إيرادات وبيانات اليوم (${todayStr})؟`)) {
+                    if(dbData.months[currentMonthKey] && dbData.months[currentMonthKey].days[todayStr]) {
+                        delete dbData.months[currentMonthKey].days[todayStr];
+                        saveDataToStorage();
+                        processMonthData();
+                        alert("تم تصفير بيانات اليوم بنجاح.");
+                    } else {
+                        alert("لا توجد مسجلات مسجلة لليوم الحالي لحذفها.");
+                    }
+                }
+            } else if(val === 'month') {
+                if(confirm(`هل أنت متأكد من تصفير بيانات الشهر الحالي (${currentMonthKey})؟`)) {
+                    if(dbData.months[currentMonthKey]) {
+                        dbData.months[currentMonthKey].days = {};
+                    }
+                    saveDataToStorage();
+                    processMonthData();
+                    alert("تم تصفير الشهر بنجاح.");
+                }
+            } else if(val === 'all') {
+                if(confirm("⚠️ تحذير: سيتم مسح كافة بيانات النظام بالكامل هل أنت متأكد؟")) {
+                    dbData = { months: {} };
+                    saveDataToStorage();
+                    processMonthData();
+                    alert("تم تصفير النظام بالكامل.");
+                }
+            }
+
+            // إعادة تعليق القائمة للاختيار الافتراضي
+            selectElem.value = "";
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dbData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `PlayStation_System_${currentMonthKey}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            if(event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = event => {
+                    try {
+                        dbData = JSON.parse(event.target.result);
+                        saveDataToStorage();
+                        processMonthData();
+                        alert("تم استيراد البيانات بنجاح!");
+                    } catch(e) {
+                        alert("الملف غير صالح!");
+                    }
+                };
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
