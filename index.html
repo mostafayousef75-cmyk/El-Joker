@@ -270,6 +270,7 @@
         }
         .btn-plus { background: #10ac84; }
         .btn-minus { background: #ee5253; }
+        .btn-edit { background: #3b82f6; }
 
         .inventory-row {
             display: flex;
@@ -288,6 +289,27 @@
             color: var(--text-color);
             border: 1px solid var(--border-color);
             border-radius: 6px;
+        }
+
+        .purchased-items-list {
+            margin-top: 15px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 10px;
+        }
+        .purchased-item-card {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 5px;
+        }
+        .purchased-item-info {
+            font-size: 0.9rem;
+            font-weight: bold;
         }
 
         .stats-box {
@@ -424,25 +446,56 @@
     <div id="inventory" class="tab-content">
         <h2>تسجيل خامات ومشتريات المحل (تخصم تلقائياً من خزينة الشهر)</h2>
         <div class="grid">
+            <!-- البلايستيشن -->
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
-                <div id="inv-ps"></div>
-                <button class="btn btn-start" style="margin-top:10px;" onclick="addInventoryRow('inv-ps', 'البلايستيشن')">➕ إضافة صنف جديد</button>
+                <div class="inventory-row">
+                    <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('ps', 'البلايستيشن')">🛒 شراء وخصم</button>
+                </div>
+                <div class="purchased-items-list" id="list-purchased-ps">
+                    <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
+                </div>
             </div>
+
+            <!-- المشروبات -->
             <div class="card">
                 <h3>☕ خامات المشروبات</h3>
-                <div id="inv-drinks"></div>
-                <button class="btn btn-start" style="margin-top:10px;" onclick="addInventoryRow('inv-drinks', 'المشروبات')">➕ إضافة صنف جديد</button>
+                <div class="inventory-row">
+                    <input type="text" placeholder="اسم الصنف" id="name-drinks" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-drinks" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('drinks', 'المشروبات')">🛒 شراء وخصم</button>
+                </div>
+                <div class="purchased-items-list" id="list-purchased-drinks">
+                    <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
+                </div>
             </div>
+
+            <!-- الأندومي -->
             <div class="card">
                 <h3>🍜 خامات الأندومي</h3>
-                <div id="inv-indomie"></div>
-                <button class="btn btn-start" style="margin-top:10px;" onclick="addInventoryRow('inv-indomie', 'الأندومي')">➕ إضافة صنف جديد</button>
+                <div class="inventory-row">
+                    <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('indomie', 'الأندومي')">🛒 شراء وخصم</button>
+                </div>
+                <div class="purchased-items-list" id="list-purchased-indomie">
+                    <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
+                </div>
             </div>
+
+            <!-- البقالة -->
             <div class="card">
                 <h3>🛒 خامات البقالة</h3>
-                <div id="inv-grocery"></div>
-                <button class="btn btn-start" style="margin-top:10px;" onclick="addInventoryRow('inv-grocery', 'البقالة')">➕ إضافة صنف جديد</button>
+                <div class="inventory-row">
+                    <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('grocery', 'البقالة')">🛒 شراء وخصم</button>
+                </div>
+                <div class="purchased-items-list" id="list-purchased-grocery">
+                    <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
+                </div>
             </div>
         </div>
     </div>
@@ -511,7 +564,7 @@
         let timerData = {};
         let allMonthsData = {};
         let currentActiveMonthKey = "2026-10";
-        let alarmIntervals = {}; // لتنظيم التنبيه الصوتي المتكرر
+        let alarmIntervals = {}; 
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
@@ -555,8 +608,12 @@
                     totalCash: 0,
                     expensesCount: 0,
                     financeRecords: [],
-                    dailyData: {}
+                    dailyData: {},
+                    purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
                 };
+            }
+            if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
+                allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
             }
             return allMonthsData[currentActiveMonthKey];
         }
@@ -592,7 +649,8 @@
                         totalCash: 0,
                         expensesCount: 0,
                         financeRecords: [],
-                        dailyData: {}
+                        dailyData: {},
+                        purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
                     };
                     saveToFirebase();
                     loadMonthDataToUI();
@@ -656,7 +714,6 @@
             });
         }
 
-        // صوت إنذار واحد
         function playSingleBeep() {
             try {
                 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -671,16 +728,14 @@
             } catch(e) {}
         }
 
-        // بدء إنذار صوتي متكرر
         function startRepeatingAlarm(idx) {
-            stopRepeatingAlarm(idx); // إيقاف أي تكرار سابق لنفس الجهاز
+            stopRepeatingAlarm(idx);
             playSingleBeep();
             alarmIntervals[idx] = setInterval(() => {
                 playSingleBeep();
-            }, 1200); // يتكرر كل 1.2 ثانية
+            }, 1200);
         }
 
-        // إيقاف الإنذار المتكرر
         function stopRepeatingAlarm(idx) {
             if (alarmIntervals[idx]) {
                 clearInterval(alarmIntervals[idx]);
@@ -726,8 +781,6 @@
                     clearInterval(timerData[idx].interval);
                     timerData[idx].interval = null;
                     document.getElementById("time-" + idx).classList.add('finished');
-                    
-                    // تشغيل التنبيه الصوتي المتكرر عند انتهاء الوقت
                     startRepeatingAlarm(idx);
                     alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                 }
@@ -774,7 +827,7 @@
         }
 
         function checkout(idx) {
-            stopRepeatingAlarm(idx); // إيقاف صوت الإنذار فور الإغلاق
+            stopRepeatingAlarm(idx);
             let psCost = calculateTimeCost(idx);
             let drinksCost = timerData[idx].drinks;
             let indomieCost = timerData[idx].indomie;
@@ -795,7 +848,6 @@
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
 
-            // تصفير بيانات المؤقت والخانات فور التصدير
             timerData[idx].seconds = 0;
             timerData[idx].setMinutes = 0;
             timerData[idx].drinks = 0;
@@ -941,33 +993,30 @@
             });
         }
 
-        function addInventoryRow(containerId, sectionName) {
-            const container = document.getElementById(containerId);
-            const div = document.createElement('div');
-            div.className = 'inventory-row';
-            div.innerHTML = `
-                <input type="text" placeholder="اسم الصنف" class="inv-name" style="flex:2; min-width:110px;">
-                <input type="number" placeholder="السعر" class="inv-price" style="flex:1; min-width:70px;">
-                <button class="action-btn btn-plus" onclick="payInventoryItem(this, '${sectionName}')">🛒 شراء وخصم</button>
-                <button class="action-btn btn-minus" onclick="this.parentElement.remove()">🗑️ حذف</button>
-            `;
-            container.appendChild(div);
-        }
-
-        function payInventoryItem(btn, sectionName) {
-            let row = btn.parentElement;
-            let nameInput = row.querySelector('.inv-name');
-            let priceInput = row.querySelector('.inv-price');
+        function payInventoryItem(categoryKey, sectionName) {
+            let nameInput = document.getElementById(`name-${categoryKey}`);
+            let priceInput = document.getElementById(`price-${categoryKey}`);
             
-            let itemName = nameInput.value.trim() || 'خامة ' + sectionName;
+            let itemName = nameInput.value.trim();
             let itemPrice = parseFloat(priceInput.value) || 0;
 
+            if (!itemName) {
+                return alert("الرجاء كتابة اسم الصنف أو الخامة!");
+            }
             if (itemPrice <= 0) {
                 return alert("الرجاء إدخال سعر صحيح لشراء الخامة!");
             }
 
             let monthData = getActiveMonthData();
+            if(!monthData.purchasedItems) monthData.purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
             if(!monthData.financeRecords) monthData.financeRecords = [];
+
+            let newItem = {
+                id: 'item_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                name: itemName,
+                price: itemPrice
+            };
+            monthData.purchasedItems[categoryKey].push(newItem);
 
             monthData.totalCash = (monthData.totalCash || 0) - itemPrice;
             monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
@@ -979,12 +1028,104 @@
                 color: '#ef4444' 
             });
 
-            updateFinanceUI();
-            saveToFirebase();
-            alert(`تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م وخصمها من خزينة الشهر!`);
-            
             nameInput.value = '';
             priceInput.value = '';
+
+            renderPurchasedItems(categoryKey);
+            updateFinanceUI();
+            saveToFirebase();
+            alert(`✅ تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م بنجاح وخصمها من خزينة الشهر!`);
+        }
+
+        function renderPurchasedItems(categoryKey) {
+            let monthData = getActiveMonthData();
+            let container = document.getElementById(`list-purchased-${categoryKey}`);
+            if (!container) return;
+
+            let items = monthData.purchasedItems && monthData.purchasedItems[categoryKey] ? monthData.purchasedItems[categoryKey] : [];
+
+            if (items.length === 0) {
+                container.innerHTML = `<div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="purchased-item-card">
+                        <div class="purchased-item-info">
+                            🔹 ${item.name} <span style="color:#38bdf8;">(${item.price} ج.م)</span>
+                        </div>
+                        <div style="display:flex; gap:4px;">
+                            <button class="action-btn btn-edit" style="padding:4px 8px; font-size:0.8rem;" onclick="editPurchasedItem('${categoryKey}', ${index})">✏️ تعديل</button>
+                            <button class="action-btn btn-minus" style="padding:4px 8px; font-size:0.8rem;" onclick="deletePurchasedItem('${categoryKey}', ${index})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function editPurchasedItem(categoryKey, index) {
+            let monthData = getActiveMonthData();
+            let item = monthData.purchasedItems[categoryKey][index];
+
+            let newName = prompt("تعديل اسم الصنف:", item.name);
+            if (newName === null) return;
+            newName = newName.trim();
+            if (!newName) return alert("❌ الاسم غير صالح!");
+
+            let newPriceStr = prompt("تعديل السعر (ج.م):", item.price);
+            if (newPriceStr === null) return;
+            let newPrice = parseFloat(newPriceStr);
+            if (isNaN(newPrice) || newPrice <= 0) return alert("❌ السعر غير صالح!");
+
+            let priceDiff = newPrice - item.price;
+
+            item.name = newName;
+            item.price = newPrice;
+
+            if (priceDiff !== 0) {
+                monthData.totalCash -= priceDiff;
+                monthData.expensesCount += priceDiff;
+                
+                if(!monthData.financeRecords) monthData.financeRecords = [];
+                monthData.financeRecords.unshift({ 
+                    type: 'تعديل خامات', 
+                    desc: `تعديل بند خامات: ${newName} (فرق السعر)`, 
+                    amount: Math.abs(priceDiff), 
+                    color: priceDiff > 0 ? '#ef4444' : '#22c55e' 
+                });
+            }
+
+            renderPurchasedItems(categoryKey);
+            updateFinanceUI();
+            saveToFirebase();
+            alert("✅ تم تعديل الصنف بنجاح!");
+        }
+
+        function deletePurchasedItem(categoryKey, index) {
+            let monthData = getActiveMonthData();
+            let item = monthData.purchasedItems[categoryKey][index];
+
+            if (!confirm(`⚠️ هل أنت متأكد من حذف الصنف (${item.name}) وإرجاع قيمته (${item.price} ج.م) للخزينة؟`)) return;
+
+            monthData.totalCash = (monthData.totalCash || 0) + item.price;
+            monthData.expensesCount = (monthData.expensesCount || 0) - item.price;
+
+            if(!monthData.financeRecords) monthData.financeRecords = [];
+            monthData.financeRecords.unshift({ 
+                type: 'إلغاء خامات (وارد)', 
+                desc: `إلغاء واسترجاع صنف خامات: ${item.name}`, 
+                amount: item.price, 
+                color: '#22c55e' 
+            });
+
+            monthData.purchasedItems[categoryKey].splice(index, 1);
+
+            renderPurchasedItems(categoryKey);
+            updateFinanceUI();
+            saveToFirebase();
+            alert("✅ تم حذف الصنف واسترجاع قيمته للخزينة بنجاح.");
         }
 
         function updateReports() {
@@ -1047,6 +1188,12 @@
         function loadMonthDataToUI() {
             initDailyTable();
             updateFinanceUI();
+            
+            renderPurchasedItems('ps');
+            renderPurchasedItems('drinks');
+            renderPurchasedItems('indomie');
+            renderPurchasedItems('grocery');
+
             let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
             document.getElementById('daily-title-text').innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
             if(document.getElementById('reports').classList.contains('active')) {
@@ -1081,7 +1228,7 @@
                 allMonthsData: allMonthsData
             };
 
-            const blob = newBlob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const now = new Date();
@@ -1117,11 +1264,6 @@
 
             initDevices();
             loadFromFirebase();
-
-            addInventoryRow('inv-ps', 'البلايستيشن');
-            addInventoryRow('inv-drinks', 'المشروبات');
-            addInventoryRow('inv-indomie', 'الأندومي');
-            addInventoryRow('inv-grocery', 'البقالة');
         };
     </script>
 </body>
