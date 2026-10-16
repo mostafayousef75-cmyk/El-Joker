@@ -318,7 +318,7 @@
     <!-- شريط اختيار الشهر والسنة -->
     <div class="month-selector-bar">
         <div>
-            <span style="font-size: 1.1rem; font-weight: bold; color: #38bdf8;">📅 الشهر الحالي المعروض: </span>
+            <span style="font-size: 1.1rem; font-weight: bold; color: #38bdf8;">📅 اختر الشهر المطلوب: </span>
             <select id="month-select" onchange="changeActiveMonth()">
                 <option value="2026-1">يناير 2026</option>
                 <option value="2026-2">فبراير 2026</option>
@@ -342,7 +342,7 @@
         <button class="tab-btn" onclick="switchTab(event, 'daily')">📅 السجل اليومي للشهر</button>
         <button class="tab-btn" onclick="switchTab(event, 'finance')">💰 الخزينة والحسابات</button>
         <button class="tab-btn" onclick="switchTab(event, 'inventory')">📦 الخامات والمشتريات</button>
-        <button class="tab-btn" onclick="switchTab(event, 'reports')">📊 تقارير الشهر والسنة</button>
+        <button class="tab-btn" onclick="switchTab(event, 'reports')">📊 جرد الشهر والسنة</button>
     </div>
 
     <!-- 1. الأجهزة والمؤقتات -->
@@ -475,11 +475,8 @@
         let timerData = {};
         let financeRecords = [];
         let totalCash = 0;
-        let totalExpensesCount = 0;
-        
-        // هيكل بيانات الشهور (كل شهر له سجل أيامه ومصروفاته)
         let allMonthsData = {};
-        let currentActiveMonthKey = "";
+        let currentActiveMonthKey = "2026-10";
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
@@ -496,17 +493,15 @@
             if (tabId === 'reports') updateReports();
         }
 
-        // تحديد الشهر الحالي تلقائياً بناءً على تاريخ جهازك
         function initMonthSelector() {
             const now = new Date();
             const year = now.getFullYear();
-            const month = now.getMonth() + 1; // 1 to 12
+            const month = now.getMonth() + 1;
             currentActiveMonthKey = `${year}-${month}`;
 
             const select = document.getElementById('month-select');
             select.value = currentActiveMonthKey;
 
-            // لو القيمة مش موجودة في القائمة يختار الافتراضي
             if (!select.value) {
                 currentActiveMonthKey = "2026-10";
                 select.value = currentActiveMonthKey;
@@ -884,7 +879,8 @@
             let monthExpenses = monthData.expensesCount || 0;
             let netProfit = monthGrossIncome - monthExpenses;
 
-            document.getElementById('current-month-report-title').innerText = `إيرادات الشهر الحالي (${document.getElementById('month-select').selectedOptions[0].text})`;
+            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
+            document.getElementById('current-month-report-title').innerText = `إيرادات الشهر الحالي (${selectedMonthText})`;
             document.getElementById('gross-income').innerText = monthGrossIncome + ' ج.م';
             document.getElementById('total-expenses').innerText = monthExpenses + ' ج.م';
             
@@ -892,7 +888,7 @@
             netProfitElem.innerText = netProfit + ' ج.م';
             netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
 
-            // حساب إجمالي أرباح وإيرادات السنة كلها (2026)
+            // حساب إجمالي أرباح وإيرادات السنة كاملة (2026)
             let yearTotalIncome = 0;
             for (let mKey in allMonthsData) {
                 if (mKey.startsWith("2026")) {
@@ -910,6 +906,8 @@
 
         function loadMonthDataToUI() {
             initDailyTable();
+            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
+            document.getElementById('daily-title-text').innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
             if(document.getElementById('reports').classList.contains('active')) {
                 updateReports();
             }
