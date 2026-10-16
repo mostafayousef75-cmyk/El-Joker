@@ -337,9 +337,44 @@
             color: white;
             font-weight: bold;
         }
+
+        /* نافذة التنبيه العائمة عند انتهاء الوقت */
+        #alarm-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .alarm-box {
+            background: var(--card-bg);
+            border: 3px solid var(--danger);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: pulse-border 1s infinite alternate;
+        }
+        @keyframes pulse-border {
+            0% { border-color: var(--danger); }
+            100% { border-color: #fde047; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- نافذة تنبيه انتهاء الوقت -->
+    <div id="alarm-modal">
+        <div class="alarm-box">
+            <h2 id="alarm-title" style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
+            <p id="alarm-desc" style="font-size: 1.2rem; font-weight: bold; margin: 20px 0;">انتهى وقت الجهاز تماماً</p>
+            <button class="btn btn-stop" style="font-size: 1.1rem; padding: 12px 30px; width: 100%; cursor: pointer;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه وإغلاق</button>
+        </div>
+    </div>
 
     <div class="header-container">
         <div>
@@ -594,7 +629,7 @@
         let timerData = {};
         let allMonthsData = {};
         let currentActiveMonthKey = "2026-10";
-        let alarmIntervals = {}; 
+        let masterAlarmInterval = null; 
         let audioCtx = null;
         
         let adminPassword = "1234"; 
@@ -823,23 +858,28 @@
             } catch(e) {}
         }
 
-        function startRepeatingAlarm(idx) {
-            stopRepeatingAlarm(idx);
-            playSingleBeep();
-            alarmIntervals[idx] = setInterval(() => {
-                playSingleBeep();
-            }, 1000);
-        }
+        // تشغيل صوت التنبيه المتكرر لجميع الأجهزة المنتهية
+        function startMasterAlarm(deviceName) {
+            document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}!`;
+            document.getElementById('alarm-modal').style.display = 'flex';
 
-        function stopRepeatingAlarm(idx) {
-            if (alarmIntervals[idx]) {
-                clearInterval(alarmIntervals[idx]);
-                alarmIntervals[idx] = null;
+            if (!masterAlarmInterval) {
+                playSingleBeep();
+                masterAlarmInterval = setInterval(() => {
+                    playSingleBeep();
+                }, 1000);
             }
         }
 
+        function stopAlarmAndDismiss() {
+            if (masterAlarmInterval) {
+                clearInterval(masterAlarmInterval);
+                masterAlarmInterval = null;
+            }
+            document.getElementById('alarm-modal').style.display = 'none';
+        }
+
         function startStopwatch(idx) {
-            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             
             let startTime = Date.now();
@@ -863,7 +903,6 @@
         }
 
         function startCountdown(idx) {
-            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
@@ -904,8 +943,7 @@
                     document.getElementById("time-" + idx).innerText = "00:00:00";
                     document.getElementById("time-" + idx).classList.add('finished');
                     
-                    startRepeatingAlarm(idx);
-                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                    startMasterAlarm(devices[idx].name);
                 }
             }, 1000);
         }
@@ -952,8 +990,7 @@
                                 document.getElementById("time-" + idx).innerText = "00:00:00";
                                 document.getElementById("time-" + idx).classList.add('finished');
                                 
-                                startRepeatingAlarm(idx);
-                                alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                                startMasterAlarm(devices[idx].name);
                             }
                         }, 1000);
                     } else {
@@ -962,8 +999,7 @@
                         document.getElementById("time-" + idx).innerText = "00:00:00";
                         document.getElementById("time-" + idx).classList.add('finished');
                         
-                        startRepeatingAlarm(idx);
-                        alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                        startMasterAlarm(devices[idx].name);
                     }
                 } 
                 else if (type === 'stopwatch') {
@@ -992,7 +1028,6 @@
         }
 
         function stopTimer(idx) {
-            stopRepeatingAlarm(idx);
             if (timerData[idx].interval) {
                 clearInterval(timerData[idx].interval);
                 timerData[idx].interval = null;
@@ -1036,7 +1071,6 @@
         }
 
         function checkout(idx) {
-            stopRepeatingAlarm(idx);
             stopTimer(idx);
 
             let psCost = calculateTimeCost(idx);
@@ -1542,7 +1576,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const now = new Date();
-            a.href = url;
+            a.href  = url;
             a.download = `PS_Backup_${now.getFullYear()}_${now.getMonth()+1}.json`;
             a.click();
             URL.revokeObjectURL(url);
