@@ -392,47 +392,4 @@
                 <h3>إجمالي إيرادات المبيعات (الدخل)</h3>
                 <div class="money-display" id="gross-income" style="color:#38bdf8;">0 ج.م</div>
             </div>
-            <div class="card" style="text-align:center;">
-                <h3>إجمالي المصروفات والخامات (الخارج)</h3>
-                <div class="money-display" id="total-expenses" style="color:#ef4444;">0 ج.م</div>
-            </div>
-            <div class="card" style="text-align:center; grid-column: 1 / -1;">
-                <h3>💎 صافي إيراد الشهر الحقيقي</h3>
-                <div class="money-display" id="net-monthly-profit">0 ج.م</div>
-                <p style="color:#94a3b8; margin-top:5px;">(إجمالي الدخل ناقصاً إجمالي الخامات والمصروفات المسجلة)</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const firebaseConfig = {
-            databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-
-        const devices = [
-            { name: "eljoker", rate: 20 },
-            { name: "salah", rate: 30 },
-            { name: "cres", rate: 20 },
-            { name: "messi", rate: 20 },
-            { name: "pubg (R)", rate: 20 },
-            { name: "pubg L", rate: 20 }
-        ];
-        let timerData = {};
-        let financeRecords = [];
-        let totalCash = 0;
-        let totalExpensesCount = 0;
-        let dailyData = {};
-
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            const isLight = document.body.classList.contains('light-mode');
-            document.getElementById('theme-btn').innerText = isLight ? '☀️ المظهر الفاتح' : '🌙 المظهر الداكن';
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-        }
-
-        function switchTab(evt, tab
+            <div class="card" style="text-align
