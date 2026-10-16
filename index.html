@@ -23,7 +23,7 @@
             padding: 20px;
         }
 
-        h1, h2 { text-align: center; color: var(--accent); }
+        h1, h2 { text-align: center; color: var(--accent); margin: 5px 0; }
         .author-tag { text-align: center; color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
 
         .nav-tabs {
@@ -217,11 +217,11 @@
     <div class="author-tag">Developed by Mostafa Yosef</div>
 
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('timers')">⏱️ الأجهزة والمؤقتات</button>
-        <button class="tab-btn" onclick="switchTab('daily')">📅 السجل اليومي (+ و -)</button>
-        <button class="tab-btn" onclick="switchTab('finance')">💰 الخزينة والحسابات</button>
-        <button class="tab-btn" onclick="switchTab('inventory')">📦 الخامات والحرة</button>
-        <button class="tab-btn" onclick="switchTab('reports')">📊 جرد الشهر والسنة</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'timers')">⏱️ الأجهزة والمؤقتات</button>
+        <button class="tab-btn" onclick="switchTab(event, 'daily')">📅 السجل اليومي (+ و -)</button>
+        <button class="tab-btn" onclick="switchTab(event, 'finance')">💰 الخزينة والحسابات</button>
+        <button class="tab-btn" onclick="switchTab(event, 'inventory')">📦 الخامات والحرة</button>
+        <button class="tab-btn" onclick="switchTab(event, 'reports')">📊 جرد الشهر والسنة</button>
     </div>
 
     <!-- 1. الأجهزة والمؤقتات -->
@@ -336,12 +336,12 @@
         let financeRecords = [];
         let totalCash = 0;
 
-        function switchTab(tabId) {
+        function switchTab(evt, tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-            if(tabId === 'reports') updateReports();
+            if (evt && evt.target) evt.target.classList.add('active');
+            if (tabId === 'reports') updateReports();
         }
 
         function initDevices() {
@@ -409,8 +409,8 @@
         function startStopwatch(idx) {
             clearInterval(timerData[idx].interval);
             timerData[idx].isCountdown = false;
-            document.getElementById(`card-${idx}`).style.border = "1px solid #334155";
-            document.getElementById(`time-${idx}`).classList.remove('finished');
+            document.getElementById("card-" + idx).style.border = "1px solid #334155";
+            document.getElementById("time-" + idx).classList.remove('finished');
 
             timerData[idx].interval = setInterval(() => {
                 timerData[idx].seconds++;
@@ -421,14 +421,14 @@
 
         function startCountdown(idx) {
             clearInterval(timerData[idx].interval);
-            let mins = parseInt(document.getElementById(`input-mins-${idx}`).value) || 0;
+            let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
             timerData[idx].setMinutes = mins;
             timerData[idx].seconds = mins * 60;
             timerData[idx].isCountdown = true;
-            document.getElementById(`card-${idx}`).style.border = "1px solid #8b5cf6";
-            document.getElementById(`time-${idx}`).classList.remove('finished');
+            document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+            document.getElementById("time-" + idx).classList.remove('finished');
 
             updateDisplay(idx);
             updateLiveBill(idx);
@@ -441,9 +441,9 @@
                 } else {
                     clearInterval(timerData[idx].interval);
                     timerData[idx].interval = null;
-                    document.getElementById(`time-${idx}`).classList.add('finished');
+                    document.getElementById("time-" + idx).classList.add('finished');
                     playAlertSound();
-                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                    alert("⚠️ انتهى وقت الجهاز: " + devices[idx].name + "!");
                 }
             }, 1000);
         }
@@ -453,7 +453,7 @@
             let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
             let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
             let secs = String(s % 60).padStart(2, '0');
-            document.getElementById(`time-${idx}`).innerText = `${hrs}:${mins}:${secs}`;
+            document.getElementById("time-" + idx).innerText = hrs + ":" + mins + ":" + secs;
         }
 
         function stopTimer(idx) {
@@ -462,15 +462,15 @@
         }
 
         function updateItems(idx) {
-            timerData[idx].drinks = parseFloat(document.getElementById(`drink-${idx}`).value) || 0;
-            timerData[idx].indomie = parseFloat(document.getElementById(`indomie-${idx}`).value) || 0;
-            timerData[idx].grocery = parseFloat(document.getElementById(`grocery-${idx}`).value) || 0;
-            timerData[idx].other = parseFloat(document.getElementById(`other-${idx}`).value) || 0;
+            timerData[idx].drinks = parseFloat(document.getElementById("drink-" + idx).value) || 0;
+            timerData[idx].indomie = parseFloat(document.getElementById("indomie-" + idx).value) || 0;
+            timerData[idx].grocery = parseFloat(document.getElementById("grocery-" + idx).value) || 0;
+            timerData[idx].other = parseFloat(document.getElementById("other-" + idx).value) || 0;
             updateLiveBill(idx);
         }
 
         function calculateTimeCost(idx) {
-            let currentRate = parseFloat(document.getElementById(`rate-${idx}`).value) || devices[idx].rate;
+            let currentRate = parseFloat(document.getElementById("rate-" + idx).value) || devices[idx].rate;
             
             if (timerData[idx].isCountdown) {
                 let hours = timerData[idx].setMinutes / 60;
@@ -486,7 +486,7 @@
             let itemsCost = timerData[idx].drinks + timerData[idx].indomie + timerData[idx].grocery + timerData[idx].other;
             let grandTotal = psCost + itemsCost;
 
-            document.getElementById(`bill-total-${idx}`).innerText = `إجمالي الفاتورة الحالية: ${grandTotal} ج.م (وقت: ${psCost} ج.م + إضافات: ${itemsCost} ج.م)`;
+            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة الحالية: " + grandTotal + " ج.م (وقت: " + psCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
         }
 
         function checkout(idx) {
@@ -501,41 +501,20 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            modifyValue(`ps-day-${currentDay}`, psCost, true);
-            modifyValue(`drink-day-${currentDay}`, drinksCost, true);
-            modifyValue(`indomie-day-${currentDay}`, indomieCost, true);
-            modifyValue(`grocery-day-${currentDay}`, groceryCost, true);
-            modifyValue(`other-day-${currentDay}`, otherCost, true);
+            modifyValue("ps-day-" + currentDay, psCost, true);
+            modifyValue("drink-day-" + currentDay, drinksCost, true);
+            modifyValue("indomie-day-" + currentDay, indomieCost, true);
+            modifyValue("grocery-day-" + currentDay, groceryCost, true);
+            modifyValue("other-day-" + currentDay, otherCost, true);
 
             if (grandTotal > 0) {
                 totalCash += grandTotal;
                 let devName = devices[idx].name;
                 
-                if (psCost > 0) financeRecords.unshift({ type: 'وارد (بلايستيشن)', desc: `إيراد جهاز ${devName}`, amount: psCost, color: '#22c55e' });
-                if (drinksCost > 0) financeRecords.unshift({ type: 'وارد (مشروبات)', desc: `مشروبات جهاز ${devName}`, amount: drinksCost, color: '#22c55e' });
-                if (indomieCost > 0) financeRecords.unshift({ type: 'وارد (أندومي)', desc: `أندومي جهاز ${devName}`, amount: indomieCost, color: '#22c55e' });
-                if (groceryCost > 0) financeRecords.unshift({ type: 'وارد (بقالة)', desc: `بقالة جهاز ${devName}`, amount: groceryCost, color: '#22c55e' });
-                if (otherCost > 0) financeRecords.unshift({ type: 'وارد (أخرى)', desc: `إيراد آخر جهاز ${devName}`, amount: otherCost, color: '#22c55e' });
+                if (psCost > 0) financeRecords.unshift({ type: 'وارد (بلايستيشن)', desc: 'إيراد جهاز ' + devName, amount: psCost, color: '#22c55e' });
+                if (drinksCost > 0) financeRecords.unshift({ type: 'وارد (مشروبات)', desc: 'مشروبات جهاز ' + devName, amount: drinksCost, color: '#22c55e' });
+                if (indomieCost > 0) financeRecords.unshift({ type: 'وارد (أندومي)', desc: 'أندومي جهاز ' + devName, amount: indomieCost, color: '#22c55e' });
+                if (groceryCost > 0) financeRecords.unshift({ type: 'وارد (بقالة)', desc: 'بقالة جهاز ' + devName, amount: groceryCost, color: '#22c55e' });
+                if (otherCost > 0) financeRecords.unshift({ type: 'وارد (أخرى)', desc: 'إيراد آخر جهاز ' + devName, amount: otherCost, color: '#22c55e' });
 
                 updateFinanceUI();
-            }
-
-            timerData[idx].seconds = 0;
-            timerData[idx].setMinutes = 0;
-            document.getElementById(`time-${idx}`).innerText = "00:00:00";
-            document.getElementById(`card-${idx}`).style.border = "1px solid #334155";
-            document.getElementById(`time-${idx}`).classList.remove('finished');
-            document.getElementById(`drink-${idx}`).value = 0;
-            document.getElementById(`indomie-${idx}`).value = 0;
-            document.getElementById(`grocery-${idx}`).value = 0;
-            document.getElementById(`other-${idx}`).value = 0;
-            updateLiveBill(idx);
-
-            alert(`تم إغلاق وتصدير الفاتورة بنجاح إلى السجل اليومي والخزينة!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
-        }
-
-        function initDailyTable() {
-            const tbody = document.getElementById('daily-table-body');
-            tbody.innerHTML = '';
-
-            for
