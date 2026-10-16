@@ -291,7 +291,6 @@
             border-radius: 6px;
         }
 
-        /* حاوية قائمة المشتريات المحفوظة تحت كل قسم */
         .purchased-items-list {
             margin-top: 15px;
             border-top: 1px dashed var(--border-color);
@@ -479,4 +478,154 @@
                 <div class="inventory-row">
                     <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;">
                     <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;">
-                    <button class="action-btn btn-plus"
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('indomie', 'الأندومي')">🛒 شراء وخصم</button>
+                </div>
+                <div class="purchased-items-list" id="list-purchased-indomie">
+                    <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
+                </div>
+            </div>
+
+            <!-- البقالة -->
+            <div class="card">
+                <h3>🛒 خامات البقالة</h3>
+                <div class="inventory-row">
+                    <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('grocery', 'البقالة')">🛒 شراء وخصم</button>
+                </div>
+                <div class="purchased-items-list" id="list-purchased-grocery">
+                    <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. جرد الشهر والسنة -->
+    <div id="reports" class="tab-content">
+        <h2>📊 تقارير الأرباح للشهر والسنة الكاملة</h2>
+        <div class="grid">
+            <div class="card" style="text-align:center;">
+                <h3 id="current-month-report-title">إيرادات الشهر الحالي</h3>
+                <div class="money-display" id="gross-income" style="color:#38bdf8;">0 ج.م</div>
+            </div>
+            <div class="card" style="text-align:center;">
+                <h3>إجمالي المصروفات والخامات للشهر</h3>
+                <div class="money-display" id="total-expenses" style="color:#ef4444;">0 ج.م</div>
+            </div>
+            <div class="card" style="text-align:center; grid-column: 1 / -1;">
+                <h3>💎 صافي ربح الشهر الحالي</h3>
+                <div class="money-display" id="net-monthly-profit">0 ج.م</div>
+            </div>
+            <div class="card" style="text-align:center; grid-column: 1 / -1; background: #0f172a; border: 2px solid #3b82f6;">
+                <h3 style="color: #fde047; font-size: 1.5rem;">🌟 إجمالي إيرادات وأرباح السنة كاملة (2026)</h3>
+                <div class="money-display" id="year-total-profit" style="color: #fde047; font-size: 2.5rem;">0 ج.م</div>
+                <p style="color:#94a3b8; margin-top:5px;">(مجموع إيرادات جميع شهور السنة مجمعة)</p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px; color: #38bdf8;">📑 ملخص إيرادات شهور السنة (2026)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>الشهر</th>
+                    <th>إجمالي الإيرادات</th>
+                    <th>إجمالي المصروفات</th>
+                    <th>صافي الربح</th>
+                </tr>
+            </thead>
+            <tbody id="yearly-summary-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        const devices = [
+            { name: "eljoker", rate: 20 },
+            { name: "salah", rate: 30 },
+            { name: "cres", rate: 20 },
+            { name: "messi", rate: 20 },
+            { name: "pubg (R)", rate: 20 },
+            { name: "pubg L", rate: 20 }
+        ];
+        
+        const monthNames = [
+            "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+            "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+        ];
+
+        let timerData = {};
+        let allMonthsData = {};
+        let currentActiveMonthKey = "2026-10";
+        let alarmIntervals = {}; 
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('theme-btn').innerText = isLight ? '☀️ المظهر الفاتح' : '🌙 المظهر الداكن';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        function switchTab(evt, tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (evt && evt.target) evt.target.classList.add('active');
+            if (tabId === 'reports') updateReports();
+        }
+
+        function initMonthSelector() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            currentActiveMonthKey = `${year}-${month}`;
+
+            const select = document.getElementById('month-select');
+            select.value = currentActiveMonthKey;
+
+            if (!select.value) {
+                currentActiveMonthKey = "2026-10";
+                select.value = currentActiveMonthKey;
+            }
+        }
+
+        function changeActiveMonth() {
+            const select = document.getElementById('month-select');
+            currentActiveMonthKey = select.value;
+            loadMonthDataToUI();
+        }
+
+        function getActiveMonthData() {
+            if (!allMonthsData[currentActiveMonthKey]) {
+                allMonthsData[currentActiveMonthKey] = {
+                    totalCash: 0,
+                    expensesCount: 0,
+                    financeRecords: [],
+                    dailyData: {},
+                    purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
+                };
+            }
+            if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
+                allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
+            }
+            return allMonthsData[currentActiveMonthKey];
+        }
+
+        function handleResetSelection(selectElem) {
+            let val = selectElem.value;
+            selectElem.selectedIndex = 0;
+
+            if (val === "day") {
+                let dayNum = prompt("أدخل رقم اليوم المراد تصفيره (من 1 إلى 31):");
+                if (!dayNum) return;
+                let day = parseInt(dayNum);
+                if (isNaN(day) || day < 1 || day > 31) {
+                    return alert("❌ رقم يوم غير صحيح!");
+                }
