@@ -235,21 +235,27 @@
 
         th, td {
             border: 1px solid var(--border-color);
-            padding: 10px;
+            padding: 12px;
             text-align: center;
+            vertical-align: middle;
         }
 
-        th { background: #0284c7; color: #fff; }
+        th { background: #0284c7; color: #fff; font-size: 1rem; }
         
+        .today-highlight {
+            background-color: rgba(59, 130, 246, 0.15) !important;
+            border: 2px solid var(--accent);
+        }
+
         .add-input-group {
             display: flex;
-            gap: 4px;
+            gap: 6px;
             justify-content: center;
             align-items: center;
         }
         .add-input-group input {
-            width: 50px;
-            padding: 4px;
+            width: 60px;
+            padding: 6px;
             background: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
@@ -398,12 +404,11 @@
         <table>
             <thead>
                 <tr>
-                    <th>اليوم</th>
-                    <th>البلايستيشن</th>
-                    <th>المشروبات</th>
-                    <th>الأندومي</th>
-                    <th>البقالة</th>
-                    <th>الإجمالي اليومي</th>
+                    <th style="width: 15%;">اليوم والتاريخ</th>
+                    <th style="width: 20%;">☕ المشروبات</th>
+                    <th style="width: 20%;">🍜 الأندومي</th>
+                    <th style="width: 20%;">🛒 البقالة</th>
+                    <th style="width: 25%;">💰 الإجمالي اليومي</th>
                 </tr>
             </thead>
             <tbody id="daily-table-body"></tbody>
@@ -431,11 +436,11 @@
             <div class="card">
                 <h3>☕ خامات المشروبات</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-drinks" style="flex:2; min-width:110px;">
-                    <input type="number" placeholder="السعر" id="price-drinks" style="flex:1; min-width:70px;">
-                    <button class="action-btn btn-plus" onclick="payInventoryItem('drinks', 'المشروبات')">🛒 شراء وخصم</button>
+                    <input type="text" placeholder="اسم الصنف" id="name-drink" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-drink" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('drink', 'المشروبات')">🛒 شراء وخصم</button>
                 </div>
-                <div class="purchased-items-list" id="list-purchased-drinks">
+                <div class="purchased-items-list" id="list-purchased-drink">
                     <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
                 </div>
             </div>
@@ -669,11 +674,11 @@
                     expensesCount: 0,
                     financeRecords: [],
                     dailyData: {},
-                    purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
+                    purchasedItems: { ps: [], drink: [], indomie: [], grocery: [] }
                 };
             }
             if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
-                allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
+                allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
             }
             return allMonthsData[currentActiveMonthKey];
         }
@@ -713,7 +718,7 @@
                         expensesCount: 0,
                         financeRecords: [],
                         dailyData: {},
-                        purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
+                        purchasedItems: { ps: [], drink: [], indomie: [], grocery: [] }
                     };
                     saveData();
                     loadMonthDataToUI();
@@ -1063,31 +1068,44 @@
             let monthData = getActiveMonthData();
             if (!monthData.dailyData) monthData.dailyData = {};
 
+            let todayObj = new Date();
+            let currentRealDay = todayObj.getDate();
+            let currentRealYear = todayObj.getFullYear();
+            let currentRealMonth = todayObj.getMonth() + 1;
+
+            let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
+
             for (let i = 1; i <= 31; i++) {
                 if(!monthData.dailyData[i]) {
                     monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
                 }
                 
                 let d = monthData.dailyData[i];
-                let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                let rowTotal = (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+
+                let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
+                let rowClass = isToday ? 'today-highlight' : '';
 
                 tbody.innerHTML += `
-                    <tr>
-                        <td><b>يوم ${i}</b></td>
-                        <td>${createCellHTML(i, 'ps', d.ps)}</td>
-                        <td>${createCellHTML(i, 'drink', d.drink)}</td>
-                        <td>${createCellHTML(i, 'indomie', d.indomie)}</td>
-                        <td>${createCellHTML(i, 'grocery', d.grocery)}</td>
-                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.1rem;">${rowTotal}</td>
+                    <tr class="${rowClass}">
+                        <td style="font-weight:bold;">
+                            يوم ${i}
+                            ${isToday ? '<br><span style="color:var(--accent); font-size:0.75rem;">(اليوم الحالي)</span>' : ''}
+                        </td>
+                        <td>${createCellHTML(i, 'drink', d.drink, 'المشروبات')}</td>
+                        <td>${createCellHTML(i, 'indomie', d.indomie, 'الأندومي')}</td>
+                        <td>${createCellHTML(i, 'grocery', d.grocery, 'البقالة')}</td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.2rem;">${rowTotal} ج.م</td>
                     </tr>
                 `;
             }
         }
 
-        function createCellHTML(day, key, val) {
+        function createCellHTML(day, key, val, labelName) {
             return `
+                <div style="margin-bottom: 4px; font-size: 0.8rem; color: #94a3b8; font-weight: bold;">${labelName}</div>
                 <div class="add-input-group">
-                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px;">${val || 0}</span>
+                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px; font-size: 1.05rem;">${val || 0}</span>
                     <input type="number" id="input-${day}-${key}" placeholder="قيمة">
                     <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
                     <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
@@ -1100,7 +1118,7 @@
             let val = parseFloat(inputField.value) || 0;
             if(val <= 0) return;
 
-            let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
+            let labelNames = { drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
             let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
 
             addValueToDailyAndFinance(day, key, val, desc, isAdd);
@@ -1126,9 +1144,9 @@
             if(span) span.innerText = monthData.dailyData[day][key];
 
             let d = monthData.dailyData[day];
-            let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+            let rowTotal = (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
             let totalCell = document.getElementById(`total-day-${day}`);
-            if(totalCell) totalCell.innerText = rowTotal;
+            if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
 
             updateFinanceUI();
             saveData();
@@ -1198,7 +1216,7 @@
             }
 
             let monthData = getActiveMonthData();
-            if(!monthData.purchasedItems) monthData.purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
+            if(!monthData.purchasedItems) monthData.purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
             let newItem = {
@@ -1325,7 +1343,7 @@
             if (monthData.dailyData) {
                 for (let i = 1; i <= 31; i++) {
                     let d = monthData.dailyData[i] || {};
-                    let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                    let dayTotal = (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
                     monthGrossIncome += dayTotal;
                 }
             }
@@ -1354,7 +1372,7 @@
                 if (mObj.dailyData) {
                     for (let day in mObj.dailyData) {
                         let d = mObj.dailyData[day];
-                        mIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                        mIncome += (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
                     }
                 }
 
@@ -1380,7 +1398,7 @@
             updateFinanceUI();
             
             renderPurchasedItems('ps');
-            renderPurchasedItems('drinks');
+            renderPurchasedItems('drink');
             renderPurchasedItems('indomie');
             renderPurchasedItems('grocery');
 
@@ -1397,10 +1415,8 @@
                 adminPassword: adminPassword || "1234"
             };
             
-            // حفظ محلياً دائماً ليعمل أوفلاين
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
-            // محاولة الحفظ سحابياً إذا كان النت متصلاً
             if (db && navigator.onLine) {
                 db.ref('ps_lounge_data').set(dataToSave).then(() => {
                     document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
@@ -1416,7 +1432,6 @@
         }
 
         function loadData() {
-            // أولاً: تحميل البيانات محلياً لتظهر فوراً بدون تأخير وبدون إنترنت
             let localData = localStorage.getItem('ps_local_backup');
             if (localData) {
                 try {
@@ -1429,7 +1444,6 @@
             initMonthSelector();
             loadMonthDataToUI();
 
-            // ثانياً: إذا كان النت متصلاً، جلب أحدث نسخة من السحابة ومزامنتها
             if (db && navigator.onLine) {
                 db.ref('ps_lounge_data').once('value').then((snapshot) => {
                     const data = snapshot.val();
@@ -1450,9 +1464,8 @@
             }
         }
 
-        // مراقبة حالة الاتصال بالإنترنت لتحديث الحالة تلقائياً
         window.addEventListener('online', () => {
-            saveData(); // مزامنة التعديلات التي تمت أوفلاين عند عودة النت
+            saveData();
         });
         window.addEventListener('offline', () => {
             document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
@@ -1481,8 +1494,9 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
+                testResult = e.target.result;
                 try {
-                    const imported = JSON.parse(e.target.result);
+                    const imported = JSON.parse(testResult);
                     allMonthsData = imported.allMonthsData || {};
                     if(imported.adminPassword) adminPassword = imported.adminPassword;
                     
