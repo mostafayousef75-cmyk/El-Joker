@@ -531,6 +531,21 @@
             </div>
         </div>
 
+        <h3 style="margin-top: 30px; color: #38bdf8;">📅 تفصيل إيرادات أيام الشهر الحالي</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>اليوم</th>
+                    <th>إيراد البلايستيشن</th>
+                    <th>إيراد المشروبات</th>
+                    <th>إيراد الأندومي</th>
+                    <th>إيراد البقالة</th>
+                    <th>إجمالي اليوم</th>
+                </tr>
+            </thead>
+            <tbody id="report-daily-breakdown-body"></tbody>
+        </table>
+
         <h3 style="margin-top: 30px; color: #38bdf8;">📑 ملخص إيرادات شهور السنة (2026)</h3>
         <table>
             <thead>
@@ -1364,12 +1379,33 @@
             let monthData = getActiveMonthData();
             let monthGrossIncome = 0;
             
-            if (monthData.dailyData) {
-                for (let i = 1; i <= 31; i++) {
-                    let d = monthData.dailyData[i] || {};
-                    let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
-                    monthGrossIncome += dayTotal;
-                }
+            let breakdownBody = document.getElementById('report-daily-breakdown-body');
+            breakdownBody.innerHTML = '';
+
+            let todayObj = new Date();
+            let currentRealDay = todayObj.getDate();
+            let currentRealYear = todayObj.getFullYear();
+            let currentRealMonth = todayObj.getMonth() + 1;
+            let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
+
+            for (let i = 1; i <= 31; i++) {
+                let d = monthData.dailyData && monthData.dailyData[i] ? monthData.dailyData[i] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+                let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                monthGrossIncome += dayTotal;
+
+                let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
+                let rowClass = isToday ? 'today-highlight' : '';
+
+                breakdownBody.innerHTML += `
+                    <tr class="${rowClass}">
+                        <td><b>يوم ${i}</b> ${isToday ? '<span style="color:var(--accent); font-size:0.75rem;">(اليوم)</span>' : ''}</td>
+                        <td style="color:#38bdf8;">${d.ps || 0} ج.م</td>
+                        <td>${d.drink || 0} ج.م</td>
+                        <td>${d.indomie || 0} ج.م</td>
+                        <td>${d.grocery || 0} ج.م</td>
+                        <td style="color:#22c55e; font-weight:bold;">${dayTotal} ج.م</td>
+                    </tr>
+                `;
             }
 
             let monthExpenses = monthData.expensesCount || 0;
