@@ -405,10 +405,11 @@
             <thead>
                 <tr>
                     <th style="width: 15%;">اليوم والتاريخ</th>
-                    <th style="width: 20%;">☕ المشروبات</th>
-                    <th style="width: 20%;">🍜 الأندومي</th>
-                    <th style="width: 20%;">🛒 البقالة</th>
-                    <th style="width: 25%;">💰 الإجمالي اليومي</th>
+                    <th style="width: 18%;">🎮 البلايستيشن</th>
+                    <th style="width: 18%;">☕ المشروبات</th>
+                    <th style="width: 18%;">🍜 الأندومي</th>
+                    <th style="width: 18%;">🛒 البقالة</th>
+                    <th style="width: 13%;">💰 الإجمالي</th>
                 </tr>
             </thead>
             <tbody id="daily-table-body"></tbody>
@@ -680,7 +681,6 @@
             if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
                 allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
             }
-            // التأكد من دعم كلا المسميين القديم والجديد لعدم حدوث خطأ
             if (allMonthsData[currentActiveMonthKey].purchasedItems.drinks && !allMonthsData[currentActiveMonthKey].purchasedItems.drink) {
                 allMonthsData[currentActiveMonthKey].purchasedItems.drink = allMonthsData[currentActiveMonthKey].purchasedItems.drinks;
             }
@@ -1040,6 +1040,8 @@
             if(currentDay > 31) currentDay = 31;
 
             let descText = customPrice > 0 ? 'مبلغ مخصص/عرض جهاز ' + devices[idx].name : 'إيراد بلايستيشن جهاز ' + devices[idx].name;
+            
+            // ترحيل القيم وإضافتها تلقائياً للسجل اليومي والخزينة للشهر الحالي
             if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
@@ -1062,7 +1064,7 @@
             
             updateLiveBill(idx);
 
-            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
+            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح وتحديث السجل اليومي والخزينة!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
         }
 
         function initDailyTable() {
@@ -1085,7 +1087,7 @@
                 }
                 
                 let d = monthData.dailyData[i];
-                let rowTotal = (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
 
                 let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
                 let rowClass = isToday ? 'today-highlight' : '';
@@ -1096,6 +1098,7 @@
                             يوم ${i}
                             ${isToday ? '<br><span style="color:var(--accent); font-size:0.75rem;">(اليوم الحالي)</span>' : ''}
                         </td>
+                        <td>${createCellHTML(i, 'ps', d.ps, 'البلايستيشن')}</td>
                         <td>${createCellHTML(i, 'drink', d.drink, 'المشروبات')}</td>
                         <td>${createCellHTML(i, 'indomie', d.indomie, 'الأندومي')}</td>
                         <td>${createCellHTML(i, 'grocery', d.grocery, 'البقالة')}</td>
@@ -1122,7 +1125,7 @@
             let val = parseFloat(inputField.value) || 0;
             if(val <= 0) return;
 
-            let labelNames = { drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
+            let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
             let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
 
             addValueToDailyAndFinance(day, key, val, desc, isAdd);
@@ -1148,7 +1151,7 @@
             if(span) span.innerText = monthData.dailyData[day][key];
 
             let d = monthData.dailyData[day];
-            let rowTotal = (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+            let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
             let totalCell = document.getElementById(`total-day-${day}`);
             if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
 
@@ -1352,7 +1355,7 @@
             if (monthData.dailyData) {
                 for (let i = 1; i <= 31; i++) {
                     let d = monthData.dailyData[i] || {};
-                    let dayTotal = (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                    let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
                     monthGrossIncome += dayTotal;
                 }
             }
@@ -1381,7 +1384,7 @@
                 if (mObj.dailyData) {
                     for (let day in mObj.dailyData) {
                         let d = mObj.dailyData[day];
-                        mIncome += (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                        mIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
                     }
                 }
 
