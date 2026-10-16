@@ -3,65 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة أجهزة البلايستيشن</title>
+    <title>نظام إدارة صالة البلايستيشن المتكامل</title>
     <style>
-        body { font-family: sans-serif; background-color: #1a1a24; color: #fff; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: #2a2a38; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #3b3b4f; }
-        .device-name { font-size: 1.5rem; font-weight: bold; color: #00d2d3; margin-bottom: 10px; }
-        .timer-display { font-size: 2rem; font-family: monospace; margin: 15px 0; color: #ff9f43; }
-        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; }
-        .btn-start { background-color: #10ac84; color: white; }
-        .btn-stop { background-color: #ee5253; color: white; }
-        .btn-reset { background-color: #576574; color: white; }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --text-color: #f8fafc;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2 { text-align: center; color: var(--accent); }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: var(--card-bg);
+            color: #fff;
+            border: 1px solid var(--accent);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* الأجهزة */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .device-title { font-size: 1.4rem; color: #38bdf8; text-align: center; font-weight: bold; }
+        .timer-display { font-size: 2.2rem; font-family: monospace; text-align: center; margin: 15px 0; color: #fde047; }
+        .timer-display.finished { color: var(--danger); animation: blink 1s infinite; }
+
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
+        .btn-start { background: var(--success); }
+        .btn-stop { background: var(--danger); }
+        .btn-add { background: var(--warning); color: #000; }
+        .btn-timer { background: #8b5cf6; }
+
+        .controls-box {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .controls-box input {
+            width: 50px;
+            padding: 5px;
+            text-align: center;
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid #475569;
+            border-radius: 4px;
+        }
+
+        .item-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .item-inputs input {
+            width: 75%;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+        }
+
+        /* الجداول */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid #334155;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th { background: #0284c7; color: #fff; }
+        input[type="number"] { background: #0f172a; color: #fff; border: 1px solid #475569; text-align: center; }
     </style>
 </head>
 <body>
 
-    <h2>🎮 إدارة أجهزة صالة البلايستيشن</h2>
-    <div class="grid" id="devices-container"></div>
+    <h1>🎮 نظام إدارة محل البلايستيشن</h1>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('timers')">⏱️ أجهزة البلايستيشن والمؤقتات</button>
+        <button class="tab-btn" onclick="switchTab('daily')">📅 التقرير اليومي (31 يوم)</button>
+        <button class="tab-btn" onclick="switchTab('inventory')">📦 تقارير الخامات والمخزون</button>
+    </div>
+
+    <!-- 1. صفحة الأجهزة والمؤقتات -->
+    <div id="timers" class="tab-content active">
+        <div class="grid" id="devices-grid"></div>
+    </div>
+
+    <!-- 2. صفحة الـ 31 يوم -->
+    <div id="daily" class="tab-content">
+        <h2>سجل الإيرادات الشهرية (31 يوم)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>اليوم</th>
+                    <th>إيراد البلايستيشن</th>
+                    <th>المشروبات</th>
+                    <th>الأندومي</th>
+                    <th>البقالة</th>
+                    <th>أخرى</th>
+                    <th>الإجمالي اليومي</th>
+                </tr>
+            </thead>
+            <tbody id="daily-table-body"></tbody>
+        </table>
+    </div>
+
+    <!-- 3. صفحة تقارير الخامات -->
+    <div id="inventory" class="tab-content">
+        <h2>متابعة خامات ومخزون المحل</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>🎮 خامات البلايستيشن</h3>
+                <p>دراعات شغالة: <input type="number" value="12" style="width:70px; padding:5px;"></p>
+                <p>وصلات شحن: <input type="number" value="6" style="width:70px; padding:5px;"></p>
+                <p>كابلات HD: <input type="number" value="6" style="width:70px; padding:5px;"></p>
+            </div>
+            <div class="card">
+                <h3>☕ خامات المشروبات</h3>
+                <p>علب كنز: <input type="number" value="48" style="width:70px; padding:5px;"></p>
+                <p>بن قهوة (كيلو): <input type="number" value="2" style="width:70px; padding:5px;"></p>
+                <p>شاي (باكت): <input type="number" value="5" style="width:70px; padding:5px;"></p>
+            </div>
+            <div class="card">
+                <h3>🍜 خامات الأندومي</h3>
+                <p>أندومي دجاج: <input type="number" value="20" style="width:70px; padding:5px;"></p>
+                <p>أندومي خضار: <input type="number" value="15" style="width:70px; padding:5px;"></p>
+                <p>أطباق جاهزة: <input type="number" value="30" style="width:70px; padding:5px;"></p>
+            </div>
+            <div class="card">
+                <h3>🛒 خامات البقالة</h3>
+                <p>شيبسي: <input type="number" value="35" style="width:70px; padding:5px;"></p>
+                <p>بسكويت / شيكولاتة: <input type="number" value="40" style="width:70px; padding:5px;"></p>
+                <p>زجاجات مياه: <input type="number" value="24" style="width:70px; padding:5px;"></p>
+            </div>
+        </div>
+    </div>
 
     <script>
         const devices = ["eljoker", "salah", "cres", "messi", "pubg (R)", "pubg L"];
-        const container = document.getElementById('devices-container');
+        let timerData = {};
 
-        devices.forEach((device, index) => {
-            container.innerHTML += `
-                <div class="card">
-                    <div class="device-name">${device}</div>
-                    <div class="timer-display" id="timer-${index}">00:00:00</div>
-                    <button class="btn btn-start" onclick="startTimer(${index})">بدء الجلسة</button>
-                    <button class="btn btn-stop" onclick="stopTimer(${index})">إيقاف / إنهاء</button>
-                    <button class="btn btn-reset" onclick="resetTimer(${index})">تصفير</button>
-                </div>
-            `;
-        });
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
 
-        let timers = {};
-        let intervals = {};
+        function initDevices() {
+            const container = document.getElementById('devices-grid');
+            container.innerHTML = '';
+            
+            devices.forEach((dev, idx) => {
+                timerData[idx] = { 
+                    seconds: 0, 
+                    totalSecondsPlayed: 0,
+                    interval: null, 
+                    isCountdown: false,
+                    drinks: 0, indomie: 0, grocery: 0, other: 0 
+                };
+                
+                container.innerHTML += `
+                    <div class="card" id="card-${idx}">
+                        <div class="device-title">${dev}</div>
+                        
+                        <div class="controls-box">
+                            ضبط وقت محدد (بالدقائق): 
+                            <input type="number" id="input-mins-${idx}" value="60" min="1">
+                            <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
+                        </div>
 
-        function startTimer(id) {
-            if (intervals[id]) return;
-            timers[id] = timers[id] || 0;
-            intervals[id] = setInterval(() => {
-                timers[id]++;
-                let hrs = String(Math.floor(timers[id] / 3600)).padStart(2, '0');
-                let mins = String(Math.floor((timers[id] % 3600) / 60)).padStart(2, '0');
-                let secs = String(timers[id] % 60).padStart(2, '0');
-                document.getElementById(`timer-${id}`).innerText = `${hrs}:${mins}:${secs}`;
+                        <div class="timer-display" id="time-${idx}">00:00:00</div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-start" onclick="startStopwatch(${idx})">وقت مفتوح</button>
+                            <button class="btn btn-stop" onclick="stopTimer(${idx})">إيقاف مؤقت</button>
+                            <button class="btn btn-add" onclick="checkout(${idx})">إغلاق وتصدير للحساب</button>
+                        </div>
+                        
+                        <div class="item-inputs">
+                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" onchange="updateItems(${idx})"></label>
+                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" onchange="updateItems(${idx})"></label>
+                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" onchange="updateItems(${idx})"></label>
+                            <label>أخرى: <input type="number" id="other-${idx}" value="0" onchange="updateItems(${idx})"></label>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function playAlertSound() {
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let oscillator = audioCtx.createOscillator();
+            let gainNode = audioCtx.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // صوت تنبيه
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.8);
+        }
+
+        function startStopwatch(idx) {
+            clearInterval(timerData[idx].interval);
+            timerData[idx].isCountdown = false;
+            document.getElementById(`card-${idx}`).style.border = "1px solid #334155";
+            document.getElementById(`time-${idx}`).classList.remove('finished');
+
+            timerData[idx].interval = setInterval(() => {
+                timerData[idx].seconds++;
+                timerData[idx].totalSecondsPlayed++;
+                updateDisplay(idx);
             }, 1000);
         }
 
-        function stopTimer(id) {
-            clearInterval(intervals[id]);
-            intervals[id] = null;
+        function startCountdown(idx) {
+            clearInterval(timerData[idx].interval);
+            let mins = parseInt(document.getElementById(`input-mins-${idx}`).value) || 0;
+            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
+
+            timerData[idx].seconds = mins * 60;
+            timerData[idx].totalSecondsPlayed = timerData[idx].seconds; // لحساب التكلفة لاحقاً
+            timerData[idx].isCountdown = true;
+            document.getElementById(`card-${idx}`).style.border = "1px solid #8b5cf6";
+            document.getElementById(`time-${idx}`).classList.remove('finished');
+
+            updateDisplay(idx);
+
+            timerData[idx].interval = setInterval(() => {
+                if (timerData[idx].seconds > 0) {
+                    timerData[idx].seconds--;
+                    updateDisplay(idx);
+                } else {
+                    clearInterval(timerData[idx].interval);
+                    timerData[idx].interval = null;
+                    document.getElementById(`time-${idx}`).classList.add('finished');
+                    playAlertSound();
+                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx]}!`);
+                }
+            }, 1000);
         }
 
-        function resetTimer(id) {
-            stopTimer(id);
-            timers[id] = 0;
-            document.getElementById(`timer-${id}`).innerText = "00:00:00";
+        function updateDisplay(idx) {
+            let s = timerData[idx].seconds;
+            let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
+            let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            let secs = String(s % 60).padStart(2, '0');
+            document.getElementById(`time-${idx}`).innerText = `${hrs}:${mins}:${secs}`;
         }
+
+        function stopTimer(idx) {
+            clearInterval(timerData[idx].interval);
+            timerData[idx].interval = null;
+        }
+
+        function updateItems(idx) {
+            timerData[idx].drinks = parseFloat(document.getElementById(`drink-${idx}`).value) || 0;
+            timerData[idx].indomie = parseFloat(document.getElementById(`indomie-${idx}`).value) || 0;
+            timerData[idx].grocery = parseFloat(document.getElementById(`grocery-${idx}`).value) || 0;
+            timerData[idx].other = parseFloat(document.getElementById(`other-${idx}`).value) || 0;
+        }
+
+        function checkout(idx) {
+            stopTimer(idx);
+            let playedSeconds = timerData[idx].isCountdown ? 
+                (timerData[idx].totalSecondsPlayed - timerData[idx].seconds) : 
+                timerData[idx].seconds;
+
+            let hours = Math.max(playedSeconds, 0) / 3600;
+            let psCost = Math.round(hours * 20); // سعر الساعة الافتراضي 20 جنيه (قابل للتعديل)
+            
+            let currentDay = new Date().getDate();
+            if(currentDay > 31) currentDay = 31;
+
+            let psInput = document.getElementById(`ps-day-${currentDay}`);
+            let drinkInput = document.getElementById(`drink-day-${currentDay}`);
+            let indomieInput = document.getElementById(`indomie-day-${currentDay}`);
+            let groceryInput = document.getElementById(`grocery-day-${currentDay}`);
+            let otherInput = document.getElementById(`other-day-${currentDay}`);
+
+            if (psInput) {
+                psInput.value = (parseFloat(psInput.value) || 0) + psCost;
+                drinkInput.value = (parseFloat(drinkInput.value) || 0) + timerData[idx].drinks;
+                indomieInput.value = (parseFloat(indomieInput.value) || 0) + timerData[idx].indomie;
+                groceryInput.value = (parseFloat(groceryInput.value) || 0) + timerData[idx].grocery;
+                otherInput.value = (parseFloat(otherInput.value) || 0) + timerData[idx].other;
+                calculateRow(currentDay);
+            }
+
+            // تصفير الجهاز
+            timerData[idx].seconds = 0;
+            timerData[idx].totalSecondsPlayed = 0;
+            document.getElementById(`time-${idx}`).innerText = "00:00:00";
+            document.getElementById(`card-${idx}`).style.border = "1px solid #334155";
+            document.getElementById(`time-${idx}`).classList.remove('finished');
+            document.getElementById(`drink-${idx}`).value = 0;
+            document.getElementById(`indomie-${idx}`).value = 0;
+            document.getElementById(`grocery-${idx}`).value = 0;
+            document.getElementById(`other-${idx}`).value = 0;
+
+            alert(`تم إغلاق الحساب وتصديره لتقرير اليوم بنجاح!\nحساب الوقت (${Math.round(hours*60)} دقيقة): ${psCost} ج.م`);
+        }
+
+        function initDailyTable() {
+            const tbody = document.getElementById('daily-table-body');
+            tbody.innerHTML = '';
+
+            for (let i = 1; i <= 31; i++) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>يوم ${i}</b></td>
+                        <td><input type="number" id="ps-day-${i}" value="0" oninput="calculateRow(${i})"></td>
+                        <td><input type="number" id="drink-day-${i}" value="0" oninput="calculateRow(${i})"></td>
+                        <td><input type="number" id="indomie-day-${i}" value="0" oninput="calculateRow(${i})"></td>
+                        <td><input type="number" id="grocery-day-${i}" value="0" oninput="calculateRow(${i})"></td>
+                        <td><input type="number" id="other-day-${i}" value="0" oninput="calculateRow(${i})"></td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e;">0</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function calculateRow(day) {
+            let ps = parseFloat(document.getElementById(`ps-day-${day}`).value) || 0;
+            let drink = parseFloat(document.getElementById(`drink-day-${day}`).value) || 0;
+            let indomie = parseFloat(document.getElementById(`indomie-day-${day}`).value) || 0;
+            let grocery = parseFloat(document.getElementById(`grocery-day-${day}`).value) || 0;
+            let other = parseFloat(document.getElementById(`other-day-${day}`).value) || 0;
+
+            let total = ps + drink + indomie + grocery + other;
+            document.getElementById(`total-day-${day}`).innerText = total;
+        }
+
+        window.onload = () => {
+            initDevices();
+            initDailyTable();
+        };
     </script>
 </body>
 </html>
