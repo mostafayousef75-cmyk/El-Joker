@@ -435,8 +435,4 @@
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
 
-        function switchTab(evt, tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if (evt && evt.target) evt.target
+        function switchTab(evt, tab
