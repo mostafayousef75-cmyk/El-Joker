@@ -770,29 +770,39 @@
             });
         }
 
-        function playSingleBeep() {
-            try {
-                let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                let oscillator = audioCtx.createOscillator();
-                let gainNode = audioCtx.createGain();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(950, audioCtx.currentTime);
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.4);
-            } catch(e) {}
-        }
+        let audioCtx = null;
 
-        function startRepeatingAlarm(idx) {
-            stopRepeatingAlarm(idx);
-            playSingleBeep(); // تشغيل فوري أول صوت مع ظهور الإشعار
-            alarmIntervals[idx] = setInterval(() => {
-                playSingleBeep();
-            }, 1200);
+function playSingleBeep() {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        let oscillator = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(950, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch(e) {
+        console.log("Audio Error:", e);
+    }
+}
 
-        function stopRepeatingAlarm(idx) {
+function startRepeatingAlarm(idx) {
+    stopRepeatingAlarm(idx);
+    playSingleBeep();
+    // تكرار الصوت كل ثانية بشكل مستمر
+    alarmIntervals[idx] = setInterval(() => {
+        playSingleBeep();
+    }, 1000);
+}
+
+function stopRepeatingAlarm(idx) {
     if (alarmIntervals[idx]) {
         clearInterval(alarmIntervals[idx]);
         alarmIntervals[idx] = null;
@@ -838,10 +848,8 @@
             timerData[idx].interval = null;
             document.getElementById("time-" + idx).classList.add('finished');
             
-            // تشغيل التنبيه المتكرر قبل ظهور الإشعار ليعمل في الخلفية مع الإشعار
+            // تشغيل التنبيه المتكرر فور الانتهاء
             startRepeatingAlarm(idx);
-            
-            alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
         }
     }, 1000);
 }
@@ -856,8 +864,10 @@
 
         function stopTimer(idx) {
     stopRepeatingAlarm(idx);
-    clearInterval(timerData[idx].interval);
-    timerData[idx].interval = null;
+    if (timerData[idx].interval) {
+        clearInterval(timerData[idx].interval);
+        timerData[idx].interval = null;
+    }
 }
 
         function updateItems(idx) {
@@ -886,7 +896,10 @@
         }
 
         function checkout(idx) {
+    // إيقاف التنبيه المتكرر والمؤقت أولاً
     stopRepeatingAlarm(idx);
+    stopTimer(idx);
+
     let psCost = calculateTimeCost(idx);
     let drinksCost = timerData[idx].drinks;
     let indomieCost = timerData[idx].indomie;
@@ -897,22 +910,24 @@
         return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
     }
 
-    stopTimer(idx);
-
     let currentDay = new Date().getDate();
-    if(currentDay > 31) currentDay = 31;
+    if (currentDay > 31) currentDay = 31;
 
+    // ترحيل القيم لجدول الخزينة والحسابات اليومية
     if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
     if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
     if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
     if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
 
+    // إعادة ضبط بيانات الجهاز
     timerData[idx].seconds = 0;
     timerData[idx].setMinutes = 0;
     timerData[idx].drinks = 0;
     timerData[idx].indomie = 0;
     timerData[idx].grocery = 0;
+    timerData[idx].isCountdown = false;
 
+    // تحديث واجهة المستخدم
     document.getElementById("time-" + idx).innerText = "00:00:00";
     document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
     document.getElementById("time-" + idx).classList.remove('finished');
