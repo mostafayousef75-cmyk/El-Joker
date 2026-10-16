@@ -770,34 +770,34 @@
             });
         }
 
-        function playSingleBeep() {
-            try {
-                let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                let oscillator = audioCtx.createOscillator();
-                let gainNode = audioCtx.createGain();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(950, audioCtx.currentTime);
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.4);
-            } catch(e) {}
-        }
+        function function playSingleBeep() {
+    try {
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillator = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(950, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.4);
+    } catch(e) {}
+}
 
-        function startRepeatingAlarm(idx) {
-            stopRepeatingAlarm(idx);
-            playSingleBeep();
-            alarmIntervals[idx] = setInterval(() => {
-                playSingleBeep();
-            }, 1200);
-        }
+function startRepeatingAlarm(idx) {
+    stopRepeatingAlarm(idx);
+    playSingleBeep(); // تشغيل فوري عند انتهاء الوقت مع الإشعار
+    alarmIntervals[idx] = setInterval(() => {
+        playSingleBeep();
+    }, 1200);
+}
 
-        function stopRepeatingAlarm(idx) {
-            if (alarmIntervals[idx]) {
-                clearInterval(alarmIntervals[idx]);
-                alarmIntervals[idx] = null;
-            }
-        }
+function stopRepeatingAlarm(idx) {
+    if (alarmIntervals[idx]) {
+        clearInterval(alarmIntervals[idx]);
+        alarmIntervals[idx] = null;
+    }
+}
 
         function startStopwatch(idx) {
             stopRepeatingAlarm(idx);
@@ -883,16 +883,20 @@
         }
 
         function checkout(idx) {
-            stopRepeatingAlarm(idx);
-            let psCost = calculateTimeCost(idx);
-            let drinksCost = timerData[idx].drinks;
-            let indomieCost = timerData[idx].indomie;
-            let groceryCost = timerData[idx].grocery;
-            let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
+    stopRepeatingAlarm(idx); // إيقاف الصوت المتكرر فور الضغط
+    let psCost = calculateTimeCost(idx);
+    let drinksCost = timerData[idx].drinks;
+    let indomieCost = timerData[idx].indomie;
+    let groceryCost = timerData[idx].grocery;
+    let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
 
-            if (grandTotal <= 0) {
-                return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
-            }
+    if (grandTotal <= 0) {
+        return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
+    }
+
+    stopTimer(idx);
+    // باقي الكود الخاص بالتصدير...
+}
 
             stopTimer(idx);
 
