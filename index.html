@@ -518,3 +518,151 @@
                 if (otherCost > 0) financeRecords.unshift({ type: 'وارد (أخرى)', desc: 'إيراد آخر جهاز ' + devName, amount: otherCost, color: '#22c55e' });
 
                 updateFinanceUI();
+            }
+
+            timerData[idx].seconds = 0;
+            timerData[idx].setMinutes = 0;
+            document.getElementById("time-" + idx).innerText = "00:00:00";
+            document.getElementById("card-" + idx).style.border = "1px solid #334155";
+            document.getElementById("time-" + idx).classList.remove('finished');
+            document.getElementById("drink-" + idx).value = 0;
+            document.getElementById("indomie-" + idx).value = 0;
+            document.getElementById("grocery-" + idx).value = 0;
+            document.getElementById("other-" + idx).value = 0;
+            updateLiveBill(idx);
+
+            alert("تم إغلاق وتصدير الفاتورة بنجاح إلى السجل اليومي والخزينة!\nإجمالي الفاتورة: " + grandTotal + " ج.م");
+        }
+
+        function initDailyTable() {
+            const tbody = document.getElementById('daily-table-body');
+            tbody.innerHTML = '';
+
+            for (let i = 1; i <= 31; i++) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>يوم ${i}</b></td>
+                        <td>${createCellHTML('ps-day-' + i)}</td>
+                        <td>${createCellHTML('drink-day-' + i)}</td>
+                        <td>${createCellHTML('indomie-day-' + i)}</td>
+                        <td>${createCellHTML('grocery-day-' + i)}</td>
+                        <td>${createCellHTML('other-day-' + i)}</td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.1rem;">0</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function createCellHTML(id) {
+            return `
+                <div class="add-input-group">
+                    <span id="${id}-sum" style="font-weight:bold; min-width:30px;">0</span>
+                    <input type="number" id="${id}-input" placeholder="قيمة">
+                    <button class="action-btn btn-plus" onclick="updateCell('${id}', true)">+</button>
+                    <button class="action-btn btn-minus" onclick="updateCell('${id}', false)">-</button>
+                </div>
+            `;
+        }
+
+        function modifyValue(id, val, isAdd) {
+            let sumSpan = document.getElementById(id + '-sum');
+            if(!sumSpan) return;
+            let current = parseFloat(sumSpan.innerText) || 0;
+            let newVal = isAdd ? (current + val) : (current - val);
+            sumSpan.innerText = newVal;
+            calculateDailyTotal();
+        }
+
+        function updateCell(id, isAdd) {
+            let inputField = document.getElementById(id + '-input');
+            let val = parseFloat(inputField.value) || 0;
+            if(val <= 0) return;
+            modifyValue(id, val, isAdd);
+            inputField.value = '';
+        }
+
+        function calculateDailyTotal() {
+            for (let i = 1; i <= 31; i++) {
+                let ps = parseFloat(document.getElementById("ps-day-" + i + "-sum") ? document.getElementById("ps-day-" + i + "-sum").innerText : 0) || 0;
+                let drink = parseFloat(document.getElementById("drink-day-" + i + "-sum") ? document.getElementById("drink-day-" + i + "-sum").innerText : 0) || 0;
+                let indomie = parseFloat(document.getElementById("indomie-day-" + i + "-sum") ? document.getElementById("indomie-day-" + i + "-sum").innerText : 0) || 0;
+                let grocery = parseFloat(document.getElementById("grocery-day-" + i + "-sum") ? document.getElementById("grocery-day-" + i + "-sum").innerText : 0) || 0;
+                let other = parseFloat(document.getElementById("other-day-" + i + "-sum") ? document.getElementById("other-day-" + i + "-sum").innerText : 0) || 0;
+
+                let total = ps + drink + indomie + grocery + other;
+                let totalCell = document.getElementById("total-day-" + i);
+                if(totalCell) totalCell.innerText = total;
+            }
+        }
+
+        function addFinance(type) {
+            let descInput = document.getElementById(type === 'in' ? 'in-desc' : 'out-desc');
+            let amountInput = document.getElementById(type === 'in' ? 'in-amount' : 'out-amount');
+            let desc = descInput.value || (type === 'in' ? 'توريد نقدي' : 'صرف نقدي');
+            let amount = parseFloat(amountInput.value) || 0;
+
+            if(amount <= 0) return alert("الرجاء إدخال مبلغ صحيح!");
+
+            if(type === 'in') {
+                totalCash += amount;
+                financeRecords.unshift({ type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
+            } else {
+                totalCash -= amount;
+                financeRecords.unshift({ type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
+            }
+
+            descInput.value = '';
+            amountInput.value = '';
+            updateFinanceUI();
+        }
+
+        function updateFinanceUI() {
+            document.getElementById('net-cash').innerText = totalCash + ' ج.م';
+            let tbody = document.getElementById('finance-table-body');
+            tbody.innerHTML = '';
+            financeRecords.forEach(rec => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
+                        <td>${rec.desc}</td>
+                        <td style="font-weight:bold;">${rec.amount} ج.م</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addInventoryRow(containerId) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'inventory-row';
+            div.innerHTML = `
+                <input type="text" placeholder="اسم الصنف" style="flex:2;">
+                <input type="number" placeholder="القيمة" style="flex:1;">
+                <button class="action-btn btn-minus" onclick="this.parentElement.remove()">حذف</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateReports() {
+            let monthTotal = 0;
+            for (let i = 1; i <= 31; i++) {
+                let dayTotalCell = document.getElementById("total-day-" + i);
+                let dayTotal = dayTotalCell ? (parseFloat(dayTotalCell.innerText) || 0) : 0;
+                monthTotal += dayTotal;
+            }
+            document.getElementById('monthly-total').innerText = monthTotal + ' ج.م';
+            document.getElementById('yearly-total').innerText = (monthTotal * 12) + ' ج.م (تقديري)';
+        }
+
+        window.onload = () => {
+            initDevices();
+            initDailyTable();
+            updateFinanceUI();
+            addInventoryRow('inv-ps');
+            addInventoryRow('inv-drinks');
+            addInventoryRow('inv-indomie');
+            addInventoryRow('inv-grocery');
+        };
+    </script>
+</body>
+</html>
