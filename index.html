@@ -498,9 +498,10 @@
         <table>
             <thead>
                 <tr>
-                    <th>النوع</th>
-                    <th>البيان / الوصف</th>
-                    <th>المبلغ</th>
+                    <th style="width: 15%;">اليوم</th>
+                    <th style="width: 20%;">النوع</th>
+                    <th style="width: 45%;">البيان / الوصف</th>
+                    <th style="width: 20%;">المبلغ</th>
                 </tr>
             </thead>
             <tbody id="finance-table-body"></tbody>
@@ -1041,7 +1042,6 @@
 
             let descText = customPrice > 0 ? 'مبلغ مخصص/عرض جهاز ' + devices[idx].name : 'إيراد بلايستيشن جهاز ' + devices[idx].name;
             
-            // ترحيل القيم وإضافتها تلقائياً للسجل اليومي والخزينة للشهر الحالي
             if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
@@ -1128,23 +1128,25 @@
             let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
             let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
 
-            addValueToDailyAndFinance(day, key, val, desc, isAdd);
+            addValueToDailyAndFinance(day, key, val, desc, isAdd, day);
             inputField.value = '';
         }
 
-        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true) {
+        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true, customRecordDay = null) {
             let monthData = getActiveMonthData();
             if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
+            let recordDay = customRecordDay !== null ? customRecordDay : new Date().getDate();
+
             if(isAdd) {
                 monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) + val;
                 monthData.totalCash = (monthData.totalCash || 0) + val;
-                monthData.financeRecords.unshift({ type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
+                monthData.financeRecords.unshift({ day: recordDay, type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
             } else {
                 monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) - val;
                 monthData.totalCash = (monthData.totalCash || 0) - val;
-                monthData.financeRecords.unshift({ type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
+                monthData.financeRecords.unshift({ day: recordDay, type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
             }
 
             let span = document.getElementById(`val-${day}-${key}`);
@@ -1170,13 +1172,15 @@
             let monthData = getActiveMonthData();
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
+            let currentDay = new Date().getDate();
+
             if(type === 'in') {
                 monthData.totalCash = (monthData.totalCash || 0) + amount;
-                monthData.financeRecords.unshift({ type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
+                monthData.financeRecords.unshift({ day: currentDay, type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
             } else {
                 monthData.totalCash = (monthData.totalCash || 0) - amount;
                 monthData.expensesCount = (monthData.expensesCount || 0) + amount;
-                monthData.financeRecords.unshift({ type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
+                monthData.financeRecords.unshift({ day: currentDay, type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
             }
 
             descInput.value = '';
@@ -1198,8 +1202,10 @@
             
             let records = monthData.financeRecords || [];
             records.forEach(rec => {
+                let dayText = rec.day ? `يوم ${rec.day}` : '-';
                 tbody.innerHTML += `
                     <tr>
+                        <td style="font-weight:bold; color:#38bdf8;">${dayText}</td>
                         <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
                         <td>${rec.desc}</td>
                         <td style="font-weight:bold;">${rec.amount} ج.م</td>
@@ -1241,7 +1247,9 @@
             monthData.totalCash = (monthData.totalCash || 0) - itemPrice;
             monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
 
+            let currentDay = new Date().getDate();
             monthData.financeRecords.unshift({ 
+                day: currentDay,
                 type: 'منصرف (خامات)', 
                 desc: `شراء خامات (${sectionName}): ${itemName}`, 
                 amount: itemPrice, 
@@ -1300,6 +1308,7 @@
             if (isNaN(newPrice) || newPrice <= 0) return alert("❌ السعر غير صالح!");
 
             let priceDiff = newPrice - item.price;
+            let currentDay = new Date().getDate();
 
             item.name = newName;
             item.price = newPrice;
@@ -1310,6 +1319,7 @@
                 
                 if(!monthData.financeRecords) monthData.financeRecords = [];
                 monthData.financeRecords.unshift({ 
+                    day: currentDay,
                     type: 'تعديل خامات', 
                     desc: `تعديل بند خامات: ${newName} (فرق السعر)`, 
                     amount: Math.abs(priceDiff), 
@@ -1332,8 +1342,10 @@
             monthData.totalCash = (monthData.totalCash || 0) + item.price;
             monthData.expensesCount = (monthData.expensesCount || 0) - item.price;
 
+            let currentDay = new Date().getDate();
             if(!monthData.financeRecords) monthData.financeRecords = [];
             monthData.financeRecords.unshift({ 
+                day: currentDay,
                 type: 'إلغاء خامات (وارد)', 
                 desc: `إلغاء واسترجاع صنف خامات: ${item.name}`, 
                 amount: item.price, 
