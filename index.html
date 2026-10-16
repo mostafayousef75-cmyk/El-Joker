@@ -198,7 +198,7 @@
 
         .item-inputs {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 8px;
             margin-top: 10px;
             font-size: 0.9rem;
@@ -733,7 +733,7 @@
                     setMinutes: 0, 
                     interval: null, 
                     isCountdown: false, 
-                    drinks: 0, indomie: 0, grocery: 0 
+                    drinks: 0, indomie: 0, grocery: 0, customPrice: 0 
                 };
                 
                 container.innerHTML += `
@@ -760,6 +760,7 @@
                             <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
                             <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
                             <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label style="color: #38bdf8;">مبلغ ثابت: <input type="number" id="custom-${idx}" value="0" oninput="updateItems(${idx})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${idx}">
@@ -830,126 +831,125 @@
         }
 
         function startCountdown(idx) {
-    stopRepeatingAlarm(idx);
-    clearInterval(timerData[idx].interval);
-    let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
-    if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
+            stopRepeatingAlarm(idx);
+            clearInterval(timerData[idx].interval);
+            let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
+            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
-    let totalSeconds = mins * 60;
-    let endTime = Date.now() + (totalSeconds * 1000);
+            let totalSeconds = mins * 60;
+            let endTime = Date.now() + (totalSeconds * 1000);
 
-    timerData[idx].setMinutes = mins;
-    timerData[idx].seconds = totalSeconds;
-    timerData[idx].isCountdown = true;
-    
-    localStorage.setItem(`timer_end_${idx}`, endTime);
-    localStorage.setItem(`timer_mins_${idx}`, mins);
-    localStorage.setItem(`timer_type_${idx}`, 'countdown');
+            timerData[idx].setMinutes = mins;
+            timerData[idx].seconds = totalSeconds;
+            timerData[idx].isCountdown = true;
+            
+            localStorage.setItem(`timer_end_${idx}`, endTime);
+            localStorage.setItem(`timer_mins_${idx}`, mins);
+            localStorage.setItem(`timer_type_${idx}`, 'countdown');
 
-    document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
-    document.getElementById("time-" + idx).classList.remove('finished');
+            document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+            document.getElementById("time-" + idx).classList.remove('finished');
 
-    updateDisplay(idx);
-    updateLiveBill(idx);
-
-    timerData[idx].interval = setInterval(() => {
-        let now = Date.now();
-        let remainingSeconds = Math.round((endTime - now) / 1000);
-
-        if (remainingSeconds > 0) {
-            timerData[idx].seconds = remainingSeconds;
             updateDisplay(idx);
             updateLiveBill(idx);
-        } else {
-            clearInterval(timerData[idx].interval);
-            timerData[idx].interval = null;
-            timerData[idx].seconds = 0;
-            
-            localStorage.removeItem(`timer_end_${idx}`);
-            localStorage.removeItem(`timer_type_${idx}`);
 
-            document.getElementById("time-" + idx).innerText = "00:00:00";
-            document.getElementById("time-" + idx).classList.add('finished');
-            
-            // تشغيل التنبيه المتكرر وإظهار الرسالة المنبثقة
-            startRepeatingAlarm(idx);
-            alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+            timerData[idx].interval = setInterval(() => {
+                let now = Date.now();
+                let remainingSeconds = Math.round((endTime - now) / 1000);
+
+                if (remainingSeconds > 0) {
+                    timerData[idx].seconds = remainingSeconds;
+                    updateDisplay(idx);
+                    updateLiveBill(idx);
+                } else {
+                    clearInterval(timerData[idx].interval);
+                    timerData[idx].interval = null;
+                    timerData[idx].seconds = 0;
+                    
+                    localStorage.removeItem(`timer_end_${idx}`);
+                    localStorage.removeItem(`timer_type_${idx}`);
+
+                    document.getElementById("time-" + idx).innerText = "00:00:00";
+                    document.getElementById("time-" + idx).classList.add('finished');
+                    
+                    startRepeatingAlarm(idx);
+                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                }
+            }, 1000);
         }
-    }, 1000);
-}
 
         function restoreTimers() {
-    devices.forEach((dev, idx) => {
-        let type = localStorage.getItem(`timer_type_${idx}`);
-        
-        if (type === 'countdown') {
-            let endTime = parseInt(localStorage.getItem(`timer_end_${idx}`)) || 0;
-            let mins = parseInt(localStorage.getItem(`timer_mins_${idx}`)) || 60;
-            let now = Date.now();
-            let remainingSeconds = Math.round((endTime - now) / 1000);
+            devices.forEach((dev, idx) => {
+                let type = localStorage.getItem(`timer_type_${idx}`);
+                
+                if (type === 'countdown') {
+                    let endTime = parseInt(localStorage.getItem(`timer_end_${idx}`)) || 0;
+                    let mins = parseInt(localStorage.getItem(`timer_mins_${idx}`)) || 60;
+                    let now = Date.now();
+                    let remainingSeconds = Math.round((endTime - now) / 1000);
 
-            if(document.getElementById(`input-mins-${idx}`)) {
-                document.getElementById(`input-mins-${idx}`).value = mins;
-            }
+                    if(document.getElementById(`input-mins-${idx}`)) {
+                        document.getElementById(`input-mins-${idx}`).value = mins;
+                    }
 
-            if (remainingSeconds > 0) {
-                timerData[idx].setMinutes = mins;
-                timerData[idx].seconds = remainingSeconds;
-                timerData[idx].isCountdown = true;
-                document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
+                    if (remainingSeconds > 0) {
+                        timerData[idx].setMinutes = mins;
+                        timerData[idx].seconds = remainingSeconds;
+                        timerData[idx].isCountdown = true;
+                        document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
 
-                updateDisplay(idx);
-                updateLiveBill(idx);
-
-                timerData[idx].interval = setInterval(() => {
-                    let curNow = Date.now();
-                    let remSec = Math.round((endTime - curNow) / 1000);
-
-                    if (remSec > 0) {
-                        timerData[idx].seconds = remSec;
                         updateDisplay(idx);
                         updateLiveBill(idx);
-                    } else {
-                        clearInterval(timerData[idx].interval);
-                        timerData[idx].interval = null;
-                        timerData[idx].seconds = 0;
 
+                        timerData[idx].interval = setInterval(() => {
+                            let curNow = Date.now();
+                            let remSec = Math.round((endTime - curNow) / 1000);
+
+                            if (remSec > 0) {
+                                timerData[idx].seconds = remSec;
+                                updateDisplay(idx);
+                                updateLiveBill(idx);
+                            } else {
+                                clearInterval(timerData[idx].interval);
+                                timerData[idx].interval = null;
+                                timerData[idx].seconds = 0;
+
+                                localStorage.removeItem(`timer_end_${idx}`);
+                                localStorage.removeItem(`timer_type_${idx}`);
+
+                                document.getElementById("time-" + idx).innerText = "00:00:00";
+                                document.getElementById("time-" + idx).classList.add('finished');
+                                
+                                startRepeatingAlarm(idx);
+                                alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
+                            }
+                        }, 1000);
+                    } else {
                         localStorage.removeItem(`timer_end_${idx}`);
                         localStorage.removeItem(`timer_type_${idx}`);
-
                         document.getElementById("time-" + idx).innerText = "00:00:00";
                         document.getElementById("time-" + idx).classList.add('finished');
                         
                         startRepeatingAlarm(idx);
                         alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                     }
-                }, 1000);
-            } else {
-                localStorage.removeItem(`timer_end_${idx}`);
-                localStorage.removeItem(`timer_type_${idx}`);
-                document.getElementById("time-" + idx).innerText = "00:00:00";
-                document.getElementById("time-" + idx).classList.add('finished');
-                
-                startRepeatingAlarm(idx);
-                alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
-            }
-        } 
-        else if (type === 'stopwatch') {
-            let startTime = parseInt(localStorage.getItem(`timer_start_${idx}`)) || Date.now();
-            timerData[idx].isCountdown = false;
-            document.getElementById("card-" + idx).style.border = "1px solid #334155";
+                } 
+                else if (type === 'stopwatch') {
+                    let startTime = parseInt(localStorage.getItem(`timer_start_${idx}`)) || Date.now();
+                    timerData[idx].isCountdown = false;
+                    document.getElementById("card-" + idx).style.border = "1px solid #334155";
 
-            timerData[idx].interval = setInterval(() => {
-                let now = Date.now();
-                let elapsedSeconds = Math.floor((now - startTime) / 1000);
-                timerData[idx].seconds = elapsedSeconds;
+                    timerData[idx].interval = setInterval(() => {
+                        let now = Date.now();
+                        let elapsedSeconds = Math.floor((now - startTime) / 1000);
+                        timerData[idx].seconds = elapsedSeconds;
 
-                updateDisplay(idx);
-                updateLiveBill(idx);
-            }, 1000);
+                        updateDisplay(idx);
+                        updateLiveBill(idx);
+                    }, 1000);
+                }
+            });
         }
-    });
-}
 
         function updateDisplay(idx) {
             let s = timerData[idx].seconds;
@@ -978,6 +978,7 @@
             timerData[idx].drinks = parseFloat(document.getElementById("drink-" + idx).value) || 0;
             timerData[idx].indomie = parseFloat(document.getElementById("indomie-" + idx).value) || 0;
             timerData[idx].grocery = parseFloat(document.getElementById("grocery-" + idx).value) || 0;
+            timerData[idx].customPrice = parseFloat(document.getElementById("custom-" + idx).value) || 0;
             updateLiveBill(idx);
         }
 
@@ -994,9 +995,12 @@
 
         function updateLiveBill(idx) {
             let psCost = calculateTimeCost(idx);
+            let customPrice = timerData[idx].customPrice || 0;
+            let finalTimeCost = customPrice > 0 ? customPrice : psCost;
+
             let itemsCost = timerData[idx].drinks + timerData[idx].indomie + timerData[idx].grocery;
-            let grandTotal = psCost + itemsCost;
-            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة الحالية: " + grandTotal + " ج.م (وقت: " + psCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
+            let grandTotal = finalTimeCost + itemsCost;
+            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة: " + grandTotal + " ج.م (الوقت/الثابت: " + finalTimeCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
         }
 
         function checkout(idx) {
@@ -1004,10 +1008,13 @@
             stopTimer(idx);
 
             let psCost = calculateTimeCost(idx);
+            let customPrice = timerData[idx].customPrice || 0;
+            let finalTimeCost = customPrice > 0 ? customPrice : psCost;
+
             let drinksCost = timerData[idx].drinks;
             let indomieCost = timerData[idx].indomie;
             let groceryCost = timerData[idx].grocery;
-            let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
+            let grandTotal = finalTimeCost + drinksCost + indomieCost + groceryCost;
 
             if (grandTotal <= 0) {
                 return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
@@ -1016,7 +1023,8 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
+            let descText = customPrice > 0 ? 'مبلغ مخصص/عرض جهاز ' + devices[idx].name : 'إيراد بلايستيشن جهاز ' + devices[idx].name;
+            if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
@@ -1026,6 +1034,7 @@
             timerData[idx].drinks = 0;
             timerData[idx].indomie = 0;
             timerData[idx].grocery = 0;
+            timerData[idx].customPrice = 0;
 
             document.getElementById("time-" + idx).innerText = "00:00:00";
             document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
@@ -1033,6 +1042,7 @@
             document.getElementById("drink-" + idx).value = 0;
             document.getElementById("indomie-" + idx).value = 0;
             document.getElementById("grocery-" + idx).value = 0;
+            if(document.getElementById("custom-" + idx)) document.getElementById("custom-" + idx).value = 0;
             
             updateLiveBill(idx);
 
