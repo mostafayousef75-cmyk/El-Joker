@@ -1,49 +1,349 @@
-<div class="purchases-section" style="background: #1e293b; padding: 20px; border-radius: 12px; margin-top: 20px; color: #fff;">
-    <h3>🛒 إدارة الخامات والمشتريات</h3>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة صالة البلايستيشن - Mostafa Yosef</title>
     
-    <!-- نموذج تسجيل عملية شراء جديدة -->
-    <form id="purchaseForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
-        <input type="text" id="pItemName" placeholder="اسم الخامة / الصنف" required style="padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff;">
-        <select id="pCategory" style="padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff;">
-            <option value="مشروبات">مشروبات</option>
-            <option value="أندومي">أندومي</option>
-            <option value="بقالة وسناكس">بقالة وسناكس</option>
-            <option value="خامات وصيانة">خامات وصيانة صالة</option>
-        </select>
-        <input type="number" id="pQuantity" placeholder="الكمية" required style="padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff;">
-        <input type="number" id="pCost" placeholder="إجمالي التكلفة (جنية)" required style="padding: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff;">
-        <button type="submit" style="background: #22c55e; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">إضافة الشراء</button>
-    </form>
+    <!-- مكتبات Firebase السحابية -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- جدول عرض المشتريات والتحكم بها -->
-    <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: right;">
-            <thead>
-                <tr style="border-bottom: 2px solid #475569; color: #94a3b8;">
-                    <th style="padding: 10px;">التاريخ</th>
-                    <th style="padding: 10px;">الصنف</th>
-                    <th style="padding: 10px;">التصنيف</th>
-                    <th style="padding: 10px;">الكمية</th>
-                    <th style="padding: 10px;">التكلفة</th>
-                    <th style="padding: 10px;">إجراءات</th>
-                </tr>
-            </thead>
-            <tbody id="purchasesTableBody">
-                <!-- سيتم تعبئتها ديناميكياً من Firebase -->
-            </tbody>
-        </table>
-    </div>
-</div>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --text-color: #f8fafc;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+        }
 
-<!-- Modal تعديل عملية شراء (مخفي افتراضياً) -->
-<div id="editPurchaseModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center;">
-    <div style="background:#1e293b; padding:20px; border-radius:10px; width:300px;">
-        <h4>تعديل عملية الشراء</h4>
-        <input type="hidden" id="editPurchaseId">
-        <input type="text" id="editPItemName" placeholder="الصنف" style="width:100%; margin-bottom:10px; padding:8px; background:#0f172a; color:#fff; border:1px solid #475569;">
-        <input type="number" id="editPQuantity" placeholder="الكمية" style="width:100%; margin-bottom:10px; padding:8px; background:#0f172a; color:#fff; border:1px solid #475569;">
-        <input type="number" id="editPCost" placeholder="التكلفة" style="width:100%; margin-bottom:10px; padding:8px; background:#0f172a; color:#fff; border:1px solid #475569;">
-        <button onclick="saveEditedPurchase()" style="background:#3b82f6; color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">حفظ التعديل</button>
-        <button onclick="closeEditModal()" style="background:#ef4444; color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; margin-right:5px;">إلغاء</button>
+        body.light-mode {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --accent: #2563eb;
+            --text-color: #0f172a;
+            --border-color: #cbd5e1;
+            --input-bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        h1 { margin: 0; color: var(--accent); }
+        .author-tag { color: #94a3b8; font-size: 0.9rem; }
+
+        .top-tools {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .tool-select-danger {
+            background: var(--card-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .month-selector-bar {
+            background: var(--card-bg);
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .month-selector-bar select {
+            padding: 8px 12px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .tab-btn.active { background: var(--accent); color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .device-title { font-size: 1.4rem; color: #38bdf8; text-align: center; font-weight: bold; }
+        
+        .rate-box {
+            background: var(--input-bg);
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        .rate-box input {
+            width: 60px;
+            padding: 4px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .timer-display { font-size: 2.2rem; font-family: monospace; text-align: center; margin: 10px 0; color: #fde047; }
+        .timer-display.finished { color: var(--danger); animation: blink 0.6s infinite; }
+
+        @keyframes blink { 50% { opacity: 0.2; } }
+
+        .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
+        .btn-start { background: var(--success); }
+        .btn-stop { background: var(--danger); }
+        .btn-add { background: var(--warning); color: #000; }
+        .btn-timer { background: #8b5cf6; }
+
+        .controls-box {
+            background: var(--input-bg);
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .controls-box input {
+            width: 50px;
+            padding: 4px;
+            text-align: center;
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .item-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .item-inputs input {
+            width: 60px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .bill-preview {
+            background: var(--input-bg);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+            text-align: center;
+            font-weight: bold;
+            color: #38bdf8;
+            border: 1px dashed #38bdf8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+
+        th { background: #0284c7; color: #fff; }
+        
+        .add-input-group {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+        }
+        .add-input-group input {
+            width: 50px;
+            padding: 4px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            border-radius: 4px;
+        }
+        .action-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-plus { background: #10ac84; }
+        .btn-minus { background: #ee5253; }
+        .btn-edit { background: #eab308; color: #000; }
+
+        .stats-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .stats-box h3 { color: #38bdf8; margin-top: 0; }
+        .money-display { font-size: 2rem; font-weight: bold; color: #22c55e; }
+        
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #22c55e;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* نافذة التعديل المنبثقة */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 320px;
+            border: 1px solid var(--border-color);
+        }
+        .modal-content input, .modal-content select {
+            width: 90%;
+            padding: 8px;
+            margin-bottom: 12px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div>
+            <h1>🎮 نظام إدارة محل البلايستيشن</h1>
+            <div class="author-tag">Developed by Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ متصل بالسحابة</span></div>
+        </div>
+        <div class="top-tools">
+            <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
+            
+            <select class="tool-select-danger" id="reset-selector" onchange="handleResetSelection(this)">
+                <option value="" disabled selected>🧹 خيارات التصفير...</option>
+                <option value="day">تصفير يوم محدد</option>
+                <option value="month">تصفير الشهر الحالي</option>
+                <option value="all">تصفير النظام بالكامل</option>
+            </select>
+
+            <button class="tool-btn" onclick="exportData()">📥 تصدير</button>
+            <button class="tool-btn" onclick="document.getElementById('import-file').click()">📤 استيراد</button>
+            <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+        </div>
     </div>
-</div>
+
+    <!-- شريط اختيار الشهر والسنة -->
+    <div class="month-selector-bar">
+        <div>
+            <span style="font-size: 1.1rem; font
