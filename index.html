@@ -543,10 +543,17 @@
             databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
         };
         
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        let firebaseInitialized = false;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            firebaseInitialized = true;
+        } catch (e) {
+            console.log("يعمل بدون إنترنت (Offline Mode)");
         }
-        const db = firebase.database();
+        
+        const db = firebaseInitialized ? firebase.database() : null;
 
         const devices = [
             { name: "eljoker", rate: 20 },
@@ -630,7 +637,7 @@
             }
 
             adminPassword = newPin.trim();
-            saveToFirebase();
+            saveData();
             alert("✅ تم تغيير الرقم السري بنجاح وحفظه!");
         }
 
@@ -690,7 +697,7 @@
                     let monthData = getActiveMonthData();
                     if (monthData.dailyData && monthData.dailyData[day]) {
                         monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
-                        saveToFirebase();
+                        saveData();
                         loadMonthDataToUI();
                         alert(`✅ تم تصفير يوم ${day} بنجاح.`);
                     } else {
@@ -708,7 +715,7 @@
                         dailyData: {},
                         purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
                     };
-                    saveToFirebase();
+                    saveData();
                     loadMonthDataToUI();
                     alert(`✅ تم تصفير شهر ${selectText} بنجاح.`);
                 }
@@ -716,7 +723,7 @@
             else if (val === "all") {
                 if (confirm("⚠️ تحذير شديد:\nسيتم مسح بيانات جميع الشهور وتصفير النظام بالكامل!\nهل أنت متأكد؟")) {
                     allMonthsData = {};
-                    saveToFirebase();
+                    saveData();
                     loadMonthDataToUI();
                     alert("✅ تم تصفير النظام بالكامل.");
                 }
@@ -1124,7 +1131,7 @@
             if(totalCell) totalCell.innerText = rowTotal;
 
             updateFinanceUI();
-            saveToFirebase();
+            saveData();
         }
 
         function addFinance(type) {
@@ -1150,7 +1157,7 @@
             descInput.value = '';
             amountInput.value = '';
             updateFinanceUI();
-            saveToFirebase();
+            saveData();
         }
 
         function updateFinanceUI() {
@@ -1216,7 +1223,7 @@
 
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
-            saveToFirebase();
+            saveData();
             alert(`✅ تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م بنجاح وخصمها من خزينة الشهر!`);
         }
 
@@ -1282,7 +1289,7 @@
 
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
-            saveToFirebase();
+            saveData();
             alert("✅ تم تعديل الصنف بنجاح!");
         }
 
@@ -1307,7 +1314,7 @@
 
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
-            saveToFirebase();
+            saveData();
             alert("✅ تم حذف الصنف واسترجاع قيمته للخزينة بنجاح.");
         }
 
@@ -1384,29 +1391,73 @@
             }
         }
 
-        function saveToFirebase() {
+        function saveData() {
             const dataToSave = {
                 allMonthsData: allMonthsData || {},
                 adminPassword: adminPassword || "1234"
             };
-            db.ref('ps_lounge_data').set(dataToSave).catch(err => console.log(err));
+            
+            // حفظ محلياً دائماً ليعمل أوفلاين
+            localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
+
+            // محاولة الحفظ سحابياً إذا كان النت متصلاً
+            if (db && navigator.onLine) {
+                db.ref('ps_lounge_data').set(dataToSave).then(() => {
+                    document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
+                    document.getElementById('cloud-status').style.background = "#22c55e";
+                }).catch(err => {
+                    document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
+                    document.getElementById('cloud-status').style.background = "#f59e0b";
+                });
+            } else {
+                document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
+                document.getElementById('cloud-status').style.background = "#f59e0b";
+            }
         }
 
-        function loadFromFirebase() {
-            db.ref('ps_lounge_data').once('value').then((snapshot) => {
-                const data = snapshot.val();
-                if(data) {
-                    if(data.allMonthsData) allMonthsData = data.allMonthsData;
-                    if(data.adminPassword) adminPassword = data.adminPassword;
-                }
-                initMonthSelector();
-                loadMonthDataToUI();
-            }).catch((err) => {
-                console.log("خطأ جلب البيانات: ", err);
-                initMonthSelector();
-                loadMonthDataToUI();
-            });
+        function loadData() {
+            // أولاً: تحميل البيانات محلياً لتظهر فوراً بدون تأخير وبدون إنترنت
+            let localData = localStorage.getItem('ps_local_backup');
+            if (localData) {
+                try {
+                    const parsed = JSON.parse(localData);
+                    if (parsed.allMonthsData) allMonthsData = parsed.allMonthsData;
+                    if (parsed.adminPassword) adminPassword = parsed.adminPassword;
+                } catch(e) {}
+            }
+
+            initMonthSelector();
+            loadMonthDataToUI();
+
+            // ثانياً: إذا كان النت متصلاً، جلب أحدث نسخة من السحابة ومزامنتها
+            if (db && navigator.onLine) {
+                db.ref('ps_lounge_data').once('value').then((snapshot) => {
+                    const data = snapshot.val();
+                    if(data) {
+                        if(data.allMonthsData) allMonthsData = data.allMonthsData;
+                        if(data.adminPassword) adminPassword = data.adminPassword;
+                        loadMonthDataToUI();
+                        document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
+                        document.getElementById('cloud-status').style.background = "#22c55e";
+                    }
+                }).catch((err) => {
+                    document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
+                    document.getElementById('cloud-status').style.background = "#f59e0b";
+                });
+            } else {
+                document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
+                document.getElementById('cloud-status').style.background = "#f59e0b";
+            }
         }
+
+        // مراقبة حالة الاتصال بالإنترنت لتحديث الحالة تلقائياً
+        window.addEventListener('online', () => {
+            saveData(); // مزامنة التعديلات التي تمت أوفلاين عند عودة النت
+        });
+        window.addEventListener('offline', () => {
+            document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
+            document.getElementById('cloud-status').style.background = "#f59e0b";
+        });
 
         function exportData() {
             const dataToExport = {
@@ -1435,7 +1486,7 @@
                     allMonthsData = imported.allMonthsData || {};
                     if(imported.adminPassword) adminPassword = imported.adminPassword;
                     
-                    saveToFirebase();
+                    saveData();
                     loadMonthDataToUI();
                     alert("✅ تم استيراد ملف البيانات بنجاح!");
                 } catch(err) {
@@ -1450,7 +1501,7 @@
             if(theme === 'light') toggleTheme();
 
             initDevices();
-            loadFromFirebase();
+            loadData();
         };
     </script>
 </body>
