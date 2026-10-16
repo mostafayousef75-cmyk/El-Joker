@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة صالة البلايستيشن المتكامل</title>
+    <title>نظام إدارة صالة البلايستيشن</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -30,6 +30,7 @@
             justify-content: center;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -43,14 +44,10 @@
             font-weight: bold;
         }
 
-        .tab-btn.active {
-            background: var(--accent);
-        }
-
+        .tab-btn.active { background: var(--accent); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* الأجهزة */
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -66,7 +63,8 @@
         }
 
         .device-title { font-size: 1.4rem; color: #38bdf8; text-align: center; font-weight: bold; }
-        .timer-display { font-size: 2.2rem; font-family: monospace; text-align: center; margin: 15px 0; color: #fde047; }
+        .rate-badge { background: #334155; font-size: 0.85rem; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; color: #fde047; }
+        .timer-display { font-size: 2.2rem; font-family: monospace; text-align: center; margin: 10px 0; color: #fde047; }
         .timer-display.finished { color: var(--danger); animation: blink 1s infinite; }
 
         @keyframes blink { 50% { opacity: 0.3; } }
@@ -80,15 +78,16 @@
 
         .controls-box {
             background: #0f172a;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             margin-bottom: 10px;
             text-align: center;
+            font-size: 0.9rem;
         }
 
         .controls-box input {
-            width: 50px;
-            padding: 5px;
+            width: 45px;
+            padding: 4px;
             text-align: center;
             background: #1e293b;
             color: #fff;
@@ -105,7 +104,7 @@
         }
 
         .item-inputs input {
-            width: 75%;
+            width: 70%;
             padding: 5px;
             border-radius: 4px;
             border: 1px solid #475569;
@@ -113,7 +112,6 @@
             color: #fff;
         }
 
-        /* الجداول */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -130,7 +128,45 @@
         }
 
         th { background: #0284c7; color: #fff; }
-        input[type="number"] { background: #0f172a; color: #fff; border: 1px solid #475569; text-align: center; }
+        
+        /* تصميم حقول الإضافة التراكمية في الجدول */
+        .add-input-group {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+        }
+        .add-input-group input {
+            width: 50px;
+            padding: 4px;
+            background: #0f172a;
+            color: #fff;
+            border: 1px solid #475569;
+            text-align: center;
+            border-radius: 4px;
+        }
+        .add-btn {
+            background: #10ac84;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .inventory-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .inventory-row input {
+            padding: 8px;
+            background: #0f172a;
+            color: #fff;
+            border: 1px solid #475569;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -139,18 +175,18 @@
 
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('timers')">⏱️ أجهزة البلايستيشن والمؤقتات</button>
-        <button class="tab-btn" onclick="switchTab('daily')">📅 التقرير اليومي (31 يوم)</button>
-        <button class="tab-btn" onclick="switchTab('inventory')">📦 تقارير الخامات والمخزون</button>
+        <button class="tab-btn" onclick="switchTab('daily')">📅 التسجيل اليومي والتراكمي (31 يوم)</button>
+        <button class="tab-btn" onclick="switchTab('inventory')">📦 تقارير الخامات الحرة</button>
     </div>
 
-    <!-- 1. صفحة الأجهزة والمؤقتات -->
+    <!-- 1. الأجهزة والمؤقتات -->
     <div id="timers" class="tab-content active">
         <div class="grid" id="devices-grid"></div>
     </div>
 
-    <!-- 2. صفحة الـ 31 يوم -->
+    <!-- 2. السجل اليومي والتراكمي -->
     <div id="daily" class="tab-content">
-        <h2>سجل الإيرادات الشهرية (31 يوم)</h2>
+        <h2>سجل الإيرادات الشهرية (إضافة أجزاء خلال اليوم)</h2>
         <table>
             <thead>
                 <tr>
@@ -167,39 +203,42 @@
         </table>
     </div>
 
-    <!-- 3. صفحة تقارير الخامات -->
+    <!-- 3. الخامات الحرة -->
     <div id="inventory" class="tab-content">
-        <h2>متابعة خامات ومخزون المحل</h2>
+        <h2>تسجيل خامات ومصروفات المحل الحرة</h2>
         <div class="grid">
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
-                <p>دراعات شغالة: <input type="number" value="12" style="width:70px; padding:5px;"></p>
-                <p>وصلات شحن: <input type="number" value="6" style="width:70px; padding:5px;"></p>
-                <p>كابلات HD: <input type="number" value="6" style="width:70px; padding:5px;"></p>
+                <div id="inv-ps"></div>
+                <button class="btn btn-start" onclick="addInventoryRow('inv-ps')">➕ إضافة صنف جديد</button>
             </div>
             <div class="card">
                 <h3>☕ خامات المشروبات</h3>
-                <p>علب كنز: <input type="number" value="48" style="width:70px; padding:5px;"></p>
-                <p>بن قهوة (كيلو): <input type="number" value="2" style="width:70px; padding:5px;"></p>
-                <p>شاي (باكت): <input type="number" value="5" style="width:70px; padding:5px;"></p>
+                <div id="inv-drinks"></div>
+                <button class="btn btn-start" onclick="addInventoryRow('inv-drinks')">➕ إضافة صنف جديد</button>
             </div>
             <div class="card">
                 <h3>🍜 خامات الأندومي</h3>
-                <p>أندومي دجاج: <input type="number" value="20" style="width:70px; padding:5px;"></p>
-                <p>أندومي خضار: <input type="number" value="15" style="width:70px; padding:5px;"></p>
-                <p>أطباق جاهزة: <input type="number" value="30" style="width:70px; padding:5px;"></p>
+                <div id="inv-indomie"></div>
+                <button class="btn btn-start" onclick="addInventoryRow('inv-indomie')">➕ إضافة صنف جديد</button>
             </div>
             <div class="card">
                 <h3>🛒 خامات البقالة</h3>
-                <p>شيبسي: <input type="number" value="35" style="width:70px; padding:5px;"></p>
-                <p>بسكويت / شيكولاتة: <input type="number" value="40" style="width:70px; padding:5px;"></p>
-                <p>زجاجات مياه: <input type="number" value="24" style="width:70px; padding:5px;"></p>
+                <div id="inv-grocery"></div>
+                <button class="btn btn-start" onclick="addInventoryRow('inv-grocery')">➕ إضافة صنف جديد</button>
             </div>
         </div>
     </div>
 
     <script>
-        const devices = ["eljoker", "salah", "cres", "messi", "pubg (R)", "pubg L"];
+        const devices = [
+            { name: "eljoker", rate: 20 },
+            { name: "salah", rate: 30 },
+            { name: "cres", rate: 20 },
+            { name: "messi", rate: 20 },
+            { name: "pubg (R)", rate: 20 },
+            { name: "pubg L", rate: 20 }
+        ];
         let timerData = {};
 
         function switchTab(tabId) {
@@ -214,21 +253,15 @@
             container.innerHTML = '';
             
             devices.forEach((dev, idx) => {
-                timerData[idx] = { 
-                    seconds: 0, 
-                    totalSecondsPlayed: 0,
-                    interval: null, 
-                    isCountdown: false,
-                    drinks: 0, indomie: 0, grocery: 0, other: 0 
-                };
+                timerData[idx] = { seconds: 0, totalSecondsPlayed: 0, interval: null, isCountdown: false, drinks: 0, indomie: 0, grocery: 0, other: 0 };
                 
                 container.innerHTML += `
                     <div class="card" id="card-${idx}">
-                        <div class="device-title">${dev}</div>
+                        <div class="device-title">${dev.name}</div>
+                        <div style="text-align:center;"><span class="rate-badge">سعر الساعة: ${dev.rate} ج.م</span></div>
                         
                         <div class="controls-box">
-                            ضبط وقت محدد (بالدقائق): 
-                            <input type="number" id="input-mins-${idx}" value="60" min="1">
+                            ضبط مؤقت (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1">
                             <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
                         </div>
 
@@ -256,7 +289,7 @@
             let oscillator = audioCtx.createOscillator();
             let gainNode = audioCtx.createGain();
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // صوت تنبيه
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             oscillator.start();
@@ -282,7 +315,7 @@
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
             timerData[idx].seconds = mins * 60;
-            timerData[idx].totalSecondsPlayed = timerData[idx].seconds; // لحساب التكلفة لاحقاً
+            timerData[idx].totalSecondsPlayed = timerData[idx].seconds;
             timerData[idx].isCountdown = true;
             document.getElementById(`card-${idx}`).style.border = "1px solid #8b5cf6";
             document.getElementById(`time-${idx}`).classList.remove('finished');
@@ -298,7 +331,7 @@
                     timerData[idx].interval = null;
                     document.getElementById(`time-${idx}`).classList.add('finished');
                     playAlertSound();
-                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx]}!`);
+                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                 }
             }, 1000);
         }
@@ -330,25 +363,17 @@
                 timerData[idx].seconds;
 
             let hours = Math.max(playedSeconds, 0) / 3600;
-            let psCost = Math.round(hours * 20); // سعر الساعة الافتراضي 20 جنيه (قابل للتعديل)
+            let psCost = Math.round(hours * devices[idx].rate);
             
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            let psInput = document.getElementById(`ps-day-${currentDay}`);
-            let drinkInput = document.getElementById(`drink-day-${currentDay}`);
-            let indomieInput = document.getElementById(`indomie-day-${currentDay}`);
-            let groceryInput = document.getElementById(`grocery-day-${currentDay}`);
-            let otherInput = document.getElementById(`other-day-${currentDay}`);
-
-            if (psInput) {
-                psInput.value = (parseFloat(psInput.value) || 0) + psCost;
-                drinkInput.value = (parseFloat(drinkInput.value) || 0) + timerData[idx].drinks;
-                indomieInput.value = (parseFloat(indomieInput.value) || 0) + timerData[idx].indomie;
-                groceryInput.value = (parseFloat(groceryInput.value) || 0) + timerData[idx].grocery;
-                otherInput.value = (parseFloat(otherInput.value) || 0) + timerData[idx].other;
-                calculateRow(currentDay);
-            }
+            // إضافة القيم تلقائياً للجدول اليومي بشكل تراكمي
+            addValueToCell(`ps-day-${currentDay}`, psCost);
+            addValueToCell(`drink-day-${currentDay}`, timerData[idx].drinks);
+            addValueToCell(`indomie-day-${currentDay}`, timerData[idx].indomie);
+            addValueToCell(`grocery-day-${currentDay}`, timerData[idx].grocery);
+            addValueToCell(`other-day-${currentDay}`, timerData[idx].other);
 
             // تصفير الجهاز
             timerData[idx].seconds = 0;
@@ -361,9 +386,10 @@
             document.getElementById(`grocery-${idx}`).value = 0;
             document.getElementById(`other-${idx}`).value = 0;
 
-            alert(`تم إغلاق الحساب وتصديره لتقرير اليوم بنجاح!\nحساب الوقت (${Math.round(hours*60)} دقيقة): ${psCost} ج.م`);
+            alert(`تم إغلاق الحساب وتصديره لتقرير اليوم بنجاح!\nحساب الوقت: ${psCost} ج.م`);
         }
 
+        // بناء جدول الـ 31 يوم مع إمكانية إضافة أجزاء (تراكمي)
         function initDailyTable() {
             const tbody = document.getElementById('daily-table-body');
             tbody.innerHTML = '';
@@ -372,31 +398,78 @@
                 tbody.innerHTML += `
                     <tr>
                         <td><b>يوم ${i}</b></td>
-                        <td><input type="number" id="ps-day-${i}" value="0" oninput="calculateRow(${i})"></td>
-                        <td><input type="number" id="drink-day-${i}" value="0" oninput="calculateRow(${i})"></td>
-                        <td><input type="number" id="indomie-day-${i}" value="0" oninput="calculateRow(${i})"></td>
-                        <td><input type="number" id="grocery-day-${i}" value="0" oninput="calculateRow(${i})"></td>
-                        <td><input type="number" id="other-day-${i}" value="0" oninput="calculateRow(${i})"></td>
-                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e;">0</td>
+                        <td>${createAddInputHTML('ps-day-' + i)}</td>
+                        <td>${createAddInputHTML('drink-day-' + i)}</td>
+                        <td>${createAddInputHTML('indomie-day-' + i)}</td>
+                        <td>${createAddInputHTML('grocery-day-' + i)}</td>
+                        <td>${createAddInputHTML('other-day-' + i)}</td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.1rem;">0</td>
                     </tr>
                 `;
             }
         }
 
-        function calculateRow(day) {
-            let ps = parseFloat(document.getElementById(`ps-day-${day}`).value) || 0;
-            let drink = parseFloat(document.getElementById(`drink-day-${day}`).value) || 0;
-            let indomie = parseFloat(document.getElementById(`indomie-day-${day}`).value) || 0;
-            let grocery = parseFloat(document.getElementById(`grocery-day-${day}`).value) || 0;
-            let other = parseFloat(document.getElementById(`other-day-${day}`).value) || 0;
+        function createAddInputHTML(id) {
+            return `
+                <div class="add-input-group">
+                    <span id="${id}-sum" style="font-weight:bold; min-width:30px;">0</span>
+                    <input type="number" id="${id}-input" placeholder="+">
+                    <button class="add-btn" onclick="addToCell('${id}')">إضافة</button>
+                </div>
+            `;
+        }
 
-            let total = ps + drink + indomie + grocery + other;
-            document.getElementById(`total-day-${day}`).innerText = total;
+        function addValueToCell(id, val) {
+            if(val <= 0) return;
+            let sumSpan = document.getElementById(id + '-sum');
+            let current = parseFloat(sumSpan.innerText) || 0;
+            let newVal = current + val;
+            sumSpan.innerText = newVal;
+            calculateDailyTotal();
+        }
+
+        function addToCell(id) {
+            let inputField = document.getElementById(id + '-input');
+            let val = parseFloat(inputField.value) || 0;
+            if(val <= 0) return;
+            addValueToCell(id, val);
+            inputField.value = '';
+        }
+
+        function calculateDailyTotal() {
+            for (let i = 1; i <= 31; i++) {
+                let ps = parseFloat(document.getElementById(`ps-day-${i}-sum`).innerText) || 0;
+                let drink = parseFloat(document.getElementById(`drink-day-${i}-sum`).innerText) || 0;
+                let indomie = parseFloat(document.getElementById(`indomie-day-${i}-sum`).innerText) || 0;
+                let grocery = parseFloat(document.getElementById(`grocery-day-${i}-sum`).innerText) || 0;
+                let other = parseFloat(document.getElementById(`other-day-${i}-sum`).innerText) || 0;
+
+                let total = ps + drink + indomie + grocery + other;
+                document.getElementById(`total-day-${i}`).innerText = total;
+            }
+        }
+
+        // إضافة صف خامات حر جديد
+        function addInventoryRow(containerId) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'inventory-row';
+            div.innerHTML = `
+                <input type="text" placeholder="اسم الصنف" style="flex:2;">
+                <input type="number" placeholder="القيمة / الكمية" style="flex:1;">
+                <button class="btn btn-stop" onclick="this.parentElement.remove()" style="padding:4px 8px;">حذف</button>
+            `;
+            container.appendChild(div);
         }
 
         window.onload = () => {
             initDevices();
             initDailyTable();
+            // إضافة سطر مبدئي لكل قسم في الخامات
+            addInventoryRow('inv-ps');
+            addInventoryRow('inv-drinks');
+            addInventoryRow('inv-indomie');
+            addInventoryRow('inv-grocery');
         };
     </script>
 </body>
