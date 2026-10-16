@@ -372,7 +372,7 @@
     <!-- 3. الخزينة والماليات -->
     <div id="finance" class="tab-content">
         <div class="stats-box">
-            <h3>💰 صافي الخزينة الحالية</h3>
+            <h3 id="net-cash-title">💰 صافي الخزينة للشهر الحالي</h3>
             <div class="money-display" id="net-cash">0 ج.م</div>
         </div>
         <div class="grid">
@@ -389,7 +389,7 @@
                 <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
         </div>
-        <h3 style="margin-top:20px;">سجل الحركات المالية المباشرة</h3>
+        <h3 style="margin-top:20px;">سجل الحركات المالية للشهر</h3>
         <table>
             <thead>
                 <tr>
@@ -404,7 +404,7 @@
 
     <!-- 4. الخامات والمشتريات -->
     <div id="inventory" class="tab-content">
-        <h2>تسجيل خامات ومشتريات المحل (تخصم تلقائياً من الخزينة)</h2>
+        <h2>تسجيل خامات ومشتريات المحل (تخصم تلقائياً من خزينة الشهر)</h2>
         <div class="grid">
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
@@ -473,8 +473,6 @@
         ];
         
         let timerData = {};
-        let financeRecords = [];
-        let totalCash = 0;
         let allMonthsData = {};
         let currentActiveMonthKey = "2026-10";
 
@@ -512,6 +510,18 @@
             const select = document.getElementById('month-select');
             currentActiveMonthKey = select.value;
             loadMonthDataToUI();
+        }
+
+        function getActiveMonthData() {
+            if (!allMonthsData[currentActiveMonthKey]) {
+                allMonthsData[currentActiveMonthKey] = {
+                    totalCash: 0,
+                    expensesCount: 0,
+                    financeRecords: [],
+                    dailyData: {}
+                };
+            }
+            return allMonthsData[currentActiveMonthKey];
         }
 
         function initDevices() {
@@ -580,419 +590,4 @@
             clearInterval(timerData[idx].interval);
             timerData[idx].isCountdown = false;
             document.getElementById("card-" + idx).style.border = "1px solid #334155";
-            document.getElementById("time-" + idx).classList.remove('finished');
-
-            timerData[idx].interval = setInterval(() => {
-                timerData[idx].seconds++;
-                updateDisplay(idx);
-                updateLiveBill(idx);
-            }, 1000);
-        }
-
-        function startCountdown(idx) {
-            clearInterval(timerData[idx].interval);
-            let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
-            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
-
-            timerData[idx].setMinutes = mins;
-            timerData[idx].seconds = mins * 60;
-            timerData[idx].isCountdown = true;
-            document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
-            document.getElementById("time-" + idx).classList.remove('finished');
-
-            updateDisplay(idx);
-            updateLiveBill(idx);
-
-            timerData[idx].interval = setInterval(() => {
-                if (timerData[idx].seconds > 0) {
-                    timerData[idx].seconds--;
-                    updateDisplay(idx);
-                    updateLiveBill(idx);
-                } else {
-                    clearInterval(timerData[idx].interval);
-                    timerData[idx].interval = null;
-                    document.getElementById("time-" + idx).classList.add('finished');
-                    playAlertSound();
-                    alert("⚠️ انتهى وقت الجهاز: " + devices[idx].name + "!");
-                }
-            }, 1000);
-        }
-
-        function updateDisplay(idx) {
-            let s = timerData[idx].seconds;
-            let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
-            let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-            let secs = String(s % 60).padStart(2, '0');
-            document.getElementById("time-" + idx).innerText = hrs + ":" + mins + ":" + secs;
-        }
-
-        function stopTimer(idx) {
-            clearInterval(timerData[idx].interval);
-            timerData[idx].interval = null;
-        }
-
-        function updateItems(idx) {
-            timerData[idx].drinks = parseFloat(document.getElementById("drink-" + idx).value) || 0;
-            timerData[idx].indomie = parseFloat(document.getElementById("indomie-" + idx).value) || 0;
-            timerData[idx].grocery = parseFloat(document.getElementById("grocery-" + idx).value) || 0;
-            timerData[idx].other = parseFloat(document.getElementById("other-" + idx).value) || 0;
-            updateLiveBill(idx);
-        }
-
-        function calculateTimeCost(idx) {
-            let currentRate = parseFloat(document.getElementById("rate-" + idx).value) || devices[idx].rate;
-            if (timerData[idx].isCountdown) {
-                let hours = timerData[idx].setMinutes / 60;
-                return Math.round(hours * currentRate);
-            } else {
-                let hours = timerData[idx].seconds / 3600;
-                return Math.round(hours * currentRate);
-            }
-        }
-
-        function updateLiveBill(idx) {
-            let psCost = calculateTimeCost(idx);
-            let itemsCost = timerData[idx].drinks + timerData[idx].indomie + timerData[idx].grocery + timerData[idx].other;
-            let grandTotal = psCost + itemsCost;
-            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة الحالية: " + grandTotal + " ج.م (وقت: " + psCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
-        }
-
-        function checkout(idx) {
-            stopTimer(idx);
-            let psCost = calculateTimeCost(idx);
-            let drinksCost = timerData[idx].drinks;
-            let indomieCost = timerData[idx].indomie;
-            let groceryCost = timerData[idx].grocery;
-            let otherCost = timerData[idx].other;
-            let grandTotal = psCost + drinksCost + indomieCost + groceryCost + otherCost;
-
-            if (grandTotal <= 0) {
-                return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
-            }
-
-            let currentDay = new Date().getDate();
-            if(currentDay > 31) currentDay = 31;
-
-            if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
-            if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
-            if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
-            if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
-            if (otherCost > 0) addValueToDailyAndFinance(currentDay, 'other', otherCost, 'إيراد آخر جهاز ' + devices[idx].name);
-
-            timerData[idx].seconds = 0;
-            timerData[idx].setMinutes = 0;
-            document.getElementById("time-" + idx).innerText = "00:00:00";
-            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
-            document.getElementById("time-" + idx).classList.remove('finished');
-            document.getElementById("drink-" + idx).value = 0;
-            document.getElementById("indomie-" + idx).value = 0;
-            document.getElementById("grocery-" + idx).value = 0;
-            document.getElementById("other-" + idx).value = 0;
-            updateLiveBill(idx);
-
-            alert("✅ تم إغلاق وتصدير الفاتورة بنجاح للشهر الحالي وتحديث الخزينة!");
-        }
-
-        function getActiveMonthData() {
-            if (!allMonthsData[currentActiveMonthKey]) {
-                allMonthsData[currentActiveMonthKey] = {
-                    dailyData: {},
-                    expensesCount: 0
-                };
-            }
-            return allMonthsData[currentActiveMonthKey];
-        }
-
-        function initDailyTable() {
-            const tbody = document.getElementById('daily-table-body');
-            tbody.innerHTML = '';
-
-            let monthData = getActiveMonthData();
-            if (!monthData.dailyData) monthData.dailyData = {};
-
-            for (let i = 1; i <= 31; i++) {
-                if(!monthData.dailyData[i]) {
-                    monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0, other: 0 };
-                }
-                
-                let d = monthData.dailyData[i];
-                let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>يوم ${i}</b></td>
-                        <td>${createCellHTML(i, 'ps', d.ps)}</td>
-                        <td>${createCellHTML(i, 'drink', d.drink)}</td>
-                        <td>${createCellHTML(i, 'indomie', d.indomie)}</td>
-                        <td>${createCellHTML(i, 'grocery', d.grocery)}</td>
-                        <td>${createCellHTML(i, 'other', d.other)}</td>
-                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.1rem;">${rowTotal}</td>
-                    </tr>
-                `;
-            }
-        }
-
-        function createCellHTML(day, key, val) {
-            return `
-                <div class="add-input-group">
-                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px;">${val || 0}</span>
-                    <input type="number" id="input-${day}-${key}" placeholder="قيمة">
-                    <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
-                    <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
-                </div>
-            `;
-        }
-
-        function handleDailyInput(day, key, isAdd) {
-            let inputField = document.getElementById(`input-${day}-${key}`);
-            let val = parseFloat(inputField.value) || 0;
-            if(val <= 0) return;
-
-            let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة', other: 'أخرى' };
-            let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
-
-            addValueToDailyAndFinance(day, key, val, desc, isAdd);
-            inputField.value = '';
-        }
-
-        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true) {
-            let monthData = getActiveMonthData();
-            if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0, other: 0 };
-
-            if(isAdd) {
-                monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) + val;
-                totalCash += val;
-                financeRecords.unshift({ type: 'وارد (' + currentActiveMonthKey + ')', desc: desc, amount: val, color: '#22c55e' });
-            } else {
-                monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) - val;
-                totalCash -= val;
-                financeRecords.unshift({ type: 'منصرف (' + currentActiveMonthKey + ')', desc: desc, amount: val, color: '#ef4444' });
-            }
-
-            let span = document.getElementById(`val-${day}-${key}`);
-            if(span) span.innerText = monthData.dailyData[day][key];
-
-            let d = monthData.dailyData[day];
-            let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
-            let totalCell = document.getElementById(`total-day-${day}`);
-            if(totalCell) totalCell.innerText = rowTotal;
-
-            updateFinanceUI();
-            saveToFirebase();
-        }
-
-        function addFinance(type) {
-            let descInput = document.getElementById(type === 'in' ? 'in-desc' : 'out-desc');
-            let amountInput = document.getElementById(type === 'in' ? 'in-amount' : 'out-amount');
-            let desc = descInput.value || (type === 'in' ? 'توريد نقدي' : 'صرف نقدي');
-            let amount = parseFloat(amountInput.value) || 0;
-
-            if(amount <= 0) return alert("الرجاء إدخال مبلغ صحيح!");
-
-            let monthData = getActiveMonthData();
-            if(type === 'in') {
-                totalCash += amount;
-                financeRecords.unshift({ type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
-            } else {
-                totalCash -= amount;
-                monthData.expensesCount = (monthData.expensesCount || 0) + amount;
-                financeRecords.unshift({ type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
-            }
-
-            descInput.value = '';
-            amountInput.value = '';
-            updateFinanceUI();
-            saveToFirebase();
-        }
-
-        function updateFinanceUI() {
-            document.getElementById('net-cash').innerText = totalCash + ' ج.م';
-            let tbody = document.getElementById('finance-table-body');
-            tbody.innerHTML = '';
-            financeRecords.forEach(rec => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
-                        <td>${rec.desc}</td>
-                        <td style="font-weight:bold;">${rec.amount} ج.م</td>
-                    </tr>
-                `;
-            });
-        }
-
-        function addInventoryRow(containerId, sectionName) {
-            const container = document.getElementById(containerId);
-            const div = document.createElement('div');
-            div.className = 'inventory-row';
-            div.innerHTML = `
-                <input type="text" placeholder="اسم الصنف" class="inv-name" style="flex:2; min-width:110px;">
-                <input type="number" placeholder="السعر" class="inv-price" style="flex:1; min-width:70px;">
-                <button class="action-btn btn-plus" onclick="payInventoryItem(this, '${sectionName}')">🛒 شراء وخصم</button>
-                <button class="action-btn btn-minus" onclick="this.parentElement.remove()">🗑️ حذف</button>
-            `;
-            container.appendChild(div);
-        }
-
-        function payInventoryItem(btn, sectionName) {
-            let row = btn.parentElement;
-            let nameInput = row.querySelector('.inv-name');
-            let priceInput = row.querySelector('.inv-price');
-            
-            let itemName = nameInput.value.trim() || 'خامة ' + sectionName;
-            let itemPrice = parseFloat(priceInput.value) || 0;
-
-            if (itemPrice <= 0) {
-                return alert("الرجاء إدخال سعر صحيح لشراء الخامة!");
-            }
-
-            let monthData = getActiveMonthData();
-            totalCash -= itemPrice;
-            monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
-
-            financeRecords.unshift({ 
-                type: 'منصرف (خامات)', 
-                desc: `شراء خامات (${sectionName}): ${itemName}`, 
-                amount: itemPrice, 
-                color: '#ef4444' 
-            });
-
-            updateFinanceUI();
-            saveToFirebase();
-            alert(`تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م وخصمها من الخزينة!`);
-            
-            nameInput.value = '';
-            priceInput.value = '';
-        }
-
-        function updateReports() {
-            let monthData = getActiveMonthData();
-            let monthGrossIncome = 0;
-            
-            if (monthData.dailyData) {
-                for (let i = 1; i <= 31; i++) {
-                    let d = monthData.dailyData[i] || {};
-                    let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
-                    monthGrossIncome += dayTotal;
-                }
-            }
-
-            let monthExpenses = monthData.expensesCount || 0;
-            let netProfit = monthGrossIncome - monthExpenses;
-
-            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
-            document.getElementById('current-month-report-title').innerText = `إيرادات الشهر الحالي (${selectedMonthText})`;
-            document.getElementById('gross-income').innerText = monthGrossIncome + ' ج.م';
-            document.getElementById('total-expenses').innerText = monthExpenses + ' ج.م';
-            
-            let netProfitElem = document.getElementById('net-monthly-profit');
-            netProfitElem.innerText = netProfit + ' ج.م';
-            netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
-
-            // حساب إجمالي أرباح وإيرادات السنة كاملة (2026)
-            let yearTotalIncome = 0;
-            for (let mKey in allMonthsData) {
-                if (mKey.startsWith("2026")) {
-                    let mObj = allMonthsData[mKey];
-                    if (mObj && mObj.dailyData) {
-                        for (let day in mObj.dailyData) {
-                            let d = mObj.dailyData[day];
-                            yearTotalIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0) + (d.other || 0);
-                        }
-                    }
-                }
-            }
-            document.getElementById('year-total-profit').innerText = yearTotalIncome + ' ج.م';
-        }
-
-        function loadMonthDataToUI() {
-            initDailyTable();
-            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
-            document.getElementById('daily-title-text').innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
-            if(document.getElementById('reports').classList.contains('active')) {
-                updateReports();
-            }
-        }
-
-        function saveToFirebase() {
-            const dataToSave = {
-                totalCash: totalCash || 0,
-                financeRecords: financeRecords || [],
-                allMonthsData: allMonthsData || {}
-            };
-            db.ref('ps_lounge_data').set(dataToSave).catch(err => console.log(err));
-        }
-
-        function loadFromFirebase() {
-            db.ref('ps_lounge_data').once('value').then((snapshot) => {
-                const data = snapshot.val();
-                if(data) {
-                    totalCash = data.totalCash || 0;
-                    financeRecords = data.financeRecords || [];
-                    allMonthsData = data.allMonthsData || {};
-                }
-                initMonthSelector();
-                loadMonthDataToUI();
-                updateFinanceUI();
-            }).catch((err) => {
-                console.log("خطأ جلب البيانات: ", err);
-                initMonthSelector();
-                loadMonthDataToUI();
-                updateFinanceUI();
-            });
-        }
-
-        function exportData() {
-            const dataToExport = {
-                totalCash: totalCash,
-                financeRecords: financeRecords,
-                allMonthsData: allMonthsData
-            };
-
-            const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const now = new Date();
-            a.href = url;
-            a.download = `PS_Backup_${now.getFullYear()}_${now.getMonth()+1}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    totalCash = imported.totalCash || 0;
-                    financeRecords = imported.financeRecords || [];
-                    allMonthsData = imported.allMonthsData || {};
-                    
-                    saveToFirebase();
-                    loadMonthDataToUI();
-                    updateFinanceUI();
-                    alert("✅ تم استيراد ملف البيانات بنجاح!");
-                } catch(err) {
-                    alert("❌ خطأ: الملف المرفق غير صالح!");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        window.onload = () => {
-            const theme = localStorage.getItem('theme');
-            if(theme === 'light') toggleTheme();
-
-            initDevices();
-            loadFromFirebase();
-
-            addInventoryRow('inv-ps', 'البلايستيشن');
-            addInventoryRow('inv-drinks', 'المشروبات');
-            addInventoryRow('inv-indomie', 'الأندومي');
-            addInventoryRow('inv-grocery', 'البقالة');
-        };
-    </script>
-</body>
-</html>
+            document.getElementById("time-" + idx).
