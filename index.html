@@ -380,7 +380,7 @@
     <div class="header-container">
         <div>
             <h1>🎮 نظام إدارة محل البلايستيشن</h1>
-            <div class="author-tag">Developed by Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ متصل بالسحابة</span></div>
+            <div class="author-tag">Developed by Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ جاري التحقق من الاتصال...</span></div>
         </div>
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
@@ -597,6 +597,22 @@
     </div>
 
     <script>
+        // تفعيل دعم الـ Service Worker برمجياً لتجاوز قيود الملفات المحلية على الهواتف
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('activate', e => e.clients.claim());
+                self.addEventListener('fetch', e => {
+                    e.respondWith(
+                        fetch(e.request).catch(() => caches.match(e.request))
+                    );
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration error:', err));
+        }
+
         const firebaseConfig = {
             databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
         };
@@ -1587,6 +1603,8 @@
 
         window.addEventListener('online', () => {
             saveData();
+            document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
+            document.getElementById('cloud-status').style.background = "#22c55e";
         });
         window.addEventListener('offline', () => {
             document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
