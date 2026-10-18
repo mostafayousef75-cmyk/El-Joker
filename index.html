@@ -174,7 +174,6 @@
         .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
         .btn-start { background: var(--success); }
         .btn-stop { background: var(--danger); }
-        .btn-reset { background: #64748b; }
         .btn-add { background: var(--warning); color: #000; }
         .btn-timer { background: #8b5cf6; }
 
@@ -338,49 +337,14 @@
             color: white;
             font-weight: bold;
         }
-
-        /* نافذة التنبيه العائمة عند انتهاء الوقت */
-        #alarm-modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .alarm-box {
-            background: var(--card-bg);
-            border: 3px solid var(--danger);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            animation: pulse-border 1s infinite alternate;
-        }
-        @keyframes pulse-border {
-            0% { border-color: var(--danger); }
-            100% { border-color: #fde047; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- نافذة تنبيه انتهاء الوقت -->
-    <div id="alarm-modal">
-        <div class="alarm-box">
-            <h2 id="alarm-title" style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
-            <p id="alarm-desc" style="font-size: 1.2rem; font-weight: bold; margin: 20px 0;">انتهى وقت الجهاز تماماً</p>
-            <button class="btn btn-stop" style="font-size: 1.1rem; padding: 12px 30px; width: 100%; cursor: pointer;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه وإغلاق</button>
-        </div>
-    </div>
-
     <div class="header-container">
         <div>
             <h1>🎮 نظام إدارة محل البلايستيشن</h1>
-            <div class="author-tag">Developed by Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ جاري التحقق من الاتصال...</span></div>
+            <div class="author-tag">Developed by Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ متصل بالسحابة</span></div>
         </div>
         <div class="top-tools">
             <button class="tool-btn" onclick="toggleTheme()" id="theme-btn">🌙 المظهر الداكن</button>
@@ -460,8 +424,8 @@
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;" onkeydown="if(event.key==='Enter') payInventoryItem('ps', 'البلايستيشن')">
-                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('ps', 'البلايستيشن')">
+                    <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('ps', 'البلايستيشن')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-ps">
@@ -473,8 +437,8 @@
             <div class="card">
                 <h3>☕ خامات المشروبات</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-drink" style="flex:2; min-width:110px;" onkeydown="if(event.key==='Enter') payInventoryItem('drink', 'المشروبات')">
-                    <input type="number" placeholder="السعر" id="price-drink" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('drink', 'المشروبات')">
+                    <input type="text" placeholder="اسم الصنف" id="name-drink" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-drink" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('drink', 'المشروبات')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-drink">
@@ -486,8 +450,8 @@
             <div class="card">
                 <h3>🍜 خامات الأندومي</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;" onkeydown="if(event.key==='Enter') payInventoryItem('indomie', 'الأندومي')">
-                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('indomie', 'الأندومي')">
+                    <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('indomie', 'الأندومي')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-indomie">
@@ -499,8 +463,8 @@
             <div class="card">
                 <h3>🛒 خامات البقالة</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;" onkeydown="if(event.key==='Enter') payInventoryItem('grocery', 'البقالة')">
-                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('grocery', 'البقالة')">
+                    <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('grocery', 'البقالة')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-grocery">
@@ -519,14 +483,14 @@
         <div class="grid">
             <div class="card">
                 <h3>📥 تسجيل وارد (أموال داخلة)</h3>
-                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
-                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
+                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
                 <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
-                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
-                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
+                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
                 <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
         </div>
@@ -561,9 +525,9 @@
                 <div class="money-display" id="net-monthly-profit">0 ج.م</div>
             </div>
             <div class="card" style="text-align:center; grid-column: 1 / -1; background: #0f172a; border: 2px solid #3b82f6;">
-                <h3 style="color: #fde047; font-size: 1.5rem;">🌟 إجمالي إيرادات وأرباح السنة كاملة (2026)</h3>
+                <h3 style="color: #fde047; font-size: 1.5rem;">🌟 صافي أرباح السنة كاملة (2026)</h3>
                 <div class="money-display" id="year-total-profit" style="color: #fde047; font-size: 2.5rem;">0 ج.م</div>
-                <p style="color:#94a3b8; margin-top:5px;">(مجموع إيرادات جميع شهور السنة مجمعة)</p>
+                <p style="color:#94a3b8; margin-top:5px;">(إجمالي إيرادات السنة مطروحاً منها إجمالي المصروفات والخامات)</p>
             </div>
         </div>
 
@@ -597,22 +561,6 @@
     </div>
 
     <script>
-        // تفعيل دعم الـ Service Worker برمجياً لتجاوز قيود الملفات المحلية على الهواتف
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', e => self.skipWaiting());
-                self.addEventListener('activate', e => e.clients.claim());
-                self.addEventListener('fetch', e => {
-                    e.respondWith(
-                        fetch(e.request).catch(() => caches.match(e.request))
-                    );
-                });
-            `;
-            const blob = new Blob([swCode], { type: 'text/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration error:', err));
-        }
-
         const firebaseConfig = {
             databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
         };
@@ -646,7 +594,7 @@
         let timerData = {};
         let allMonthsData = {};
         let currentActiveMonthKey = "2026-10";
-        let masterAlarmInterval = null; 
+        let alarmIntervals = {}; 
         let audioCtx = null;
         
         let adminPassword = "1234"; 
@@ -824,11 +772,11 @@
                     <div class="card" id="card-${idx}">
                         <div class="device-title">${dev.name}</div>
                         <div class="rate-box">
-                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})" onkeydown="if(event.key==='Enter') updateLiveBill(${idx})">
+                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})">
                         </div>
                         
                         <div class="controls-box">
-                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1" onkeydown="if(event.key==='Enter') startCountdown(${idx})">
+                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1">
                             <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
                         </div>
 
@@ -837,15 +785,14 @@
                         <div class="btn-group">
                             <button class="btn btn-start" onclick="startStopwatch(${idx})">وقت مفتوح</button>
                             <button class="btn btn-stop" onclick="stopTimer(${idx})">إيقاف مؤقت</button>
-                            <button class="btn btn-reset" onclick="resetTimer(${idx})">إعادة ضبط</button>
-                            <button class="btn btn-add" onclick="checkout(${idx})">إغلاق وتصدير</button>
+                            <button class="btn btn-add" onclick="checkout(${idx})">إغلاق وتصدير للحسابات</button>
                         </div>
                         
                         <div class="item-inputs">
-                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
-                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
-                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
-                            <label style="color: #38bdf8;">مبلغ ثابت: <input type="number" id="custom-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
+                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label style="color: #38bdf8;">مبلغ ثابت: <input type="number" id="custom-${idx}" value="0" oninput="updateItems(${idx})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${idx}">
@@ -876,27 +823,23 @@
             } catch(e) {}
         }
 
-        function startMasterAlarm(deviceName) {
-            document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}!`;
-            document.getElementById('alarm-modal').style.display = 'flex';
-
-            if (!masterAlarmInterval) {
+        function startRepeatingAlarm(idx) {
+            stopRepeatingAlarm(idx);
+            playSingleBeep();
+            alarmIntervals[idx] = setInterval(() => {
                 playSingleBeep();
-                masterAlarmInterval = setInterval(() => {
-                    playSingleBeep();
-                }, 1000);
-            }
+            }, 1000);
         }
 
-        function stopAlarmAndDismiss() {
-            if (masterAlarmInterval) {
-                clearInterval(masterAlarmInterval);
-                masterAlarmInterval = null;
+        function stopRepeatingAlarm(idx) {
+            if (alarmIntervals[idx]) {
+                clearInterval(alarmIntervals[idx]);
+                alarmIntervals[idx] = null;
             }
-            document.getElementById('alarm-modal').style.display = 'none';
         }
 
         function startStopwatch(idx) {
+            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             
             let startTime = Date.now();
@@ -920,6 +863,7 @@
         }
 
         function startCountdown(idx) {
+            stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
             let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
@@ -960,35 +904,10 @@
                     document.getElementById("time-" + idx).innerText = "00:00:00";
                     document.getElementById("time-" + idx).classList.add('finished');
                     
-                    startMasterAlarm(devices[idx].name);
+                    startRepeatingAlarm(idx);
+                    alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                 }
             }, 1000);
-        }
-
-        function resetTimer(idx) {
-            if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت الجهاز ${devices[idx].name}؟ ولن يتم إصدار أي فاتورة.`)) {
-                return;
-            }
-
-            stopTimer(idx);
-
-            timerData[idx].seconds = 0;
-            timerData[idx].setMinutes = 0;
-            timerData[idx].drinks = 0;
-            timerData[idx].indomie = 0;
-            timerData[idx].grocery = 0;
-            timerData[idx].customPrice = 0;
-
-            document.getElementById("time-" + idx).innerText = "00:00:00";
-            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
-            document.getElementById("time-" + idx).classList.remove('finished');
-            document.getElementById("drink-" + idx).value = 0;
-            document.getElementById("indomie-" + idx).value = 0;
-            document.getElementById("grocery-" + idx).value = 0;
-            if(document.getElementById("custom-" + idx)) document.getElementById("custom-" + idx).value = 0;
-            
-            updateLiveBill(idx);
-            alert(`🔄 تم إعادة ضبط الجهاز ${devices[idx].name} بنجاح دون إصدار فاتورة.`);
         }
 
         function restoreTimers() {
@@ -1033,7 +952,8 @@
                                 document.getElementById("time-" + idx).innerText = "00:00:00";
                                 document.getElementById("time-" + idx).classList.add('finished');
                                 
-                                startMasterAlarm(devices[idx].name);
+                                startRepeatingAlarm(idx);
+                                alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                             }
                         }, 1000);
                     } else {
@@ -1042,7 +962,8 @@
                         document.getElementById("time-" + idx).innerText = "00:00:00";
                         document.getElementById("time-" + idx).classList.add('finished');
                         
-                        startMasterAlarm(devices[idx].name);
+                        startRepeatingAlarm(idx);
+                        alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                     }
                 } 
                 else if (type === 'stopwatch') {
@@ -1071,6 +992,7 @@
         }
 
         function stopTimer(idx) {
+            stopRepeatingAlarm(idx);
             if (timerData[idx].interval) {
                 clearInterval(timerData[idx].interval);
                 timerData[idx].interval = null;
@@ -1114,6 +1036,7 @@
         }
 
         function checkout(idx) {
+            stopRepeatingAlarm(idx);
             stopTimer(idx);
 
             let psCost = calculateTimeCost(idx);
@@ -1205,7 +1128,7 @@
                 <div style="margin-bottom: 4px; font-size: 0.8rem; color: #94a3b8; font-weight: bold;">${labelName}</div>
                 <div class="add-input-group">
                     <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px; font-size: 1.05rem;">${val || 0}</span>
-                    <input type="number" id="input-${day}-${key}" placeholder="قيمة" onkeydown="if(event.key==='Enter') handleDailyInput(${day}, '${key}', true)">
+                    <input type="number" id="input-${day}-${key}" placeholder="قيمة">
                     <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
                     <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
                 </div>
@@ -1498,6 +1421,7 @@
             netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
 
             let yearTotalIncome = 0;
+            let yearTotalExpenses = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
             summaryBody.innerHTML = '';
 
@@ -1515,7 +1439,9 @@
 
                 let mExpenses = mObj.expensesCount || 0;
                 let mNet = mIncome - mExpenses;
+                
                 yearTotalIncome += mIncome;
+                yearTotalExpenses += mExpenses;
 
                 summaryBody.innerHTML += `
                     <tr>
@@ -1527,7 +1453,10 @@
                 `;
             }
 
-            document.getElementById('year-total-profit').innerText = yearTotalIncome + ' ج.م';
+            let yearNetProfit = yearTotalIncome - yearTotalExpenses;
+            let yearTotalProfitElem = document.getElementById('year-total-profit');
+            yearTotalProfitElem.innerText = yearNetProfit + ' ج.م';
+            yearTotalProfitElem.style.color = yearNetProfit >= 0 ? '#22c55e' : '#ef4444';
         }
 
         function loadMonthDataToUI() {
@@ -1603,8 +1532,6 @@
 
         window.addEventListener('online', () => {
             saveData();
-            document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
-            document.getElementById('cloud-status').style.background = "#22c55e";
         });
         window.addEventListener('offline', () => {
             document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
