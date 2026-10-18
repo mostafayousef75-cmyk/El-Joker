@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة صالة البلايستيشن - Mostafa Yosef</title>
+    <title>نظام إدارة محل البلايستيشن - Mostafa Yosef</title>
     
     <!-- مكتبات Firebase السحابية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -779,17 +779,20 @@
                     isCountdown: false, 
                     drinks: 0, indomie: 0, grocery: 0, customPrice: 0 
                 };
+
+                let savedRate = localStorage.getItem(`device_rate_${idx}`) || dev.rate;
+                let savedMins = localStorage.getItem(`device_mins_${idx}`) || 60;
                 
                 container.innerHTML += `
                     <div class="card" id="card-${idx}">
                         <div class="device-title">${dev.name}</div>
                         <div class="rate-box">
-                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})" onkeypress="if(event.key === 'Enter') { updateLiveBill(${idx}); this.blur(); }">
+                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${savedRate}" onchange="updateLiveBill(${idx}); saveDeviceSettings(${idx});" onkeypress="if(event.key === 'Enter') { updateLiveBill(${idx}); saveDeviceSettings(${idx}); this.blur(); }">
                         </div>
                         
                         <div class="controls-box">
-                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1" onkeypress="if(event.key === 'Enter') { startCountdown(${idx}); this.blur(); }">
-                            <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
+                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="${savedMins}" min="1" onkeypress="if(event.key === 'Enter') { saveDeviceSettings(${idx}); startCountdown(${idx}); this.blur(); }">
+                            <button class="btn btn-timer" onclick="saveDeviceSettings(${idx}); startCountdown(${idx});">بدء مؤقت</button>
                         </div>
 
                         <div class="timer-display" id="time-${idx}">00:00:00</div>
@@ -815,6 +818,13 @@
                 `;
             });
             restoreTimers();
+        }
+
+        function saveDeviceSettings(idx) {
+            let rateVal = document.getElementById(`rate-${idx}`).value;
+            let minsVal = document.getElementById(`input-mins-${idx}`).value;
+            localStorage.setItem(`device_rate_${idx}`, rateVal);
+            localStorage.setItem(`device_mins_${idx}`, minsVal);
         }
 
         function playSingleBeep() {
