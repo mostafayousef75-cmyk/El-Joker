@@ -638,7 +638,20 @@
                 if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
             }
 
+            localStorage.setItem('active_tab', tabId);
             if (tabId === 'reports') updateReports();
+        }
+
+        function restoreActiveTab() {
+            let savedTab = localStorage.getItem('active_tab');
+            if (savedTab && document.getElementById(savedTab)) {
+                if (savedTab === 'finance' || savedTab === 'reports') {
+                    // إذا كان التبويب المحفوظ يتطلب كلمة سر، سنسمح بالدخول أو نعرض تبويب الأجهزة افتراضياً إن لم تكن مؤكداً
+                    // للأمان سنتركه يفتح الأجهزة أو نطلب كلمة السر. سنفتح الأجهزة افتراضياً لتجنب إزعاج الباسورد عند الفتح:
+                    savedTab = 'timers';
+                }
+                switchTab(null, savedTab);
+            }
         }
 
         function changeAdminPassword() {
@@ -773,11 +786,11 @@
                     <div class="card" id="card-${idx}">
                         <div class="device-title">${dev.name}</div>
                         <div class="rate-box">
-                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})">
+                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})" onkeypress="if(event.key === 'Enter') updateLiveBill(${idx})">
                         </div>
                         
                         <div class="controls-box">
-                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1">
+                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1" onkeypress="if(event.key === 'Enter') startCountdown(${idx})">
                             <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
                         </div>
 
@@ -791,10 +804,10 @@
                         </div>
                         
                         <div class="item-inputs">
-                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
-                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
-                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
-                            <label style="color: #38bdf8;">مبلغ ثابت: <input type="number" id="custom-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') updateItems(${idx})"></label>
+                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') updateItems(${idx})"></label>
+                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') updateItems(${idx})"></label>
+                            <label style="color: #38bdf8;">مبلغ ثابت: <input type="number" id="custom-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') updateItems(${idx})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${idx}">
@@ -1604,6 +1617,7 @@
 
             initDevices();
             loadData();
+            restoreActiveTab();
         };
     </script>
 </body>
