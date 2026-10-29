@@ -239,7 +239,14 @@
             text-align: center;
         }
 
-        th { background: #0284c7; color: #fff; }
+        /* تثبيت شريط عناوين الخدمات في الأعلى عند التمرير (Scroll) */
+        thead th {
+            background: #0284c7;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
         
         .add-input-group {
             display: flex;
@@ -419,7 +426,7 @@
                 <h3>🎮 خامات البلايستيشن</h3>
                 <div class="inventory-row">
                     <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;">
-                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;">
+                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('ps', 'البلايستيشن')">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('ps', 'البلايستيشن')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-ps">
@@ -432,7 +439,7 @@
                 <h3>☕ خامات المشروبات</h3>
                 <div class="inventory-row">
                     <input type="text" placeholder="اسم الصنف" id="name-drinks" style="flex:2; min-width:110px;">
-                    <input type="number" placeholder="السعر" id="price-drinks" style="flex:1; min-width:70px;">
+                    <input type="number" placeholder="السعر" id="price-drinks" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('drinks', 'المشروبات')">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('drinks', 'المشروبات')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-drinks">
@@ -445,7 +452,7 @@
                 <h3>🍜 خامات الأندومي</h3>
                 <div class="inventory-row">
                     <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;">
-                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;">
+                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('indomie', 'الأندومي')">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('indomie', 'الأندومي')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-indomie">
@@ -458,7 +465,7 @@
                 <h3>🛒 خامات البقالة</h3>
                 <div class="inventory-row">
                     <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;">
-                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;">
+                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('grocery', 'البقالة')">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('grocery', 'البقالة')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-grocery">
@@ -477,14 +484,14 @@
         <div class="grid">
             <div class="card">
                 <h3>📥 تسجيل وارد (أموال داخلة)</h3>
-                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
-                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
+                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
                 <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
-                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
-                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
+                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
                 <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
         </div>
@@ -567,7 +574,6 @@
         let currentActiveMonthKey = "2026-10";
         let alarmIntervals = {}; 
         
-        // نظام الحماية بكلمة سر
         let adminPassword = "1234"; 
         let isUnlocked = false; 
 
@@ -727,7 +733,6 @@
             const container = document.getElementById('devices-grid');
             container.innerHTML = '';
             
-            // إضافة بطاقة اليوم الحالي السريعة في أعلى صفحة الأجهزة والمؤقتات
             const todayNum = new Date().getDate();
             let quickPanelHTML = `
                 <div class="card" style="grid-column: 1 / -1; background: var(--input-bg); border: 2px dashed var(--accent);">
@@ -736,28 +741,28 @@
                         <div>
                             <label style="font-size:0.85rem;">🎮 بلايستيشن:</label>
                             <div style="display:flex; gap:4px; margin-top:4px;">
-                                <input type="number" id="quick-input-ps" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <input type="number" id="quick-input-ps" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('ps')">
                                 <button class="action-btn btn-plus" onclick="quickAddCurrentDay('ps')">+</button>
                             </div>
                         </div>
                         <div>
                             <label style="font-size:0.85rem;">☕ مشروبات:</label>
                             <div style="display:flex; gap:4px; margin-top:4px;">
-                                <input type="number" id="quick-input-drink" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <input type="number" id="quick-input-drink" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('drink')">
                                 <button class="action-btn btn-plus" onclick="quickAddCurrentDay('drink')">+</button>
                             </div>
                         </div>
                         <div>
                             <label style="font-size:0.85rem;">🍜 أندومي:</label>
                             <div style="display:flex; gap:4px; margin-top:4px;">
-                                <input type="number" id="quick-input-indomie" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <input type="number" id="quick-input-indomie" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('indomie')">
                                 <button class="action-btn btn-plus" onclick="quickAddCurrentDay('indomie')">+</button>
                             </div>
                         </div>
                         <div>
                             <label style="font-size:0.85rem;">🛒 بقالة:</label>
                             <div style="display:flex; gap:4px; margin-top:4px;">
-                                <input type="number" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <input type="number" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('grocery')">
                                 <button class="action-btn btn-plus" onclick="quickAddCurrentDay('grocery')">+</button>
                             </div>
                         </div>
@@ -789,7 +794,7 @@
                         </div>
                         
                         <div class="controls-box">
-                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1">
+                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1" onkeydown="if(event.key==='Enter') startCountdown(${idx})">
                             <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
                         </div>
 
@@ -802,9 +807,9 @@
                         </div>
                         
                         <div class="item-inputs">
-                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
-                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
-                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
+                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
+                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})" onkeydown="if(event.key==='Enter') checkout(${idx})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${idx}">
@@ -859,7 +864,6 @@
             addValueToDailyAndFinance(currentDay, key, val, desc, true);
             inputField.value = '';
             updateQuickTodayTotalView();
-            alert(`✅ تمت الإضافة بنجاح إلى يوم ${currentDay}`);
         }
 
         function updateQuickTodayTotalView() {
@@ -1024,8 +1028,6 @@
             
             updateLiveBill(idx);
             updateQuickTodayTotalView();
-
-            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
         }
 
         function initDailyTable() {
@@ -1060,7 +1062,7 @@
             return `
                 <div class="add-input-group">
                     <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px;">${val || 0}</span>
-                    <input type="number" id="input-${day}-${key}" placeholder="قيمة">
+                    <input type="number" id="input-${day}-${key}" placeholder="قيمة" onkeydown="if(event.key==='Enter') handleDailyInput(${day}, '${key}', true)">
                     <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
                     <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
                 </div>
@@ -1197,7 +1199,6 @@
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
             saveToFirebase();
-            alert(`✅ تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م بنجاح وخصمها من خزينة الشهر!`);
         }
 
         function renderPurchasedItems(categoryKey) {
@@ -1263,7 +1264,6 @@
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
             saveToFirebase();
-            alert("✅ تم تعديل الصنف بنجاح!");
         }
 
         function deletePurchasedItem(categoryKey, index) {
@@ -1288,7 +1288,6 @@
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
             saveToFirebase();
-            alert("✅ تم حذف الصنف واسترجاع قيمته للخزينة بنجاح.");
         }
 
         function updateReports() {
