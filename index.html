@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة محل البلايستيشن - Mostafa Yosef</title>
+    <title>نظام إدارة صالة البلايستيشن - Mostafa Yosef</title>
     
     <!-- مكتبات Firebase السحابية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -176,7 +176,6 @@
         .btn-stop { background: var(--danger); }
         .btn-add { background: var(--warning); color: #000; }
         .btn-timer { background: #8b5cf6; }
-        .btn-reset-time { background: #0284c7; }
 
         .controls-box {
             background: var(--input-bg);
@@ -199,7 +198,7 @@
 
         .item-inputs {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
             margin-top: 10px;
             font-size: 0.9rem;
@@ -236,27 +235,21 @@
 
         th, td {
             border: 1px solid var(--border-color);
-            padding: 12px;
+            padding: 10px;
             text-align: center;
-            vertical-align: middle;
         }
 
-        th { background: #0284c7; color: #fff; font-size: 1rem; }
+        th { background: #0284c7; color: #fff; }
         
-        .today-highlight {
-            background-color: rgba(59, 130, 246, 0.15) !important;
-            border: 2px solid var(--accent);
-        }
-
         .add-input-group {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             justify-content: center;
             align-items: center;
         }
         .add-input-group input {
-            width: 60px;
-            padding: 6px;
+            width: 50px;
+            padding: 4px;
             background: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
@@ -405,12 +398,12 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 15%;">اليوم والتاريخ</th>
-                    <th style="width: 18%;">🎮 البلايستيشن</th>
-                    <th style="width: 18%;">☕ المشروبات</th>
-                    <th style="width: 18%;">🍜 الأندومي</th>
-                    <th style="width: 18%;">🛒 البقالة</th>
-                    <th style="width: 13%;">💰 الإجمالي</th>
+                    <th>اليوم</th>
+                    <th>البلايستيشن</th>
+                    <th>المشروبات</th>
+                    <th>الأندومي</th>
+                    <th>البقالة</th>
+                    <th>الإجمالي اليومي</th>
                 </tr>
             </thead>
             <tbody id="daily-table-body"></tbody>
@@ -425,8 +418,8 @@
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;" onkeypress="if(event.key === 'Enter') payInventoryItem('ps', 'البلايستيشن')">
-                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;" onkeypress="if(event.key === 'Enter') payInventoryItem('ps', 'البلايستيشن')">
+                    <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('ps', 'البلايستيشن')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-ps">
@@ -438,11 +431,11 @@
             <div class="card">
                 <h3>☕ خامات المشروبات</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-drink" style="flex:2; min-width:110px;" onkeypress="if(event.key === 'Enter') payInventoryItem('drink', 'المشروبات')">
-                    <input type="number" placeholder="السعر" id="price-drink" style="flex:1; min-width:70px;" onkeypress="if(event.key === 'Enter') payInventoryItem('drink', 'المشروبات')">
-                    <button class="action-btn btn-plus" onclick="payInventoryItem('drink', 'المشروبات')">🛒 شراء وخصم</button>
+                    <input type="text" placeholder="اسم الصنف" id="name-drinks" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-drinks" style="flex:1; min-width:70px;">
+                    <button class="action-btn btn-plus" onclick="payInventoryItem('drinks', 'المشروبات')">🛒 شراء وخصم</button>
                 </div>
-                <div class="purchased-items-list" id="list-purchased-drink">
+                <div class="purchased-items-list" id="list-purchased-drinks">
                     <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>
                 </div>
             </div>
@@ -451,8 +444,8 @@
             <div class="card">
                 <h3>🍜 خامات الأندومي</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;" onkeypress="if(event.key === 'Enter') payInventoryItem('indomie', 'الأندومي')">
-                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;" onkeypress="if(event.key === 'Enter') payInventoryItem('indomie', 'الأندومي')">
+                    <input type="text" placeholder="اسم الصنف" id="name-indomie" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-indomie" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('indomie', 'الأندومي')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-indomie">
@@ -464,8 +457,8 @@
             <div class="card">
                 <h3>🛒 خامات البقالة</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;" onkeypress="if(event.key === 'Enter') payInventoryItem('grocery', 'البقالة')">
-                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;" onkeypress="if(event.key === 'Enter') payInventoryItem('grocery', 'البقالة')">
+                    <input type="text" placeholder="اسم الصنف" id="name-grocery" style="flex:2; min-width:110px;">
+                    <input type="number" placeholder="السعر" id="price-grocery" style="flex:1; min-width:70px;">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('grocery', 'البقالة')">🛒 شراء وخصم</button>
                 </div>
                 <div class="purchased-items-list" id="list-purchased-grocery">
@@ -484,14 +477,14 @@
         <div class="grid">
             <div class="card">
                 <h3>📥 تسجيل وارد (أموال داخلة)</h3>
-                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeypress="if(event.key === 'Enter') addFinance('in')">
-                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeypress="if(event.key === 'Enter') addFinance('in')">
+                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
                 <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
-                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeypress="if(event.key === 'Enter') addFinance('out')">
-                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeypress="if(event.key === 'Enter') addFinance('out')">
+                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
+                <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;">
                 <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
         </div>
@@ -499,10 +492,9 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 15%;">اليوم</th>
-                    <th style="width: 20%;">النوع</th>
-                    <th style="width: 45%;">البيان / الوصف</th>
-                    <th style="width: 20%;">المبلغ</th>
+                    <th>النوع</th>
+                    <th>البيان / الوصف</th>
+                    <th>المبلغ</th>
                 </tr>
             </thead>
             <tbody id="finance-table-body"></tbody>
@@ -526,26 +518,11 @@
                 <div class="money-display" id="net-monthly-profit">0 ج.م</div>
             </div>
             <div class="card" style="text-align:center; grid-column: 1 / -1; background: #0f172a; border: 2px solid #3b82f6;">
-                <h3 style="color: #fde047; font-size: 1.5rem;">🌟 صافي أرباح السنة كاملة (2026)</h3>
+                <h3 style="color: #fde047; font-size: 1.5rem;">🌟 إجمالي إيرادات وأرباح السنة كاملة (2026)</h3>
                 <div class="money-display" id="year-total-profit" style="color: #fde047; font-size: 2.5rem;">0 ج.م</div>
-                <p style="color:#94a3b8; margin-top:5px;">(إجمالي إيرادات السنة مطروحاً منها إجمالي المصروفات والخامات)</p>
+                <p style="color:#94a3b8; margin-top:5px;">(مجموع إيرادات جميع شهور السنة مجمعة)</p>
             </div>
         </div>
-
-        <h3 style="margin-top: 30px; color: #38bdf8;">📅 تفصيل إيرادات أيام الشهر الحالي</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>اليوم</th>
-                    <th>إيراد البلايستيشن</th>
-                    <th>إيراد المشروبات</th>
-                    <th>إيراد الأندومي</th>
-                    <th>إيراد البقالة</th>
-                    <th>إجمالي اليوم</th>
-                </tr>
-            </thead>
-            <tbody id="report-daily-breakdown-body"></tbody>
-        </table>
 
         <h3 style="margin-top: 30px; color: #38bdf8;">📑 ملخص إيرادات شهور السنة (2026)</h3>
         <table>
@@ -566,17 +543,10 @@
             databaseURL: "https://eljoker-d1094-default-rtdb.firebaseio.com/"
         };
         
-        let firebaseInitialized = false;
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            firebaseInitialized = true;
-        } catch (e) {
-            console.log("يعمل بدون إنترنت (Offline Mode)");
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-        
-        const db = firebaseInitialized ? firebase.database() : null;
+        const db = firebase.database();
 
         const devices = [
             { name: "eljoker", rate: 20 },
@@ -596,8 +566,8 @@
         let allMonthsData = {};
         let currentActiveMonthKey = "2026-10";
         let alarmIntervals = {}; 
-        let audioCtx = null;
         
+        // نظام الحماية بكلمة سر
         let adminPassword = "1234"; 
         let isUnlocked = false; 
 
@@ -638,18 +608,7 @@
                 if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
             }
 
-            localStorage.setItem('active_tab', tabId);
             if (tabId === 'reports') updateReports();
-        }
-
-        function restoreActiveTab() {
-            let savedTab = localStorage.getItem('active_tab');
-            if (savedTab && document.getElementById(savedTab)) {
-                if (savedTab === 'finance' || savedTab === 'reports') {
-                    savedTab = 'timers';
-                }
-                switchTab(null, savedTab);
-            }
         }
 
         function changeAdminPassword() {
@@ -671,7 +630,7 @@
             }
 
             adminPassword = newPin.trim();
-            saveData();
+            saveToFirebase();
             alert("✅ تم تغيير الرقم السري بنجاح وحفظه!");
         }
 
@@ -703,14 +662,11 @@
                     expensesCount: 0,
                     financeRecords: [],
                     dailyData: {},
-                    purchasedItems: { ps: [], drink: [], indomie: [], grocery: [] }
+                    purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
                 };
             }
             if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
-                allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
-            }
-            if (allMonthsData[currentActiveMonthKey].purchasedItems.drinks && !allMonthsData[currentActiveMonthKey].purchasedItems.drink) {
-                allMonthsData[currentActiveMonthKey].purchasedItems.drink = allMonthsData[currentActiveMonthKey].purchasedItems.drinks;
+                allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
             }
             return allMonthsData[currentActiveMonthKey];
         }
@@ -734,7 +690,7 @@
                     let monthData = getActiveMonthData();
                     if (monthData.dailyData && monthData.dailyData[day]) {
                         monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
-                        saveData();
+                        saveToFirebase();
                         loadMonthDataToUI();
                         alert(`✅ تم تصفير يوم ${day} بنجاح.`);
                     } else {
@@ -750,9 +706,9 @@
                         expensesCount: 0,
                         financeRecords: [],
                         dailyData: {},
-                        purchasedItems: { ps: [], drink: [], indomie: [], grocery: [] }
+                        purchasedItems: { ps: [], drinks: [], indomie: [], grocery: [] }
                     };
-                    saveData();
+                    saveToFirebase();
                     loadMonthDataToUI();
                     alert(`✅ تم تصفير شهر ${selectText} بنجاح.`);
                 }
@@ -760,7 +716,7 @@
             else if (val === "all") {
                 if (confirm("⚠️ تحذير شديد:\nسيتم مسح بيانات جميع الشهور وتصفير النظام بالكامل!\nهل أنت متأكد؟")) {
                     allMonthsData = {};
-                    saveData();
+                    saveToFirebase();
                     loadMonthDataToUI();
                     alert("✅ تم تصفير النظام بالكامل.");
                 }
@@ -771,28 +727,70 @@
             const container = document.getElementById('devices-grid');
             container.innerHTML = '';
             
-            devices.forEach((dev, idx) => {
-                timerData[idx] = { 
-                    seconds: 0, 
-                    setMinutes: 0, 
-                    interval: null, 
-                    isCountdown: false, 
-                    drinks: 0, indomie: 0, grocery: 0, customPrice: 0 
-                };
+            // إضافة بطاقة اليوم الحالي السريعة في أعلى صفحة الأجهزة والمؤقتات
+            const todayNum = new Date().getDate();
+            let quickPanelHTML = `
+                <div class="card" style="grid-column: 1 / -1; background: var(--input-bg); border: 2px dashed var(--accent);">
+                    <h3 style="color: #38bdf8; text-align: center; margin-top: 0;">⚡ تسجيل سريع لإيرادات اليوم (يوم ${todayNum})</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; align-items: center;">
+                        <div>
+                            <label style="font-size:0.85rem;">🎮 بلايستيشن:</label>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <input type="number" id="quick-input-ps" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <button class="action-btn btn-plus" onclick="quickAddCurrentDay('ps')">+</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem;">☕ مشروبات:</label>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <input type="number" id="quick-input-drink" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <button class="action-btn btn-plus" onclick="quickAddCurrentDay('drink')">+</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem;">🍜 أندومي:</label>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <input type="number" id="quick-input-indomie" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <button class="action-btn btn-plus" onclick="quickAddCurrentDay('indomie')">+</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem;">🛒 بقالة:</label>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <input type="number" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                                <button class="action-btn btn-plus" onclick="quickAddCurrentDay('grocery')">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:center; margin-top:10px; font-size:0.9rem; color:#fde047;" id="quick-today-total-view">
+                        إجمالي إيراد اليوم السريع: 0 ج.م
+                    </div>
+                </div>
+            `;
+            container.innerHTML += quickPanelHTML;
 
-                let savedRate = localStorage.getItem(`device_rate_${idx}`) || dev.rate;
-                let savedMins = localStorage.getItem(`device_mins_${idx}`) || 60;
+            devices.forEach((dev, idx) => {
+                if (!timerData[idx]) {
+                    timerData[idx] = { 
+                        seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
+                        drinks: 0, indomie: 0, grocery: 0 
+                    };
+                }
                 
                 container.innerHTML += `
-                    <div class="card" id="card-${idx}">
-                        <div class="device-title">${dev.name}</div>
+                    <div class="card device-card-item" draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event, ${idx})" data-idx="${idx}" style="cursor: grab;">
+                        <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size: 0.9rem; color: #94a3b8;">⠿ اسحب للترتيب</span>
+                            <span>${dev.name}</span>
+                            <span>🎮</span>
+                        </div>
                         <div class="rate-box">
-                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${savedRate}" onchange="updateLiveBill(${idx}); saveDeviceSettings(${idx});" onkeypress="if(event.key === 'Enter') { updateLiveBill(${idx}); saveDeviceSettings(${idx}); this.blur(); }">
+                            سعر الساعة (ج.م): <input type="number" id="rate-${idx}" value="${dev.rate}" onchange="updateLiveBill(${idx})">
                         </div>
                         
                         <div class="controls-box">
-                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="${savedMins}" min="1" onkeypress="if(event.key === 'Enter') { saveDeviceSettings(${idx}); startCountdown(${idx}); this.blur(); }">
-                            <button class="btn btn-timer" onclick="saveDeviceSettings(${idx}); startCountdown(${idx});">بدء مؤقت</button>
+                            حجز وقت محدد (دقائق): <input type="number" id="input-mins-${idx}" value="60" min="1">
+                            <button class="btn btn-timer" onclick="startCountdown(${idx})">بدء مؤقت</button>
                         </div>
 
                         <div class="timer-display" id="time-${idx}">00:00:00</div>
@@ -800,15 +798,13 @@
                         <div class="btn-group">
                             <button class="btn btn-start" onclick="startStopwatch(${idx})">وقت مفتوح</button>
                             <button class="btn btn-stop" onclick="stopTimer(${idx})">إيقاف مؤقت</button>
-                            <button class="btn btn-reset-time" onclick="resetDeviceTime(${idx})">🔄 إعادة ضبط الوقت</button>
                             <button class="btn btn-add" onclick="checkout(${idx})">إغلاق وتصدير للحسابات</button>
                         </div>
                         
                         <div class="item-inputs">
-                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') checkout(${idx})"></label>
-                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') checkout(${idx})"></label>
-                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') checkout(${idx})"></label>
-                            <label style="color: #38bdf8;">مبلغ ثابت: <input type="number" id="custom-${idx}" value="0" oninput="updateItems(${idx})" onkeypress="if(event.key === 'Enter') checkout(${idx})"></label>
+                            <label>مشروبات: <input type="number" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>أندومي: <input type="number" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label>بقالة: <input type="number" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${idx}">
@@ -817,24 +813,71 @@
                     </div>
                 `;
             });
-            restoreTimers();
+            updateQuickTodayTotalView();
         }
 
-        function saveDeviceSettings(idx) {
-            let rateVal = document.getElementById(`rate-${idx}`).value;
-            let minsVal = document.getElementById(`input-mins-${idx}`).value;
-            localStorage.setItem(`device_rate_${idx}`, rateVal);
-            localStorage.setItem(`device_mins_${idx}`, minsVal);
+        let draggedSrcEl = null;
+
+        function drag(e) {
+            draggedSrcEl = e.target.closest('.device-card-item');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+
+        function drop(e, targetIdx) {
+            e.preventDefault();
+            let targetCard = e.target.closest('.device-card-item');
+            if (!targetCard || draggedSrcEl === targetCard) return;
+
+            let srcIdx = parseInt(draggedSrcEl.getAttribute('data-idx'));
+            
+            let tempDev = devices[srcIdx];
+            devices[srcIdx] = devices[targetIdx];
+            devices[targetIdx] = tempDev;
+
+            let tempTimer = timerData[srcIdx];
+            timerData[srcIdx] = timerData[targetIdx];
+            timerData[targetIdx] = tempTimer;
+
+            initDevices();
+        }
+
+        function quickAddCurrentDay(key) {
+            let inputField = document.getElementById(`quick-input-${key}`);
+            let val = parseFloat(inputField.value) || 0;
+            if (val <= 0) return alert("الرجاء إدخال قيمة صحيحة!");
+
+            let currentDay = new Date().getDate();
+            if (currentDay > 31) currentDay = 31;
+
+            let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
+            let desc = `توريد سريع يوم ${currentDay} (${labelNames[key]})`;
+
+            addValueToDailyAndFinance(currentDay, key, val, desc, true);
+            inputField.value = '';
+            updateQuickTodayTotalView();
+            alert(`✅ تمت الإضافة بنجاح إلى يوم ${currentDay}`);
+        }
+
+        function updateQuickTodayTotalView() {
+            let currentDay = new Date().getDate();
+            if (currentDay > 31) currentDay = 31;
+            let monthData = getActiveMonthData();
+            let d = monthData.dailyData && monthData.dailyData[currentDay] ? monthData.dailyData[currentDay] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+            let total = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+            
+            let viewElem = document.getElementById('quick-today-total-view');
+            if (viewElem) {
+                viewElem.innerText = `إجمالي إيراد اليوم السريع (${currentDay}): ${total} ج.م`;
+            }
         }
 
         function playSingleBeep() {
             try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 let oscillator = audioCtx.createOscillator();
                 let gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
@@ -842,7 +885,7 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.3);
+                oscillator.stop(audioCtx.currentTime + 0.4);
             } catch(e) {}
         }
 
@@ -851,7 +894,7 @@
             playSingleBeep();
             alarmIntervals[idx] = setInterval(() => {
                 playSingleBeep();
-            }, 1000);
+            }, 1200);
         }
 
         function stopRepeatingAlarm(idx) {
@@ -864,22 +907,12 @@
         function startStopwatch(idx) {
             stopRepeatingAlarm(idx);
             clearInterval(timerData[idx].interval);
-            
-            let startTime = Date.now();
-            timerData[idx].seconds = 0;
             timerData[idx].isCountdown = false;
-
-            localStorage.setItem(`timer_start_${idx}`, startTime);
-            localStorage.setItem(`timer_type_${idx}`, 'stopwatch');
-
             document.getElementById("card-" + idx).style.border = "1px solid #334155";
             document.getElementById("time-" + idx).classList.remove('finished');
 
             timerData[idx].interval = setInterval(() => {
-                let now = Date.now();
-                let elapsedSeconds = Math.floor((now - startTime) / 1000);
-                timerData[idx].seconds = elapsedSeconds;
-
+                timerData[idx].seconds++;
                 updateDisplay(idx);
                 updateLiveBill(idx);
             }, 1000);
@@ -891,17 +924,9 @@
             let mins = parseInt(document.getElementById("input-mins-" + idx).value) || 0;
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
 
-            let totalSeconds = mins * 60;
-            let endTime = Date.now() + (totalSeconds * 1000);
-
             timerData[idx].setMinutes = mins;
-            timerData[idx].seconds = totalSeconds;
+            timerData[idx].seconds = mins * 60;
             timerData[idx].isCountdown = true;
-            
-            localStorage.setItem(`timer_end_${idx}`, endTime);
-            localStorage.setItem(`timer_mins_${idx}`, mins);
-            localStorage.setItem(`timer_type_${idx}`, 'countdown');
-
             document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
             document.getElementById("time-" + idx).classList.remove('finished');
 
@@ -909,122 +934,18 @@
             updateLiveBill(idx);
 
             timerData[idx].interval = setInterval(() => {
-                let now = Date.now();
-                let remainingSeconds = Math.round((endTime - now) / 1000);
-
-                if (remainingSeconds > 0) {
-                    timerData[idx].seconds = remainingSeconds;
+                if (timerData[idx].seconds > 0) {
+                    timerData[idx].seconds--;
                     updateDisplay(idx);
                     updateLiveBill(idx);
                 } else {
                     clearInterval(timerData[idx].interval);
                     timerData[idx].interval = null;
-                    timerData[idx].seconds = 0;
-                    
-                    localStorage.removeItem(`timer_end_${idx}`);
-                    localStorage.removeItem(`timer_type_${idx}`);
-
-                    document.getElementById("time-" + idx).innerText = "00:00:00";
                     document.getElementById("time-" + idx).classList.add('finished');
-                    
                     startRepeatingAlarm(idx);
                     alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
                 }
             }, 1000);
-        }
-
-        function resetDeviceTime(idx) {
-            stopRepeatingAlarm(idx);
-            if (timerData[idx].interval) {
-                clearInterval(timerData[idx].interval);
-                timerData[idx].interval = null;
-            }
-            localStorage.removeItem(`timer_end_${idx}`);
-            localStorage.removeItem(`timer_start_${idx}`);
-            localStorage.removeItem(`timer_type_${idx}`);
-            localStorage.removeItem(`timer_mins_${idx}`);
-
-            timerData[idx].seconds = 0;
-            timerData[idx].setMinutes = 0;
-            timerData[idx].isCountdown = false;
-
-            document.getElementById("time-" + idx).innerText = "00:00:00";
-            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
-            document.getElementById("time-" + idx).classList.remove('finished');
-            updateLiveBill(idx);
-        }
-
-        function restoreTimers() {
-            devices.forEach((dev, idx) => {
-                let type = localStorage.getItem(`timer_type_${idx}`);
-                
-                if (type === 'countdown') {
-                    let endTime = parseInt(localStorage.getItem(`timer_end_${idx}`)) || 0;
-                    let mins = parseInt(localStorage.getItem(`timer_mins_${idx}`)) || 60;
-                    let now = Date.now();
-                    let remainingSeconds = Math.round((endTime - now) / 1000);
-
-                    if(document.getElementById(`input-mins-${idx}`)) {
-                        document.getElementById(`input-mins-${idx}`).value = mins;
-                    }
-
-                    if (remainingSeconds > 0) {
-                        timerData[idx].setMinutes = mins;
-                        timerData[idx].seconds = remainingSeconds;
-                        timerData[idx].isCountdown = true;
-                        document.getElementById("card-" + idx).style.border = "1px solid #8b5cf6";
-
-                        updateDisplay(idx);
-                        updateLiveBill(idx);
-
-                        timerData[idx].interval = setInterval(() => {
-                            let curNow = Date.now();
-                            let remSec = Math.round((endTime - curNow) / 1000);
-
-                            if (remSec > 0) {
-                                timerData[idx].seconds = remSec;
-                                updateDisplay(idx);
-                                updateLiveBill(idx);
-                            } else {
-                                clearInterval(timerData[idx].interval);
-                                timerData[idx].interval = null;
-                                timerData[idx].seconds = 0;
-
-                                localStorage.removeItem(`timer_end_${idx}`);
-                                localStorage.removeItem(`timer_type_${idx}`);
-
-                                document.getElementById("time-" + idx).innerText = "00:00:00";
-                                document.getElementById("time-" + idx).classList.add('finished');
-                                
-                                startRepeatingAlarm(idx);
-                                alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
-                            }
-                        }, 1000);
-                    } else {
-                        localStorage.removeItem(`timer_end_${idx}`);
-                        localStorage.removeItem(`timer_type_${idx}`);
-                        document.getElementById("time-" + idx).innerText = "00:00:00";
-                        document.getElementById("time-" + idx).classList.add('finished');
-                        
-                        startRepeatingAlarm(idx);
-                        alert(`⚠️ انتهى وقت الجهاز: ${devices[idx].name}!`);
-                    }
-                } 
-                else if (type === 'stopwatch') {
-                    let startTime = parseInt(localStorage.getItem(`timer_start_${idx}`)) || Date.now();
-                    timerData[idx].isCountdown = false;
-                    document.getElementById("card-" + idx).style.border = "1px solid #334155";
-
-                    timerData[idx].interval = setInterval(() => {
-                        let now = Date.now();
-                        let elapsedSeconds = Math.floor((now - startTime) / 1000);
-                        timerData[idx].seconds = elapsedSeconds;
-
-                        updateDisplay(idx);
-                        updateLiveBill(idx);
-                    }, 1000);
-                }
-            });
         }
 
         function updateDisplay(idx) {
@@ -1037,24 +958,14 @@
 
         function stopTimer(idx) {
             stopRepeatingAlarm(idx);
-            if (timerData[idx].interval) {
-                clearInterval(timerData[idx].interval);
-                timerData[idx].interval = null;
-            }
-            localStorage.removeItem(`timer_end_${idx}`);
-            localStorage.removeItem(`timer_start_${idx}`);
-            localStorage.removeItem(`timer_type_${idx}`);
-            localStorage.removeItem(`timer_mins_${idx}`);
-
-            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
-            document.getElementById("time-" + idx).classList.remove('finished');
+            clearInterval(timerData[idx].interval);
+            timerData[idx].interval = null;
         }
 
         function updateItems(idx) {
             timerData[idx].drinks = parseFloat(document.getElementById("drink-" + idx).value) || 0;
             timerData[idx].indomie = parseFloat(document.getElementById("indomie-" + idx).value) || 0;
             timerData[idx].grocery = parseFloat(document.getElementById("grocery-" + idx).value) || 0;
-            timerData[idx].customPrice = parseFloat(document.getElementById("custom-" + idx).value) || 0;
             updateLiveBill(idx);
         }
 
@@ -1071,37 +982,29 @@
 
         function updateLiveBill(idx) {
             let psCost = calculateTimeCost(idx);
-            let customPrice = timerData[idx].customPrice || 0;
-            let finalTimeCost = customPrice > 0 ? customPrice : psCost;
-
             let itemsCost = timerData[idx].drinks + timerData[idx].indomie + timerData[idx].grocery;
-            let grandTotal = finalTimeCost + itemsCost;
-            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة: " + grandTotal + " ج.م (الوقت/الثابت: " + finalTimeCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
+            let grandTotal = psCost + itemsCost;
+            document.getElementById("bill-total-" + idx).innerText = "إجمالي الفاتورة الحالية: " + grandTotal + " ج.م (وقت: " + psCost + " ج.م + إضافات: " + itemsCost + " ج.م)";
         }
 
         function checkout(idx) {
             stopRepeatingAlarm(idx);
-            stopTimer(idx);
-
             let psCost = calculateTimeCost(idx);
-            let customPrice = timerData[idx].customPrice || 0;
-            let finalTimeCost = customPrice > 0 ? customPrice : psCost;
-
             let drinksCost = timerData[idx].drinks;
             let indomieCost = timerData[idx].indomie;
             let groceryCost = timerData[idx].grocery;
-            let grandTotal = finalTimeCost + drinksCost + indomieCost + groceryCost;
+            let grandTotal = psCost + drinksCost + indomieCost + groceryCost;
 
             if (grandTotal <= 0) {
                 return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
             }
 
+            stopTimer(idx);
+
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            let descText = customPrice > 0 ? 'مبلغ مخصص/عرض جهاز ' + devices[idx].name : 'إيراد بلايستيشن جهاز ' + devices[idx].name;
-            
-            if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText);
+            if (psCost > 0) addValueToDailyAndFinance(currentDay, 'ps', psCost, 'إيراد بلايستيشن جهاز ' + devices[idx].name);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devices[idx].name);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devices[idx].name);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devices[idx].name);
@@ -1111,7 +1014,6 @@
             timerData[idx].drinks = 0;
             timerData[idx].indomie = 0;
             timerData[idx].grocery = 0;
-            timerData[idx].customPrice = 0;
 
             document.getElementById("time-" + idx).innerText = "00:00:00";
             document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
@@ -1119,11 +1021,11 @@
             document.getElementById("drink-" + idx).value = 0;
             document.getElementById("indomie-" + idx).value = 0;
             document.getElementById("grocery-" + idx).value = 0;
-            if(document.getElementById("custom-" + idx)) document.getElementById("custom-" + idx).value = 0;
             
             updateLiveBill(idx);
+            updateQuickTodayTotalView();
 
-            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح وتحديث السجل اليومي والخزينة!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
+            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nمبلغ الفاتورة: ${grandTotal} ج.م`);
         }
 
         function initDailyTable() {
@@ -1133,13 +1035,6 @@
             let monthData = getActiveMonthData();
             if (!monthData.dailyData) monthData.dailyData = {};
 
-            let todayObj = new Date();
-            let currentRealDay = todayObj.getDate();
-            let currentRealYear = todayObj.getFullYear();
-            let currentRealMonth = todayObj.getMonth() + 1;
-
-            let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
-
             for (let i = 1; i <= 31; i++) {
                 if(!monthData.dailyData[i]) {
                     monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
@@ -1148,31 +1043,24 @@
                 let d = monthData.dailyData[i];
                 let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
 
-                let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
-                let rowClass = isToday ? 'today-highlight' : '';
-
                 tbody.innerHTML += `
-                    <tr class="${rowClass}">
-                        <td style="font-weight:bold;">
-                            يوم ${i}
-                            ${isToday ? '<br><span style="color:var(--accent); font-size:0.75rem;">(اليوم الحالي)</span>' : ''}
-                        </td>
-                        <td>${createCellHTML(i, 'ps', d.ps, 'البلايستيشن')}</td>
-                        <td>${createCellHTML(i, 'drink', d.drink, 'المشروبات')}</td>
-                        <td>${createCellHTML(i, 'indomie', d.indomie, 'الأندومي')}</td>
-                        <td>${createCellHTML(i, 'grocery', d.grocery, 'البقالة')}</td>
-                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.2rem;">${rowTotal} ج.م</td>
+                    <tr>
+                        <td><b>يوم ${i}</b></td>
+                        <td>${createCellHTML(i, 'ps', d.ps)}</td>
+                        <td>${createCellHTML(i, 'drink', d.drink)}</td>
+                        <td>${createCellHTML(i, 'indomie', d.indomie)}</td>
+                        <td>${createCellHTML(i, 'grocery', d.grocery)}</td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.1rem;">${rowTotal}</td>
                     </tr>
                 `;
             }
         }
 
-        function createCellHTML(day, key, val, labelName) {
+        function createCellHTML(day, key, val) {
             return `
-                <div style="margin-bottom: 4px; font-size: 0.8rem; color: #94a3b8; font-weight: bold;">${labelName}</div>
                 <div class="add-input-group">
-                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px; font-size: 1.05rem;">${val || 0}</span>
-                    <input type="number" id="input-${day}-${key}" placeholder="قيمة" onkeypress="if(event.key === 'Enter') handleDailyInput(${day}, '${key}', true)">
+                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px;">${val || 0}</span>
+                    <input type="number" id="input-${day}-${key}" placeholder="قيمة">
                     <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
                     <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
                 </div>
@@ -1187,25 +1075,23 @@
             let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
             let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
 
-            addValueToDailyAndFinance(day, key, val, desc, isAdd, day);
+            addValueToDailyAndFinance(day, key, val, desc, isAdd);
             inputField.value = '';
         }
 
-        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true, customRecordDay = null) {
+        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true) {
             let monthData = getActiveMonthData();
             if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
-            let recordDay = customRecordDay !== null ? customRecordDay : new Date().getDate();
-
             if(isAdd) {
                 monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) + val;
                 monthData.totalCash = (monthData.totalCash || 0) + val;
-                monthData.financeRecords.unshift({ day: recordDay, type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
+                monthData.financeRecords.unshift({ type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
             } else {
                 monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) - val;
                 monthData.totalCash = (monthData.totalCash || 0) - val;
-                monthData.financeRecords.unshift({ day: recordDay, type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
+                monthData.financeRecords.unshift({ type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
             }
 
             let span = document.getElementById(`val-${day}-${key}`);
@@ -1214,10 +1100,11 @@
             let d = monthData.dailyData[day];
             let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
             let totalCell = document.getElementById(`total-day-${day}`);
-            if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
+            if(totalCell) totalCell.innerText = rowTotal;
 
             updateFinanceUI();
-            saveData();
+            updateQuickTodayTotalView();
+            saveToFirebase();
         }
 
         function addFinance(type) {
@@ -1231,21 +1118,19 @@
             let monthData = getActiveMonthData();
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
-            let currentDay = new Date().getDate();
-
             if(type === 'in') {
                 monthData.totalCash = (monthData.totalCash || 0) + amount;
-                monthData.financeRecords.unshift({ day: currentDay, type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
+                monthData.financeRecords.unshift({ type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
             } else {
                 monthData.totalCash = (monthData.totalCash || 0) - amount;
                 monthData.expensesCount = (monthData.expensesCount || 0) + amount;
-                monthData.financeRecords.unshift({ day: currentDay, type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
+                monthData.financeRecords.unshift({ type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
             }
 
             descInput.value = '';
             amountInput.value = '';
             updateFinanceUI();
-            saveData();
+            saveToFirebase();
         }
 
         function updateFinanceUI() {
@@ -1261,10 +1146,8 @@
             
             let records = monthData.financeRecords || [];
             records.forEach(rec => {
-                let dayText = rec.day ? `يوم ${rec.day}` : '-';
                 tbody.innerHTML += `
                     <tr>
-                        <td style="font-weight:bold; color:#38bdf8;">${dayText}</td>
                         <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
                         <td>${rec.desc}</td>
                         <td style="font-weight:bold;">${rec.amount} ج.م</td>
@@ -1277,10 +1160,6 @@
             let nameInput = document.getElementById(`name-${categoryKey}`);
             let priceInput = document.getElementById(`price-${categoryKey}`);
             
-            if (!nameInput || !priceInput) {
-                return alert("خطأ في تحديد خانات الإدخال لهذا القسم!");
-            }
-
             let itemName = nameInput.value.trim();
             let itemPrice = parseFloat(priceInput.value) || 0;
 
@@ -1292,8 +1171,7 @@
             }
 
             let monthData = getActiveMonthData();
-            if(!monthData.purchasedItems) monthData.purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
-            if(!monthData.purchasedItems[categoryKey]) monthData.purchasedItems[categoryKey] = [];
+            if(!monthData.purchasedItems) monthData.purchasedItems = { ps: [], drinks: [], indomie: [], grocery: [] };
             if(!monthData.financeRecords) monthData.financeRecords = [];
 
             let newItem = {
@@ -1306,9 +1184,7 @@
             monthData.totalCash = (monthData.totalCash || 0) - itemPrice;
             monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
 
-            let currentDay = new Date().getDate();
             monthData.financeRecords.unshift({ 
-                day: currentDay,
                 type: 'منصرف (خامات)', 
                 desc: `شراء خامات (${sectionName}): ${itemName}`, 
                 amount: itemPrice, 
@@ -1320,7 +1196,7 @@
 
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
-            saveData();
+            saveToFirebase();
             alert(`✅ تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م بنجاح وخصمها من خزينة الشهر!`);
         }
 
@@ -1367,7 +1243,6 @@
             if (isNaN(newPrice) || newPrice <= 0) return alert("❌ السعر غير صالح!");
 
             let priceDiff = newPrice - item.price;
-            let currentDay = new Date().getDate();
 
             item.name = newName;
             item.price = newPrice;
@@ -1378,7 +1253,6 @@
                 
                 if(!monthData.financeRecords) monthData.financeRecords = [];
                 monthData.financeRecords.unshift({ 
-                    day: currentDay,
                     type: 'تعديل خامات', 
                     desc: `تعديل بند خامات: ${newName} (فرق السعر)`, 
                     amount: Math.abs(priceDiff), 
@@ -1388,7 +1262,7 @@
 
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
-            saveData();
+            saveToFirebase();
             alert("✅ تم تعديل الصنف بنجاح!");
         }
 
@@ -1401,10 +1275,8 @@
             monthData.totalCash = (monthData.totalCash || 0) + item.price;
             monthData.expensesCount = (monthData.expensesCount || 0) - item.price;
 
-            let currentDay = new Date().getDate();
             if(!monthData.financeRecords) monthData.financeRecords = [];
             monthData.financeRecords.unshift({ 
-                day: currentDay,
                 type: 'إلغاء خامات (وارد)', 
                 desc: `إلغاء واسترجاع صنف خامات: ${item.name}`, 
                 amount: item.price, 
@@ -1415,7 +1287,7 @@
 
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
-            saveData();
+            saveToFirebase();
             alert("✅ تم حذف الصنف واسترجاع قيمته للخزينة بنجاح.");
         }
 
@@ -1423,33 +1295,12 @@
             let monthData = getActiveMonthData();
             let monthGrossIncome = 0;
             
-            let breakdownBody = document.getElementById('report-daily-breakdown-body');
-            breakdownBody.innerHTML = '';
-
-            let todayObj = new Date();
-            let currentRealDay = todayObj.getDate();
-            let currentRealYear = todayObj.getFullYear();
-            let currentRealMonth = todayObj.getMonth() + 1;
-            let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
-
-            for (let i = 1; i <= 31; i++) {
-                let d = monthData.dailyData && monthData.dailyData[i] ? monthData.dailyData[i] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
-                let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
-                monthGrossIncome += dayTotal;
-
-                let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
-                let rowClass = isToday ? 'today-highlight' : '';
-
-                breakdownBody.innerHTML += `
-                    <tr class="${rowClass}">
-                        <td><b>يوم ${i}</b> ${isToday ? '<span style="color:var(--accent); font-size:0.75rem;">(اليوم)</span>' : ''}</td>
-                        <td style="color:#38bdf8;">${d.ps || 0} ج.م</td>
-                        <td>${d.drink || 0} ج.م</td>
-                        <td>${d.indomie || 0} ج.م</td>
-                        <td>${d.grocery || 0} ج.م</td>
-                        <td style="color:#22c55e; font-weight:bold;">${dayTotal} ج.م</td>
-                    </tr>
-                `;
+            if (monthData.dailyData) {
+                for (let i = 1; i <= 31; i++) {
+                    let d = monthData.dailyData[i] || {};
+                    let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                    monthGrossIncome += dayTotal;
+                }
             }
 
             let monthExpenses = monthData.expensesCount || 0;
@@ -1465,7 +1316,6 @@
             netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
 
             let yearTotalIncome = 0;
-            let yearTotalExpenses = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
             summaryBody.innerHTML = '';
 
@@ -1483,9 +1333,7 @@
 
                 let mExpenses = mObj.expensesCount || 0;
                 let mNet = mIncome - mExpenses;
-                
                 yearTotalIncome += mIncome;
-                yearTotalExpenses += mExpenses;
 
                 summaryBody.innerHTML += `
                     <tr>
@@ -1497,10 +1345,7 @@
                 `;
             }
 
-            let yearNetProfit = yearTotalIncome - yearTotalExpenses;
-            let yearTotalProfitElem = document.getElementById('year-total-profit');
-            yearTotalProfitElem.innerText = yearNetProfit + ' ج.م';
-            yearTotalProfitElem.style.color = yearNetProfit >= 0 ? '#22c55e' : '#ef4444';
+            document.getElementById('year-total-profit').innerText = yearTotalIncome + ' ج.م';
         }
 
         function loadMonthDataToUI() {
@@ -1508,9 +1353,10 @@
             updateFinanceUI();
             
             renderPurchasedItems('ps');
-            renderPurchasedItems('drink');
+            renderPurchasedItems('drinks');
             renderPurchasedItems('indomie');
             renderPurchasedItems('grocery');
+            updateQuickTodayTotalView();
 
             let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
             document.getElementById('daily-title-text').innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
@@ -1519,68 +1365,29 @@
             }
         }
 
-        function saveData() {
+        function saveToFirebase() {
             const dataToSave = {
                 allMonthsData: allMonthsData || {},
                 adminPassword: adminPassword || "1234"
             };
-            
-            localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
-
-            if (db && navigator.onLine) {
-                db.ref('ps_lounge_data').set(dataToSave).then(() => {
-                    document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
-                    document.getElementById('cloud-status').style.background = "#22c55e";
-                }).catch(err => {
-                    document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                    document.getElementById('cloud-status').style.background = "#f59e0b";
-                });
-            } else {
-                document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                document.getElementById('cloud-status').style.background = "#f59e0b";
-            }
+            db.ref('ps_lounge_data').set(dataToSave).catch(err => console.log(err));
         }
 
-        function loadData() {
-            let localData = localStorage.getItem('ps_local_backup');
-            if (localData) {
-                try {
-                    const parsed = JSON.parse(localData);
-                    if (parsed.allMonthsData) allMonthsData = parsed.allMonthsData;
-                    if (parsed.adminPassword) adminPassword = parsed.adminPassword;
-                } catch(e) {}
-            }
-
-            initMonthSelector();
-            loadMonthDataToUI();
-
-            if (db && navigator.onLine) {
-                db.ref('ps_lounge_data').once('value').then((snapshot) => {
-                    const data = snapshot.val();
-                    if(data) {
-                        if(data.allMonthsData) allMonthsData = data.allMonthsData;
-                        if(data.adminPassword) adminPassword = data.adminPassword;
-                        loadMonthDataToUI();
-                        document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
-                        document.getElementById('cloud-status').style.background = "#22c55e";
-                    }
-                }).catch((err) => {
-                    document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                    document.getElementById('cloud-status').style.background = "#f59e0b";
-                });
-            } else {
-                document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                document.getElementById('cloud-status').style.background = "#f59e0b";
-            }
+        function loadFromFirebase() {
+            db.ref('ps_lounge_data').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    if(data.allMonthsData) allMonthsData = data.allMonthsData;
+                    if(data.adminPassword) adminPassword = data.adminPassword;
+                }
+                initMonthSelector();
+                loadMonthDataToUI();
+            }).catch((err) => {
+                console.log("خطأ جلب البيانات: ", err);
+                initMonthSelector();
+                loadMonthDataToUI();
+            });
         }
-
-        window.addEventListener('online', () => {
-            saveData();
-        });
-        window.addEventListener('offline', () => {
-            document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-            document.getElementById('cloud-status').style.background = "#f59e0b";
-        });
 
         function exportData() {
             const dataToExport = {
@@ -1609,7 +1416,7 @@
                     allMonthsData = imported.allMonthsData || {};
                     if(imported.adminPassword) adminPassword = imported.adminPassword;
                     
-                    saveData();
+                    saveToFirebase();
                     loadMonthDataToUI();
                     alert("✅ تم استيراد ملف البيانات بنجاح!");
                 } catch(err) {
@@ -1624,8 +1431,7 @@
             if(theme === 'light') toggleTheme();
 
             initDevices();
-            loadData();
-            restoreActiveTab();
+            loadFromFirebase();
         };
     </script>
 </body>
