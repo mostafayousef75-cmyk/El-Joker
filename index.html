@@ -967,47 +967,47 @@
 
         // دالة احتساب وتعديل البقالة المتبقية بناء على إجمالي إيراد اليوم الشامل المطلوب
         function setTotalDayAmount(day, targetTotal) {
-            let monthData = getActiveMonthData();
-            if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+    let monthData = getActiveMonthData();
+    if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
 
-            let d = monthData.dailyData[day];
-            let currentOthersSum = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0);
-            
-            let newGrocery = targetTotal - currentOthersSum;
-            if (newGrocery < 0) {
-                alert(`⚠️ تنبيه: مجموع البلايستيشن والمشروبات والأندومي (${currentOthersSum} ج.م) أكبر من الإجمالي المكتوب (${targetTotal} ج.م)!\nسيتم تصفيير البقالة بدلاً من القيمة بالسالب.`);
-                newGrocery = 0;
-            }
+    let d = monthData.dailyData[day];
+    let currentOthersSum = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0);
+    
+    // حساب البقالة تلقائياً بطريقة بسيطة (الإجمالي ناقص مجموع الثلاثة الباقيين)
+    let newGrocery = targetTotal - currentOthersSum;
+    if (newGrocery < 0) {
+        newGrocery = 0; // لو الإجمالي أقل، تخلي البقالة صفر بدل السالب
+    }
 
-            let oldGrocery = d.grocery || 0;
-            let groceryDiff = newGrocery - oldGrocery;
+    let oldGrocery = d.grocery || 0;
+    let groceryDiff = newGrocery - oldGrocery;
 
-            d.grocery = newGrocery;
-            monthData.totalCash = (monthData.totalCash || 0) + groceryDiff;
+    d.grocery = newGrocery;
+    monthData.totalCash = (monthData.totalCash || 0) + groceryDiff;
 
-            if (groceryDiff !== 0) {
-                if(!monthData.financeRecords) monthData.financeRecords = [];
-                let currentDay = new Date().getDate();
-                monthData.financeRecords.unshift({
-                    day: currentDay,
-                    type: groceryDiff > 0 ? 'وارد (تعديل بقالة)' : 'منصرف (تعديل بقالة)',
-                    desc: `تعديل بقالة يوم ${day} ليصل الإجمالي الشامل لـ ${targetTotal} ج.م`,
-                    amount: Math.abs(groceryDiff),
-                    color: groceryDiff > 0 ? '#22c55e' : '#ef4444'
-                });
-            }
+    if (groceryDiff !== 0) {
+        if(!monthData.financeRecords) monthData.financeRecords = [];
+        let currentDay = new Date().getDate();
+        monthData.financeRecords.unshift({
+            day: currentDay,
+            type: groceryDiff > 0 ? 'وارد (تعديل بقالة)' : 'منصرف (تعديل بقالة)',
+            desc: `تعديل بقالة يوم ${day} بناءً على إيراد اليوم الشامل ${targetTotal} ج.م`,
+            amount: Math.abs(groceryDiff),
+            color: groceryDiff > 0 ? '#22c55e' : '#ef4444'
+        });
+    }
 
-            let spanGrocery = document.getElementById(`val-${day}-grocery`);
-            if(spanGrocery) spanGrocery.innerText = newGrocery;
+    let spanGrocery = document.getElementById(`val-${day}-grocery`);
+    if(spanGrocery) spanGrocery.innerText = newGrocery;
 
-            let rowTotal = currentOthersSum + newGrocery;
-            let totalCell = document.getElementById(`total-day-${day}`);
-            if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
+    let rowTotal = currentOthersSum + newGrocery;
+    let totalCell = document.getElementById(`total-day-${day}`);
+    if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
 
-            updateFinanceUI();
-            updateQuickTodayTotalView();
-            saveData();
-        }
+    updateFinanceUI();
+    updateQuickTodayTotalView();
+    saveData();
+}
 
         function updateQuickTodayTotalView() {
             let currentDay = new Date().getDate();
