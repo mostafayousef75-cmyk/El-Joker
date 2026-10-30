@@ -939,29 +939,45 @@
         }
 
         let draggedSrcIdx = null;
-        function drag(e) {
-            let cardElem = e.target.closest('.card');
-            if (cardElem) {
-                draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        }
-        function allowDrop(e) { e.preventDefault(); }
-        function drop(e, targetIdx) {
-            e.preventDefault();
-            if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
 
-            let tempDev = devices[draggedSrcIdx];
-            devices[draggedSrcIdx] = devices[targetIdx];
-            devices[targetIdx] = tempDev;
+function drag(e) {
+    let cardElem = e.target.closest('.card');
+    if (cardElem) {
+        draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
+        e.dataTransfer.setData('text/plain', draggedSrcIdx);
+        e.dataTransfer.effectAllowed = 'move';
+    }
+}
 
-            let tempTimer = timerData[draggedSrcIdx];
-            timerData[draggedSrcIdx] = timerData[targetIdx];
-            timerData[targetIdx] = tempTimer;
+function allowDrop(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
 
-            draggedSrcIdx = null;
-            initDevices();
-        }
+function drop(e, targetIdx) {
+    e.preventDefault();
+    let cardElem = e.target.closest('.card');
+    if (!cardElem) return;
+    
+    targetIdx = parseInt(cardElem.getAttribute('data-idx'));
+
+    if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
+
+    // تبديل الأجهزة في مصفوفة devices
+    let tempDev = devices[draggedSrcIdx];
+    devices[draggedSrcIdx] = devices[targetIdx];
+    devices[targetIdx] = tempDev;
+
+    // تبديل بيانات المؤقتات في timerData
+    let tempTimer = timerData[draggedSrcIdx];
+    timerData[draggedSrcIdx] = timerData[targetIdx];
+    timerData[targetIdx] = tempTimer;
+
+    draggedSrcIdx = null;
+    
+    // إعادة بناء الأجهزة بالشكل الصحيح والسلس
+    initDevices();
+}
 
         function quickAddCurrentDay(key) {
             let inputField = document.getElementById(`quick-input-${key}`);
