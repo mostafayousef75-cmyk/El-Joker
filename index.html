@@ -10,18 +10,49 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
+        /* تعريف السيمات الأربعة المطلوبة */
         :root {
-            --bg-color: #000000; /* أسود AMOLED نقي */
+            /* الافتراضي: أسود في ذهبي OLED */
+            --bg-color: #000000;
             --card-bg: #0a0a0a;
-            --card-border: #222222;
-            --gold: #d4af37; /* ذهبي فخم */
-            --gold-light: #f3e5ab;
+            --accent: #d4af37;
             --text-color: #f5f5f5;
-            --text-muted: #888888;
             --success: #10b981;
             --danger: #ef4444;
-            --accent: #d4af37;
+            --warning: #f59e0b;
+            --border-color: #222222;
             --input-bg: #141414;
+            --text-muted: #888888;
+        }
+
+        body.theme-charcoal {
+            --bg-color: #121824;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text-color: #f8fafc;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --text-muted: #94a3b8;
+        }
+
+        body.theme-dark-blue {
+            --bg-color: #030712;
+            --card-bg: #0f172a;
+            --accent: #6366f1;
+            --text-color: #f3f4f6;
+            --border-color: #1e293b;
+            --input-bg: #020617;
+            --text-muted: #9ca3af;
+        }
+
+        body.theme-light {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --accent: #2563eb;
+            --text-color: #0f172a;
+            --border-color: #cbd5e1;
+            --input-bg: #f8fafc;
+            --text-muted: #64748b;
         }
 
         body {
@@ -30,6 +61,7 @@
             color: var(--text-color);
             margin: 0;
             padding: 15px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* إلغاء أسهم وسكرول الأرقام السالبة تماماً */
@@ -38,23 +70,21 @@
             -webkit-appearance: none; 
             margin: 0; 
         }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
+        input[type=number] { -moz-appearance: textfield; }
 
         .header-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--card-border);
-            gap: 15px;
+            margin-bottom: 15px;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
         }
 
-        h1 { margin: 0; color: var(--gold); font-size: 1.6rem; font-weight: 700; }
-        .author-tag { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+        h1 { margin: 0; color: var(--accent); font-size: 1.5rem; }
+        .author-tag { color: var(--text-muted); font-size: 0.85rem; }
 
         .top-tools {
             display: flex;
@@ -63,18 +93,16 @@
             flex-wrap: wrap;
         }
 
-        .tool-btn {
+        .tool-btn, .tool-select {
             background: var(--card-bg);
-            color: var(--gold);
-            border: 1px solid var(--gold);
+            color: var(--text-color);
+            border: 1px solid var(--accent);
             padding: 7px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: bold;
             font-size: 0.85rem;
-            transition: all 0.2s;
         }
-        .tool-btn:hover { background: var(--gold); color: #000; }
 
         .tool-select-danger {
             background: var(--card-bg);
@@ -83,25 +111,28 @@
             padding: 7px 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: bold;
             font-size: 0.85rem;
         }
 
-        .month-bar {
+        .month-selector-bar {
             background: var(--card-bg);
             padding: 10px 15px;
             border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            border: 1px solid var(--card-border);
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .month-bar select {
-            padding: 6px 12px;
+
+        .month-selector-bar select {
+            padding: 6px 10px;
             background: var(--input-bg);
-            color: var(--gold);
-            border: 1px solid var(--gold);
+            color: var(--text-color);
+            border: 1px solid var(--accent);
             border-radius: 6px;
             font-weight: bold;
         }
@@ -109,84 +140,88 @@
         .nav-tabs {
             display: flex;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
 
         .tab-btn {
             background: var(--card-bg);
             color: var(--text-color);
-            border: 1px solid var(--card-border);
-            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            padding: 7px 14px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: bold;
         }
-        .tab-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+        .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
+        /* أنماط عرض الأجهزة المختلفة */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 15px;
         }
+        .grid.layout-standard { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .grid.layout-compact { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .grid.layout-list { grid-template-columns: 1fr; }
 
         .card {
             background: var(--card-bg);
             border-radius: 10px;
             padding: 15px;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             position: relative;
         }
 
         .drag-handle {
             font-size: 0.75rem;
-            color: var(--gold);
+            color: var(--accent);
             cursor: grab;
             background: rgba(212, 175, 55, 0.1);
             padding: 2px 6px;
             border-radius: 4px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            border: 1px solid var(--accent);
             user-select: none;
         }
         .drag-handle:active { cursor: grabbing; }
 
-        .device-title { font-size: 1.25rem; color: var(--gold); font-weight: bold; }
+        .device-title { font-size: 1.2rem; color: var(--accent); text-align: center; font-weight: bold; }
         
         .rate-box {
             background: var(--input-bg);
             padding: 6px;
             border-radius: 6px;
             text-align: center;
-            margin: 10px 0;
+            margin: 8px 0;
             font-size: 0.85rem;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
         }
         .rate-box input {
-            width: 55px;
+            width: 50px;
             padding: 3px;
             background: var(--card-bg);
-            color: var(--gold);
-            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
             text-align: center;
             font-weight: bold;
             border-radius: 4px;
         }
 
-        .timer-display { font-size: 2rem; font-family: monospace; text-align: center; margin: 8px 0; color: #fff; font-weight: bold; }
+        .timer-display { font-size: 1.8rem; font-family: monospace; text-align: center; margin: 8px 0; color: #fde047; font-weight: bold; }
         .timer-display.finished { color: var(--danger); animation: blink 0.6s infinite; }
         @keyframes blink { 50% { opacity: 0.2; } }
 
-        .btn-group { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
-        .btn { padding: 6px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #fff; font-size: 0.85rem; }
+        .btn-group { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .btn { padding: 6px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #fff; font-size: 0.8rem; }
         .btn-start { background: var(--success); }
         .btn-stop { background: var(--danger); }
-        .btn-reset { background: #333; color: #ccc; }
-        .btn-add { background: var(--gold); color: #000; }
-        .btn-timer { background: #6366f1; }
+        .btn-reset { background: #555; }
+        .btn-add { background: var(--warning); color: #000; }
+        .btn-timer { background: var(--accent); color: #000; }
 
         .controls-box {
             background: var(--input-bg);
@@ -195,7 +230,7 @@
             margin-bottom: 8px;
             text-align: center;
             font-size: 0.85rem;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
         }
         .controls-box input {
             width: 45px;
@@ -203,7 +238,7 @@
             text-align: center;
             background: var(--card-bg);
             color: var(--text-color);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
         }
 
@@ -215,10 +250,10 @@
             font-size: 0.85rem;
         }
         .item-inputs input {
-            width: 55px;
+            width: 50px;
             padding: 4px;
             border-radius: 4px;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             background: var(--input-bg);
             color: var(--text-color);
             text-align: center;
@@ -231,8 +266,8 @@
             margin-top: 10px;
             text-align: center;
             font-weight: bold;
-            color: var(--gold);
-            border: 1px dashed var(--gold);
+            color: var(--accent);
+            border: 1px dashed var(--accent);
             font-size: 0.85rem;
         }
 
@@ -243,22 +278,22 @@
             margin-top: 15px;
             border-radius: 8px;
             overflow: hidden;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
         }
 
         th, td {
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             padding: 8px;
             text-align: center;
             vertical-align: middle;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        th { background: #111; color: var(--gold); font-size: 0.9rem; }
+        th { background: var(--accent); color: #000; }
         
         .today-highlight {
-            background-color: rgba(212, 175, 55, 0.1) !important;
-            border: 2px solid var(--gold);
+            background-color: rgba(212, 175, 55, 0.15) !important;
+            border: 2px solid var(--accent);
         }
 
         .add-input-group {
@@ -272,7 +307,7 @@
             padding: 4px;
             background: var(--input-bg);
             color: var(--text-color);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             text-align: center;
             border-radius: 4px;
         }
@@ -283,7 +318,7 @@
             font-weight: bold;
             border: none;
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
         .btn-plus { background: var(--success); }
         .btn-minus { background: var(--danger); }
@@ -297,24 +332,24 @@
             background: var(--input-bg);
             padding: 6px;
             border-radius: 6px;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
         }
         .inventory-row input {
             padding: 5px;
             background: var(--card-bg);
             color: var(--text-color);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
         }
 
         .purchased-items-list {
             margin-top: 10px;
-            border-top: 1px dashed var(--card-border);
+            border-top: 1px dashed var(--border-color);
             padding-top: 8px;
         }
         .purchased-item-card {
             background: var(--input-bg);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
             padding: 6px 10px;
             border-radius: 6px;
             margin-bottom: 6px;
@@ -329,9 +364,9 @@
             border-radius: 8px;
             text-align: center;
             margin-bottom: 15px;
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-color);
         }
-        .stats-box h3 { color: var(--gold); margin-top: 0; font-size: 1.1rem; }
+        .stats-box h3 { color: var(--accent); margin-top: 0; font-size: 1.1rem; }
         .money-display { font-size: 1.8rem; font-weight: bold; color: var(--success); }
         
         .status-badge {
@@ -367,7 +402,7 @@
 
     <div id="alarm-modal">
         <div class="alarm-box">
-            <h2 id="alarm-title" style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
+            <h2 style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
             <p id="alarm-desc" style="font-size: 1.1rem; font-weight: bold; margin: 15px 0;">انتهى وقت الجهاز تماماً</p>
             <button class="btn btn-stop" style="font-size: 1rem; padding: 10px; width: 100%;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه</button>
         </div>
@@ -379,22 +414,32 @@
             <div class="author-tag">Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ متصل</span></div>
         </div>
         <div class="top-tools">
-            <button class="tool-btn" onclick="changeAdminPassword()">🔐 الرقم السري</button>
-            <select class="tool-select-danger" id="reset-selector" onchange="handleResetSelection(this)">
-                <option value="" disabled selected>🧹 تصفير 🔒</option>
-                <option value="day">تصفير يوم</option>
-                <option value="month">تصفير الشهر</option>
-                <option value="all">الكل</option>
+            <!-- قائمة اختيار السيمات الأربعة المطلوبة -->
+            <select class="tool-select" id="theme-selector" onchange="changeTheme(this.value)">
+                <option value="oled">🖤 أسود ذهبي (OLED)</option>
+                <option value="charcoal">🛡️ رصاصي فحم</option>
+                <option value="dark-blue">🔵 أزرق غامق مضيء</option>
+                <option value="light">☀️ مظهر فاتح</option>
             </select>
+
+            <button class="tool-btn" onclick="changeAdminPassword()">🔐 الرقم السري</button>
+            
+            <select class="tool-select-danger" id="reset-selector" onchange="handleResetSelection(this)">
+                <option value="" disabled selected>🧹 خيارات التصفير 🔒</option>
+                <option value="day">تصفير يوم محدد</option>
+                <option value="month">تصفير الشهر الحالي</option>
+                <option value="all">تصفير النظام بالكامل</option>
+            </select>
+
             <button class="tool-btn" onclick="exportData()">📥 تصدير</button>
             <button class="tool-btn" onclick="document.getElementById('import-file').click()">📤 استيراد</button>
             <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
         </div>
     </div>
 
-    <div class="month-bar">
+    <div class="month-selector-bar">
         <div>
-            <span style="font-size: 0.95rem; font-weight: bold; color: var(--gold);">📅 الشهر: </span>
+            <span style="font-size: 0.95rem; font-weight: bold; color: var(--accent);">📅 اختر الشهر: </span>
             <select id="month-select" onchange="changeActiveMonth()">
                 <option value="2026-1">يناير 2026</option>
                 <option value="2026-2">فبراير 2026</option>
@@ -410,7 +455,15 @@
                 <option value="2026-12">ديسمبر 2026</option>
             </select>
         </div>
-        <div id="current-active-indicator" style="font-size: 0.85rem; color: var(--gold-light);"></div>
+        <!-- قائمة طريقة عرض صفحة الأجهزة -->
+        <div>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">عرض الأجهزة: </span>
+            <select id="layout-selector" onchange="changeDevicesLayout(this.value)" style="padding:5px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                <option value="standard">ش شبكي قياسي</option>
+                <option value="compact">مضغوط (صغير)</option>
+                <option value="list">قائمة طولية</option>
+            </select>
+        </div>
     </div>
 
     <div class="nav-tabs">
@@ -423,56 +476,56 @@
 
     <!-- 1. الأجهزة والمؤقتات -->
     <div id="timers" class="tab-content active">
-        <div class="card" style="margin-bottom: 20px; border: 1px dashed var(--gold);">
-            <h3 style="color: var(--gold); text-align: center; margin-top: 0; font-size: 1rem;" id="quick-panel-title">⚡ تسجيل سريع لإيرادات اليوم</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: center;">
+        <div class="card" style="margin-bottom: 15px; border: 1px dashed var(--accent);">
+            <h3 style="color: var(--accent); text-align: center; margin-top: 0; font-size: 0.95rem;" id="quick-panel-title">⚡ تسجيل سريع لإيرادات اليوم</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: center;">
                 <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">🎮 بلايستيشن:</label>
+                    <label style="font-size:0.75rem; color:var(--text-muted);">🎮 بلايستيشن:</label>
                     <div style="display:flex; gap:4px; margin-top:2px;">
                         <button class="action-btn btn-plus" onclick="quickAddCurrentDay('ps')">+</button>
-                        <input type="number" min="0" id="quick-input-ps" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--card-border); text-align:center;">
+                        <input type="number" min="0" id="quick-input-ps" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); text-align:center;">
                     </div>
                 </div>
                 <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">☕ مشروبات:</label>
+                    <label style="font-size:0.75rem; color:var(--text-muted);">☕ مشروبات:</label>
                     <div style="display:flex; gap:4px; margin-top:2px;">
                         <button class="action-btn btn-plus" onclick="quickAddCurrentDay('drink')">+</button>
-                        <input type="number" min="0" id="quick-input-drink" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--card-border); text-align:center;">
+                        <input type="number" min="0" id="quick-input-drink" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); text-align:center;">
                     </div>
                 </div>
                 <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">🍜 أندومي:</label>
+                    <label style="font-size:0.75rem; color:var(--text-muted);">🍜 أندومي:</label>
                     <div style="display:flex; gap:4px; margin-top:2px;">
                         <button class="action-btn btn-plus" onclick="quickAddCurrentDay('indomie')">+</button>
-                        <input type="number" min="0" id="quick-input-indomie" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--card-border); text-align:center;">
+                        <input type="number" min="0" id="quick-input-indomie" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); text-align:center;">
                     </div>
                 </div>
                 <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">🛒 بقالة:</label>
+                    <label style="font-size:0.75rem; color:var(--text-muted);">🛒 بقالة:</label>
                     <div style="display:flex; gap:4px; margin-top:2px;">
                         <button class="action-btn btn-plus" onclick="quickAddCurrentDay('grocery')">+</button>
-                        <input type="number" min="0" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--card-border); text-align:center;">
+                        <input type="number" min="0" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:4px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); text-align:center;">
                     </div>
                 </div>
-                <div style="grid-column: 1 / -1; background: #111; padding: 8px; border-radius: 6px; border: 1px solid var(--gold);">
-                    <label style="font-size:0.85rem; color:var(--gold);">🎯 إيراد اليوم الشامل (توزيع تلقائي للبقالة):</label>
-                    <div style="display:flex; gap:8px; margin-top:4px;">
-                        <input type="number" min="0" id="quick-input-total" placeholder="الإجمالي الكلي" style="flex:1; padding:6px; background:var(--card-bg); color:var(--gold); border:1px solid var(--gold); border-radius:4px; text-align:center; font-weight:bold;">
-                        <button class="action-btn btn-add" onclick="processQuickTotalCalculated()">💡 احتساب</button>
+                <div style="grid-column: 1 / -1; background: var(--input-bg); padding: 8px; border-radius: 6px; border: 1px solid var(--accent);">
+                    <label style="font-size:0.8rem; color:var(--accent); font-weight:bold;">🎯 إيراد اليوم الشامل (خصم البلايستيشن والمشروبات والأندومي وتحويل المتبقي للبقالة تلقائياً):</label>
+                    <div style="display:flex; gap:6px; margin-top:4px;">
+                        <input type="number" min="0" id="quick-input-total" placeholder="الإجمالي الكلي" style="flex:1; padding:5px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--accent); border-radius:4px; text-align:center; font-weight:bold;">
+                        <button class="action-btn btn-add" style="padding:5px 12px;" onclick="processQuickTotalCalculated()">💡 احتساب</button>
                     </div>
                 </div>
             </div>
-            <div style="text-align:center; margin-top:10px; font-size:0.95rem; color:var(--success); font-weight:bold;" id="quick-today-total-view">
+            <div style="text-align:center; margin-top:8px; font-size:0.9rem; color:var(--success); font-weight:bold;" id="quick-today-total-view">
                 إجمالي إيراد اليوم السريع: 0 ج.م
             </div>
         </div>
 
-        <div class="grid" id="devices-grid"></div>
+        <div class="grid layout-standard" id="devices-grid"></div>
     </div>
 
     <!-- 2. السجل اليومي -->
     <div id="daily" class="tab-content">
-        <h2 id="daily-title-text" style="font-size: 1.2rem; color: var(--gold);">سجل الإيرادات اليومية للشهر</h2>
+        <h2 id="daily-title-text" style="font-size: 1.1rem; color: var(--accent);">سجل الإيرادات اليومية للشهر</h2>
         <table>
             <thead>
                 <tr>
@@ -491,8 +544,8 @@
 
     <!-- 3. الخامات والمشتريات -->
     <div id="inventory" class="tab-content">
-        <h2 style="font-size: 1.2rem; color: var(--gold);">تسجيل المشتريات (تخصم من الخزينة)</h2>
-        <div class="grid">
+        <h2 style="font-size: 1.1rem; color: var(--accent);">تسجيل المشتريات (تخصم من الخزينة)</h2>
+        <div class="grid layout-standard">
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
                 <div class="inventory-row">
@@ -538,21 +591,21 @@
             <h3 id="net-cash-title">💰 صافي الخزينة</h3>
             <div class="money-display" id="net-cash">0 ج.م</div>
         </div>
-        <div class="grid">
+        <div class="grid layout-standard">
             <div class="card">
                 <h3>📥 تسجيل وارد</h3>
-                <input type="text" id="in-desc" placeholder="السبب" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--card-border); border-radius:4px;">
-                <input type="number" min="0" id="in-amount" placeholder="المبلغ" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--card-border); border-radius:4px;">
+                <input type="text" id="in-desc" placeholder="السبب" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                <input type="number" min="0" id="in-amount" placeholder="المبلغ" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
                 <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة وارد</button>
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف</h3>
-                <input type="text" id="out-desc" placeholder="السبب" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--card-border); border-radius:4px;">
-                <input type="number" min="0" id="out-amount" placeholder="المبلغ" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--card-border); border-radius:4px;">
+                <input type="text" id="out-desc" placeholder="السبب" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
+                <input type="number" min="0" id="out-amount" placeholder="المبلغ" style="width:90%; padding:6px; margin-bottom:8px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;">
                 <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم منصرف</button>
             </div>
         </div>
-        <h3 style="margin-top:20px; font-size: 1.1rem; color: var(--gold);">سجل الحركات المالية</h3>
+        <h3 style="margin-top:15px; font-size: 1rem; color: var(--accent);">سجل الحركات المالية</h3>
         <table>
             <thead>
                 <tr>
@@ -568,11 +621,11 @@
 
     <!-- 5. الجرد -->
     <div id="reports" class="tab-content">
-        <h2 style="font-size: 1.2rem; color: var(--gold);">📊 تقارير الأرباح والجرد</h2>
-        <div class="grid">
+        <h2 style="font-size: 1.1rem; color: var(--accent);">📊 تقارير الأرباح والجرد</h2>
+        <div class="grid layout-standard">
             <div class="card" style="text-align:center;">
                 <h3 id="current-month-report-title">إيرادات الشهر</h3>
-                <div class="money-display" id="gross-income" style="color:var(--gold);">0 ج.م</div>
+                <div class="money-display" id="gross-income" style="color:var(--accent);">0 ج.م</div>
             </div>
             <div class="card" style="text-align:center;">
                 <h3>إجمالي المصروفات</h3>
@@ -582,12 +635,12 @@
                 <h3>💎 صافي ربح الشهر</h3>
                 <div class="money-display" id="net-monthly-profit">0 ج.م</div>
             </div>
-            <div class="card" style="text-align:center; grid-column: 1 / -1; background: #0a0a0a; border: 1px solid var(--gold);">
-                <h3 style="color: var(--gold); font-size: 1.2rem;">🌟 إجمالي أرباح السنة (2026)</h3>
-                <div class="money-display" id="year-total-profit" style="color: var(--gold); font-size: 2rem;">0 ج.م</div>
+            <div class="card" style="text-align:center; grid-column: 1 / -1; background: var(--card-bg); border: 1px solid var(--accent);">
+                <h3 style="color: var(--accent); font-size: 1.1rem;">🌟 إجمالي أرباح السنة (2026)</h3>
+                <div class="money-display" id="year-total-profit" style="color: var(--accent); font-size: 1.8rem;">0 ج.م</div>
             </div>
         </div>
-        <h3 style="margin-top: 20px; font-size: 1.1rem; color: var(--gold);">📑 ملخص شهور السنة</h3>
+        <h3 style="margin-top: 15px; font-size: 1rem; color: var(--accent);">📑 ملخص شهور السنة</h3>
         <table>
             <thead>
                 <tr>
@@ -628,6 +681,24 @@
         let audioCtx = null;
         let adminPassword = "1234"; 
         let isUnlocked = false; 
+
+        // تبديل السيمات الأربعة
+        function changeTheme(themeName) {
+            document.body.className = "";
+            if (themeName === 'charcoal') document.body.classList.add('theme-charcoal');
+            else if (themeName === 'dark-blue') document.body.classList.add('theme-dark-blue');
+            else if (themeName === 'light') document.body.classList.add('theme-light');
+            // الافتراضي oled أسود في ذهبي بدون كلاس إضافي
+            localStorage.setItem('ps_theme', themeName);
+        }
+
+        // تغيير طريقة عرض صفحة الأجهزة
+        function changeDevicesLayout(layoutType) {
+            let grid = document.getElementById('devices-grid');
+            if (!grid) return;
+            grid.className = "grid layout-" + layoutType;
+            localStorage.setItem('ps_devices_layout', layoutType);
+        }
 
         function verifyAdminPassword() {
             if (isUnlocked) return true;
@@ -707,7 +778,7 @@
             const container = document.getElementById('devices-grid');
             if (!container) return;
             container.innerHTML = '';
-            const todayNum = new Date().getDate();
+            let todayNum = new Date().getDate();
             if(document.getElementById('quick-panel-title')) document.getElementById('quick-panel-title').innerText = `⚡ تسجيل سريع لإيرادات اليوم (يوم ${todayNum})`;
 
             devices.forEach((dev, idx) => {
@@ -737,7 +808,7 @@
                             <label>مشروبات: <input type="number" min="0" id="drink-${idx}" value="0" oninput="updateItems(${idx})"></label>
                             <label>أندومي: <input type="number" min="0" id="indomie-${idx}" value="0" oninput="updateItems(${idx})"></label>
                             <label>بقالة: <input type="number" min="0" id="grocery-${idx}" value="0" oninput="updateItems(${idx})"></label>
-                            <label style="color:var(--gold);">مبلغ ثابت: <input type="number" min="0" id="custom-${idx}" value="0" oninput="updateItems(${idx})"></label>
+                            <label style="color:var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${idx}" value="0" oninput="updateItems(${idx})"></label>
                         </div>
                         <div class="bill-preview" id="bill-total-${idx}">إجمالي الفاتورة: 0 ج.م</div>
                     </div>
@@ -789,7 +860,7 @@
             alert(`✅ تم احتساب وضبط بقالة يوم ${currentDay} لتصل للإجمالي ${targetTotal} ج.م بدقة!`);
         }
 
-        // دالة بسيطة ونظيفة 100% ومن غير أي سوالب تماماً
+        // دالة احتساب البقالة آلياً مع حماية مطلقة ضد السالب
         function setTotalDayAmount(day, targetTotal) {
             let monthData = getActiveMonthData();
             if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
@@ -797,7 +868,7 @@
             let currentOthersSum = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0);
             
             let newGrocery = targetTotal - currentOthersSum;
-            if (newGrocery < 0) newGrocery = 0; // حماية مطلقة ضد السالب
+            if (newGrocery < 0) newGrocery = 0;
 
             let oldGrocery = d.grocery || 0;
             let groceryDiff = newGrocery - oldGrocery;
@@ -868,7 +939,7 @@
             timerData[idx].seconds = 0; timerData[idx].isCountdown = false;
             localStorage.setItem(`timer_start_${idx}`, startTime);
             localStorage.setItem(`timer_type_${idx}`, 'stopwatch');
-            document.getElementById("card-" + idx).style.border = "1px solid var(--card-border)";
+            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
             document.getElementById("time-" + idx).classList.remove('finished');
             timerData[idx].interval = setInterval(() => {
                 timerData[idx].seconds = Math.floor((Date.now() - startTime) / 1000);
@@ -886,7 +957,7 @@
             localStorage.setItem(`timer_end_${idx}`, endTime);
             localStorage.setItem(`timer_mins_${idx}`, mins);
             localStorage.setItem(`timer_type_${idx}`, 'countdown');
-            document.getElementById("card-" + idx).style.border = "1px solid var(--gold)";
+            document.getElementById("card-" + idx).style.border = "1px solid var(--accent)";
             document.getElementById("time-" + idx).classList.remove('finished');
             updateDisplay(idx); updateLiveBill(idx);
             timerData[idx].interval = setInterval(() => {
@@ -907,7 +978,7 @@
             stopTimer(idx);
             timerData[idx].seconds = 0; timerData[idx].setMinutes = 0; timerData[idx].drinks = 0; timerData[idx].indomie = 0; timerData[idx].grocery = 0; timerData[idx].customPrice = 0;
             document.getElementById("time-" + idx).innerText = "00:00:00";
-            document.getElementById("card-" + idx).style.border = "1px solid var(--card-border)";
+            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
             document.getElementById("time-" + idx).classList.remove('finished');
             document.getElementById("drink-" + idx).value = 0; document.getElementById("indomie-" + idx).value = 0; document.getElementById("grocery-" + idx).value = 0;
             if(document.getElementById("custom-" + idx)) document.getElementById("custom-" + idx).value = 0;
@@ -922,7 +993,7 @@
                     let remSec = Math.round((endTime - Date.now()) / 1000);
                     if (remSec > 0) {
                         timerData[idx].seconds = remSec; timerData[idx].isCountdown = true;
-                        document.getElementById("card-" + idx).style.border = "1px solid var(--gold)";
+                        document.getElementById("card-" + idx).style.border = "1px solid var(--accent)";
                         updateDisplay(idx); updateLiveBill(idx);
                         timerData[idx].interval = setInterval(() => {
                             let r = Math.round((endTime - Date.now()) / 1000);
@@ -951,7 +1022,7 @@
         function stopTimer(idx) {
             if (timerData[idx].interval) { clearInterval(timerData[idx].interval); timerData[idx].interval = null; }
             localStorage.removeItem(`timer_end_${idx}`); localStorage.removeItem(`timer_start_${idx}`); localStorage.removeItem(`timer_type_${idx}`);
-            document.getElementById("card-" + idx).style.border = "1px solid var(--card-border)";
+            document.getElementById("card-" + idx).style.border = "1px solid var(--border-color)";
             document.getElementById("time-" + idx).classList.remove('finished');
         }
 
@@ -1014,14 +1085,14 @@
 
                 tbody.innerHTML += `
                     <tr class="${isToday ? 'today-highlight' : ''}">
-                        <td style="font-weight:bold;">يوم ${i} ${isToday ? '<br><span style="color:var(--gold); font-size:0.7rem;">(اليوم)</span>' : ''}</td>
+                        <td style="font-weight:bold;">يوم ${i} ${isToday ? '<br><span style="color:var(--accent); font-size:0.7rem;">(اليوم)</span>' : ''}</td>
                         <td>${createCellHTML(i, 'ps', d.ps, 'بلايستيشن')}</td>
                         <td>${createCellHTML(i, 'drink', d.drink, 'مشروبات')}</td>
                         <td>${createCellHTML(i, 'indomie', d.indomie, 'أندومي')}</td>
                         <td>${createCellHTML(i, 'grocery', d.grocery, 'بقالة')}</td>
                         <td>
                             <div class="add-input-group">
-                                <input type="number" min="0" id="input-total-calc-${i}" placeholder="الإجمالي" style="width:55px;">
+                                <input type="number" min="0" id="input-total-calc-${i}" placeholder="الإجمالي" style="width:50px;">
                                 <button class="action-btn btn-plus" onclick="handleDailyTotalCalcInput(${i})">احتساب</button>
                             </div>
                         </td>
@@ -1111,7 +1182,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             (monthData.financeRecords || []).forEach(rec => {
-                tbody.innerHTML += `<tr><td style="color:var(--gold);">يوم ${rec.day || '-'}</td><td style="color:${rec.color};">${rec.type}</td><td>${rec.desc}</td><td style="font-weight:bold;">${rec.amount} ج.م</td></tr>`;
+                tbody.innerHTML += `<tr><td style="color:var(--accent);">يوم ${rec.day || '-'}</td><td style="color:${rec.color};">${rec.type}</td><td>${rec.desc}</td><td style="font-weight:bold;">${rec.amount} ج.م</td></tr>`;
             });
         }
 
@@ -1187,7 +1258,7 @@
                     let mExp = mObj.expensesCount || 0;
                     let mNet = mInc - mExp;
                     yearTotal += mInc;
-                    summaryBody.innerHTML += `<tr><td style="color:var(--gold);">${monthNames[m-1]} 2026</td><td style="color:var(--gold);">${mInc} ج.م</td><td style="color:var(--danger);">${mExp} ج.م</td><td style="color:${mNet >= 0 ? 'var(--success)' : 'var(--danger)'};">${mNet} ج.م</td></tr>`;
+                    summaryBody.innerHTML += `<tr><td style="color:var(--accent);">${monthNames[m-1]} 2026</td><td style="color:var(--accent);">${mInc} ج.م</td><td style="color:var(--danger);">${mExp} ج.م</td><td style="color:${mNet >= 0 ? 'var(--success)' : 'var(--danger)'};">${mNet} ج.م</td></tr>`;
                 }
             }
             document.getElementById('year-total-profit').innerText = yearTotal + ' ج.م';
@@ -1216,6 +1287,19 @@
             if (local) {
                 try { let parsed = JSON.parse(local); if (parsed.allMonthsData) allMonthsData = parsed.allMonthsData; if (parsed.adminPassword) adminPassword = parsed.adminPassword; } catch(e){}
             }
+            
+            // استعادة السيم المحفوظ
+            let savedTheme = localStorage.getItem('ps_theme') || 'oled';
+            let themeSelect = document.getElementById('theme-selector');
+            if(themeSelect) themeSelect.value = savedTheme;
+            changeTheme(savedTheme);
+
+            // استعادة شكل عرض الأجهزة المحفوظ
+            let savedLayout = localStorage.getItem('ps_devices_layout') || 'standard';
+            let layoutSelect = document.getElementById('layout-selector');
+            if(layoutSelect) layoutSelect.value = savedLayout;
+            changeDevicesLayout(savedLayout);
+
             initMonthSelector(); loadMonthDataToUI();
             switchTab(null, localStorage.getItem('activeTab') || 'timers');
             if (db && navigator.onLine) {
