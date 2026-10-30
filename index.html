@@ -340,7 +340,6 @@
             font-weight: bold;
         }
 
-        /* نافذة التنبيه العائمة عند انتهاء الوقت */
         #alarm-modal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -369,7 +368,6 @@
 </head>
 <body>
 
-    <!-- نافذة تنبيه انتهاء الوقت -->
     <div id="alarm-modal">
         <div class="alarm-box">
             <h2 id="alarm-title" style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
@@ -400,7 +398,6 @@
         </div>
     </div>
 
-    <!-- شريط اختيار الشهر والسنة -->
     <div class="month-selector-bar">
         <div>
             <span style="font-size: 1.1rem; font-weight: bold; color: #38bdf8;">📅 اختر الشهر المطلوب: </span>
@@ -432,9 +429,8 @@
 
     <!-- 1. الأجهزة والمؤقتات -->
     <div id="timers" class="tab-content active">
-        <!-- شريط التسجيل السريع لإيرادات اليوم المطلوب -->
         <div class="card" style="margin-bottom: 25px; background: var(--input-bg); border: 2px dashed var(--accent);">
-            <h3 style="color: #38bdf8; text-align: center; margin-top: 0;" id="quick-panel-title">⚡ تسجيل سريع لإيرادات اليوم (يوم 17)</h3>
+            <h3 style="color: #38bdf8; text-align: center; margin-top: 0;" id="quick-panel-title">⚡ تسجيل سريع لإيرادات اليوم</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
                 <div>
                     <label style="font-size:0.85rem; color:#94a3b8; font-weight:bold;">🎮 بلايستيشن:</label>
@@ -495,11 +491,10 @@
     <div id="inventory" class="tab-content">
         <h2>تسجيل خامات ومشتريات المحل (تخصم تلقائياً من خزينة الشهر)</h2>
         <div class="grid">
-            <!-- البلايستيشن -->
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
                 <div class="inventory-row">
-                    <input type="text" placeholder="اسم الصنف (مثل: كابلات)" id="name-ps" style="flex:2; min-width:110px;" onkeydown="if(event.key==='Enter') payInventoryItem('ps', 'البلايستيشن')">
+                    <input type="text" placeholder="اسم الصنف" id="name-ps" style="flex:2; min-width:110px;" onkeydown="if(event.key==='Enter') payInventoryItem('ps', 'البلايستيشن')">
                     <input type="number" placeholder="السعر" id="price-ps" style="flex:1; min-width:70px;" onkeydown="if(event.key==='Enter') payInventoryItem('ps', 'البلايستيشن')">
                     <button class="action-btn btn-plus" onclick="payInventoryItem('ps', 'البلايستيشن')">🛒 شراء وخصم</button>
                 </div>
@@ -508,7 +503,6 @@
                 </div>
             </div>
 
-            <!-- المشروبات -->
             <div class="card">
                 <h3>☕ خامات المشروبات</h3>
                 <div class="inventory-row">
@@ -521,7 +515,6 @@
                 </div>
             </div>
 
-            <!-- الأندومي -->
             <div class="card">
                 <h3>🍜 خامات الأندومي</h3>
                 <div class="inventory-row">
@@ -534,7 +527,6 @@
                 </div>
             </div>
 
-            <!-- البقالة -->
             <div class="card">
                 <h3>🛒 خامات البقالة</h3>
                 <div class="inventory-row">
@@ -549,7 +541,7 @@
         </div>
     </div>
 
-    <!-- 4. الخزينة والماليات (محمية بكلمة سر) -->
+    <!-- 4. الخزينة والحسابات -->
     <div id="finance" class="tab-content">
         <div class="stats-box">
             <h3 id="net-cash-title">💰 صافي الخزينة لشهر المعروض</h3>
@@ -558,13 +550,13 @@
         <div class="grid">
             <div class="card">
                 <h3>📥 تسجيل وارد (أموال داخلة)</h3>
-                <input type="text" id="in-desc" placeholder="السبب (مثلاً: إيراد يومي، دعم..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
+                <input type="text" id="in-desc" placeholder="السبب" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
                 <input type="number" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
                 <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
-                <input type="text" id="out-desc" placeholder="السبب (مثلاً: مصروفات، فواتير..)" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
+                <input type="text" id="out-desc" placeholder="السبب" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
                 <input type="number" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
                 <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
@@ -583,7 +575,7 @@
         </table>
     </div>
 
-    <!-- 5. جرد الشهر والسنة (محمية بكلمة سر) -->
+    <!-- 5. جرد الشهر والسنة -->
     <div id="reports" class="tab-content">
         <h2>📊 تقارير الأرباح للشهر والسنة الكاملة</h2>
         <div class="grid">
@@ -745,11 +737,12 @@
             currentActiveMonthKey = `${year}-${month}`;
 
             const select = document.getElementById('month-select');
-            select.value = currentActiveMonthKey;
-
-            if (!select.value) {
-                currentActiveMonthKey = "2026-10";
+            if (select) {
                 select.value = currentActiveMonthKey;
+                if (!select.value) {
+                    currentActiveMonthKey = "2026-10";
+                    select.value = currentActiveMonthKey;
+                }
             }
         }
 
@@ -771,9 +764,6 @@
             }
             if (!allMonthsData[currentActiveMonthKey].purchasedItems) {
                 allMonthsData[currentActiveMonthKey].purchasedItems = { ps: [], drink: [], indomie: [], grocery: [] };
-            }
-            if (allMonthsData[currentActiveMonthKey].purchasedItems.drinks && !allMonthsData[currentActiveMonthKey].purchasedItems.drink) {
-                allMonthsData[currentActiveMonthKey].purchasedItems.drink = allMonthsData[currentActiveMonthKey].purchasedItems.drinks;
             }
             return allMonthsData[currentActiveMonthKey];
         }
@@ -832,6 +822,7 @@
 
         function initDevices() {
             const container = document.getElementById('devices-grid');
+            if (!container) return;
             container.innerHTML = '';
             
             const todayNum = new Date().getDate();
@@ -912,6 +903,7 @@
 
         function quickAddCurrentDay(key) {
             let inputField = document.getElementById(`quick-input-${key}`);
+            if (!inputField) return;
             let val = parseFloat(inputField.value) || 0;
             if (val <= 0) return alert("الرجاء إدخال قيمة صحيحة!");
 
@@ -1236,6 +1228,7 @@
 
         function initDailyTable() {
             const tbody = document.getElementById('daily-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             let monthData = getActiveMonthData();
@@ -1289,6 +1282,7 @@
 
         function handleDailyInput(day, key, isAdd) {
             let inputField = document.getElementById(`input-${day}-${key}`);
+            if (!inputField) return;
             let val = parseFloat(inputField.value) || 0;
             if(val <= 0) return;
 
@@ -1332,6 +1326,7 @@
         function addFinance(type) {
             let descInput = document.getElementById(type === 'in' ? 'in-desc' : 'out-desc');
             let amountInput = document.getElementById(type === 'in' ? 'in-amount' : 'out-amount');
+            if (!descInput || !amountInput) return;
             let desc = descInput.value || (type === 'in' ? 'توريد نقدي' : 'صرف نقدي');
             let amount = parseFloat(amountInput.value) || 0;
 
@@ -1359,12 +1354,17 @@
         function updateFinanceUI() {
             let monthData = getActiveMonthData();
             let cash = monthData.totalCash || 0;
-            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
+            let monthSelectElem = document.getElementById('month-select');
+            let selectedMonthText = (monthSelectElem && monthSelectElem.selectedOptions[0]) ? monthSelectElem.selectedOptions[0].text : 'الشهر الحالي';
             
-            document.getElementById('net-cash-title').innerText = `💰 صافي الخزينة لشهر (${selectedMonthText})`;
-            document.getElementById('net-cash').innerText = cash + ' ج.م';
+            let netCashTitle = document.getElementById('net-cash-title');
+            if (netCashTitle) netCashTitle.innerText = `💰 صافي الخزينة لشهر (${selectedMonthText})`;
+            
+            let netCashElem = document.getElementById('net-cash');
+            if (netCashElem) netCashElem.innerText = cash + ' ج.م';
 
             let tbody = document.getElementById('finance-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
             
             let records = monthData.financeRecords || [];
@@ -1526,6 +1526,7 @@
             let monthGrossIncome = 0;
             
             let breakdownBody = document.getElementById('report-daily-breakdown-body');
+            if (!breakdownBody) return;
             breakdownBody.innerHTML = '';
 
             let todayObj = new Date();
@@ -1557,17 +1558,27 @@
             let monthExpenses = monthData.expensesCount || 0;
             let netProfit = monthGrossIncome - monthExpenses;
 
-            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
-            document.getElementById('current-month-report-title').innerText = `إيرادات الشهر الحالي (${selectedMonthText})`;
-            document.getElementById('gross-income').innerText = monthGrossIncome + ' ج.م';
-            document.getElementById('total-expenses').innerText = monthExpenses + ' ج.م';
+            let monthSelectElem = document.getElementById('month-select');
+            let selectedMonthText = (monthSelectElem && monthSelectElem.selectedOptions[0]) ? monthSelectElem.selectedOptions[0].text : 'الشهر الحالي';
+            
+            let reportTitle = document.getElementById('current-month-report-title');
+            if (reportTitle) reportTitle.innerText = `إيرادات الشهر الحالي (${selectedMonthText})`;
+            
+            let grossIncomeElem = document.getElementById('gross-income');
+            if (grossIncomeElem) grossIncomeElem.innerText = monthGrossIncome + ' ج.م';
+            
+            let totalExpensesElem = document.getElementById('total-expenses');
+            if (totalExpensesElem) totalExpensesElem.innerText = monthExpenses + ' ج.م';
             
             let netProfitElem = document.getElementById('net-monthly-profit');
-            netProfitElem.innerText = netProfit + ' ج.م';
-            netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
+            if (netProfitElem) {
+                netProfitElem.innerText = netProfit + ' ج.م';
+                netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
+            }
 
             let yearTotalIncome = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
+            if (!summaryBody) return;
             summaryBody.innerHTML = '';
 
             for (let m = 1; m <= 12; m++) {
@@ -1596,7 +1607,8 @@
                 `;
             }
 
-            document.getElementById('year-total-profit').innerText = yearTotalIncome + ' ج.م';
+            let yearTotalProfitElem = document.getElementById('year-total-profit');
+            if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalIncome + ' ج.م';
         }
 
         function loadMonthDataToUI() {
@@ -1609,9 +1621,14 @@
             renderPurchasedItems('grocery');
             updateQuickTodayTotalView();
 
-            let selectedMonthText = document.getElementById('month-select').selectedOptions[0].text;
-            document.getElementById('daily-title-text').innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
-            if(document.getElementById('reports').classList.contains('active')) {
+            let monthSelectElem = document.getElementById('month-select');
+            let selectedMonthText = (monthSelectElem && monthSelectElem.selectedOptions[0]) ? monthSelectElem.selectedOptions[0].text : 'الشهر الحالي';
+            
+            let dailyTitleText = document.getElementById('daily-title-text');
+            if (dailyTitleText) dailyTitleText.innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
+            
+            let reportsTab = document.getElementById('reports');
+            if(reportsTab && reportsTab.classList.contains('active')) {
                 updateReports();
             }
         }
@@ -1624,17 +1641,22 @@
             
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
+            let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
                 db.ref('ps_lounge_data').set(dataToSave).then(() => {
-                    document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
-                    document.getElementById('cloud-status').style.background = "#22c55e";
+                    if (cloudStatus) {
+                        cloudStatus.innerText = "☁️ متصل بالسحابة";
+                        cloudStatus.style.background = "#22c55e";
+                    }
                 }).catch(err => {
-                    document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                    document.getElementById('cloud-status').style.background = "#f59e0b";
+                    if (cloudStatus) {
+                        cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
+                        cloudStatus.style.background = "#f59e0b";
+                    }
                 });
-            } else {
-                document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                document.getElementById('cloud-status').style.background = "#f59e0b";
+            } else if (cloudStatus) {
+                cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
+                cloudStatus.style.background = "#f59e0b";
             }
         }
 
@@ -1651,10 +1673,10 @@
             initMonthSelector();
             loadMonthDataToUI();
 
-            // استرجاع التبويب النشط لضمان ثبات الصفحة عند التحديث (Refresh)
             let savedTab = localStorage.getItem('activeTab') || 'timers';
             switchTab(null, savedTab);
 
+            let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
                 db.ref('ps_lounge_data').once('value').then((snapshot) => {
                     const data = snapshot.val();
@@ -1662,23 +1684,30 @@
                         if(data.allMonthsData) allMonthsData = data.allMonthsData;
                         if(data.adminPassword) adminPassword = data.adminPassword;
                         loadMonthDataToUI();
-                        document.getElementById('cloud-status').innerText = "☁️ متصل بالسحابة";
-                        document.getElementById('cloud-status').style.background = "#22c55e";
+                        if (cloudStatus) {
+                            cloudStatus.innerText = "☁️ متصل بالسحابة";
+                            cloudStatus.style.background = "#22c55e";
+                        }
                     }
                 }).catch((err) => {
-                    document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                    document.getElementById('cloud-status').style.background = "#f59e0b";
+                    if (cloudStatus) {
+                        cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
+                        cloudStatus.style.background = "#f59e0b";
+                    }
                 });
-            } else {
-                document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-                document.getElementById('cloud-status').style.background = "#f59e0b";
+            } else if (cloudStatus) {
+                cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
+                cloudStatus.style.background = "#f59e0b";
             }
         }
 
         window.addEventListener('online', () => { saveData(); });
         window.addEventListener('offline', () => {
-            document.getElementById('cloud-status').innerText = "📴 يعمل محلياً (Offline)";
-            document.getElementById('cloud-status').style.background = "#f59e0b";
+            let cloudStatus = document.getElementById('cloud-status');
+            if (cloudStatus) {
+                cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
+                cloudStatus.style.background = "#f59e0b";
+            }
         });
 
         function exportData() {
@@ -1718,6 +1747,7 @@
             reader.readAsText(file);
         }
 
+        // تم إعادة ضبط وتفعيل الدالة لتبدأ مع تحميل الصفحة بشكل صحيح
         window.onload = () => {
             const theme = localStorage.getItem('theme');
             if(theme === 'light') toggleTheme();
