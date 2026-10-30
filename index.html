@@ -145,6 +145,20 @@
             position: relative;
         }
 
+        .drag-handle {
+            font-size: 0.85rem;
+            color: #38bdf8;
+            cursor: grab;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            user-select: none;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
         .device-title { font-size: 1.4rem; color: #38bdf8; text-align: center; font-weight: bold; }
         
         .rate-box {
@@ -237,12 +251,12 @@
 
         th, td {
             border: 1px solid var(--border-color);
-            padding: 12px;
+            padding: 10px;
             text-align: center;
             vertical-align: middle;
         }
 
-        th { background: #0284c7; color: #fff; font-size: 1rem; }
+        th { background: #0284c7; color: #fff; font-size: 0.95rem; }
         
         .today-highlight {
             background-color: rgba(59, 130, 246, 0.15) !important;
@@ -251,13 +265,13 @@
 
         .add-input-group {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             justify-content: center;
             align-items: center;
         }
         .add-input-group input {
-            width: 60px;
-            padding: 6px;
+            width: 50px;
+            padding: 5px;
             background: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
@@ -265,7 +279,7 @@
             border-radius: 4px;
         }
         .action-btn {
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
@@ -274,7 +288,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
         }
         .btn-plus { background: #10ac84; }
         .btn-minus { background: #ee5253; }
@@ -431,7 +445,7 @@
     <div id="timers" class="tab-content active">
         <div class="card" style="margin-bottom: 25px; background: var(--input-bg); border: 2px dashed var(--accent);">
             <h3 style="color: #38bdf8; text-align: center; margin-top: 0;" id="quick-panel-title">⚡ تسجيل سريع لإيرادات اليوم</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: center;">
                 <div>
                     <label style="font-size:0.85rem; color:#94a3b8; font-weight:bold;">🎮 بلايستيشن:</label>
                     <div style="display:flex; gap:6px; margin-top:4px; align-items:center;">
@@ -460,8 +474,15 @@
                         <input type="number" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:6px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; text-align:center;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('grocery')">
                     </div>
                 </div>
+                <div style="grid-column: 1 / -1; background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 5px;">
+                    <label style="font-size:0.9rem; color:#fde047; font-weight:bold;">🎯 حاسبة إيراد اليوم الشامل (سيتم خصم البلايستيشن والأندومي والمشروبات وتحويل المتبقي تلقائياً للبقالة):</label>
+                    <div style="display:flex; gap:10px; margin-top:6px; align-items:center;">
+                        <input type="number" id="quick-input-total" placeholder="أدخل إيراد اليوم الشامل (مثلاً 50)" style="flex:1; padding:8px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--accent); border-radius:6px; text-align:center; font-weight:bold;" onkeydown="if(event.key==='Enter') processQuickTotalCalculated()">
+                        <button class="action-btn btn-plus" style="padding:8px 16px; font-size:0.9rem;" onclick="processQuickTotalCalculated()">💡 احتساب وتحديث البقالة</button>
+                    </div>
+                </div>
             </div>
-            <div style="text-align:center; margin-top:12px; font-size:1rem; color:#fde047; font-weight:bold;" id="quick-today-total-view">
+            <div style="text-align:center; margin-top:12px; font-size:1.1rem; color:#22c55e; font-weight:bold;" id="quick-today-total-view">
                 إجمالي إيراد اليوم السريع: 0 ج.م
             </div>
         </div>
@@ -475,12 +496,13 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 15%;">اليوم والتاريخ</th>
-                    <th style="width: 18%;">🎮 البلايستيشن</th>
-                    <th style="width: 18%;">☕ المشروبات</th>
-                    <th style="width: 18%;">🍜 الأندومي</th>
-                    <th style="width: 18%;">🛒 البقالة</th>
-                    <th style="width: 13%;">💰 الإجمالي</th>
+                    <th style="width: 12%;">اليوم</th>
+                    <th style="width: 16%;">🎮 البلايستيشن</th>
+                    <th style="width: 16%;">☕ المشروبات</th>
+                    <th style="width: 16%;">🍜 الأندومي</th>
+                    <th style="width: 16%;">🛒 البقالة</th>
+                    <th style="width: 20%;">🎯 إيراد اليوم الشامل (تلقائي)</th>
+                    <th style="width: 10%;">💰 الإجمالي</th>
                 </tr>
             </thead>
             <tbody id="daily-table-body"></tbody>
@@ -837,9 +859,9 @@
                 };
                 
                 container.innerHTML += `
-                    <div class="card" id="card-${idx}" draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event, ${idx})" data-idx="${idx}">
+                    <div class="card" id="card-${idx}" data-idx="${idx}">
                         <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.8rem; color:#94a3b8; cursor:grab;" title="اسحب للترتيب">⠿ اسحب</span>
+                            <span class="drag-handle" draggable="true" ondragstart="drag(event)" title="اضغط واسحب من هنا فقط لتحريك الكارت">⠿ اسحب</span>
                             <span>${dev.name}</span>
                             <span>🎮</span>
                         </div>
@@ -874,30 +896,39 @@
                     </div>
                 `;
             });
+
+            // ربط أحداث السحب على الكروت كمستقبلات Drop
+            document.querySelectorAll('.card').forEach((card, idx) => {
+                card.addEventListener('dragover', allowDrop);
+                card.addEventListener('drop', (e) => drop(e, idx));
+            });
+
             restoreTimers();
             updateQuickTodayTotalView();
         }
 
-        let draggedSrcEl = null;
+        let draggedSrcIdx = null;
         function drag(e) {
-            draggedSrcEl = e.target.closest('.card');
-            e.dataTransfer.effectAllowed = 'move';
+            let cardElem = e.target.closest('.card');
+            if (cardElem) {
+                draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
+                e.dataTransfer.effectAllowed = 'move';
+            }
         }
         function allowDrop(e) { e.preventDefault(); }
         function drop(e, targetIdx) {
             e.preventDefault();
-            let targetCard = e.target.closest('.card');
-            if (!targetCard || draggedSrcEl === targetCard) return;
+            if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
 
-            let srcIdx = parseInt(draggedSrcEl.getAttribute('data-idx'));
-            let tempDev = devices[srcIdx];
-            devices[srcIdx] = devices[targetIdx];
+            let tempDev = devices[draggedSrcIdx];
+            devices[draggedSrcIdx] = devices[targetIdx];
             devices[targetIdx] = tempDev;
 
-            let tempTimer = timerData[srcIdx];
-            timerData[srcIdx] = timerData[targetIdx];
+            let tempTimer = timerData[draggedSrcIdx];
+            timerData[draggedSrcIdx] = timerData[targetIdx];
             timerData[targetIdx] = tempTimer;
 
+            draggedSrcIdx = null;
             initDevices();
         }
 
@@ -916,6 +947,66 @@
             addValueToDailyAndFinance(currentDay, key, val, desc, true, currentDay);
             inputField.value = '';
             updateQuickTodayTotalView();
+        }
+
+        // دالة احتساب إيراد اليوم الشامل في التسجيل السريع
+        function processQuickTotalCalculated() {
+            let totalInput = document.getElementById('quick-input-total');
+            let targetTotal = parseFloat(totalInput.value);
+            if (isNaN(targetTotal) || targetTotal < 0) {
+                return alert("الرجاء إدخال إيراد يوم شامل صحيح!");
+            }
+
+            let currentDay = new Date().getDate();
+            if (currentDay > 31) currentDay = 31;
+
+            setTotalDayAmount(currentDay, targetTotal);
+            totalInput.value = '';
+            alert(`✅ تم احتساب وضبط إيراد اليوم (${currentDay}) ليصل إلى ${targetTotal} ج.م وتحديث البقالة المتبقية!`);
+        }
+
+        // دالة احتساب وتعديل البقالة المتبقية بناء على إجمالي إيراد اليوم الشامل المطلوب
+        function setTotalDayAmount(day, targetTotal) {
+            let monthData = getActiveMonthData();
+            if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+
+            let d = monthData.dailyData[day];
+            let currentOthersSum = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0);
+            
+            let newGrocery = targetTotal - currentOthersSum;
+            if (newGrocery < 0) {
+                alert(`⚠️ تنبيه: مجموع البلايستيشن والمشروبات والأندومي (${currentOthersSum} ج.م) أكبر من الإجمالي المكتوب (${targetTotal} ج.م)!\nسيتم تصفيير البقالة بدلاً من القيمة بالسالب.`);
+                newGrocery = 0;
+            }
+
+            let oldGrocery = d.grocery || 0;
+            let groceryDiff = newGrocery - oldGrocery;
+
+            d.grocery = newGrocery;
+            monthData.totalCash = (monthData.totalCash || 0) + groceryDiff;
+
+            if (groceryDiff !== 0) {
+                if(!monthData.financeRecords) monthData.financeRecords = [];
+                let currentDay = new Date().getDate();
+                monthData.financeRecords.unshift({
+                    day: currentDay,
+                    type: groceryDiff > 0 ? 'وارد (تعديل بقالة)' : 'منصرف (تعديل بقالة)',
+                    desc: `تعديل بقالة يوم ${day} ليصل الإجمالي الشامل لـ ${targetTotal} ج.م`,
+                    amount: Math.abs(groceryDiff),
+                    color: groceryDiff > 0 ? '#22c55e' : '#ef4444'
+                });
+            }
+
+            let spanGrocery = document.getElementById(`val-${day}-grocery`);
+            if(spanGrocery) spanGrocery.innerText = newGrocery;
+
+            let rowTotal = currentOthersSum + newGrocery;
+            let totalCell = document.getElementById(`total-day-${day}`);
+            if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
+
+            updateFinanceUI();
+            updateQuickTodayTotalView();
+            saveData();
         }
 
         function updateQuickTodayTotalView() {
@@ -1256,13 +1347,19 @@
                     <tr class="${rowClass}">
                         <td style="font-weight:bold;">
                             يوم ${i}
-                            ${isToday ? '<br><span style="color:var(--accent); font-size:0.75rem;">(اليوم الحالي)</span>' : ''}
+                            ${isToday ? '<br><span style="color:var(--accent); font-size:0.75rem;">(اليوم)</span>' : ''}
                         </td>
                         <td>${createCellHTML(i, 'ps', d.ps, 'البلايستيشن')}</td>
                         <td>${createCellHTML(i, 'drink', d.drink, 'المشروبات')}</td>
                         <td>${createCellHTML(i, 'indomie', d.indomie, 'الأندومي')}</td>
                         <td>${createCellHTML(i, 'grocery', d.grocery, 'البقالة')}</td>
-                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.2rem;">${rowTotal} ج.م</td>
+                        <td>
+                            <div class="add-input-group">
+                                <input type="number" id="input-total-calc-${i}" placeholder="إجمالي" style="width:65px;" onkeydown="if(event.key==='Enter') handleDailyTotalCalcInput(${i})">
+                                <button class="action-btn btn-plus" title="احتساب وضبط البقالة التلقائية" onclick="handleDailyTotalCalcInput(${i})">💡 احتساب</button>
+                            </div>
+                        </td>
+                        <td id="total-day-${i}" style="font-weight:bold; color:#22c55e; font-size: 1.15rem;">${rowTotal} ج.م</td>
                     </tr>
                 `;
             }
@@ -1270,14 +1367,24 @@
 
         function createCellHTML(day, key, val, labelName) {
             return `
-                <div style="margin-bottom: 4px; font-size: 0.8rem; color: #94a3b8; font-weight: bold;">${labelName}</div>
+                <div style="margin-bottom: 2px; font-size: 0.75rem; color: #94a3b8; font-weight: bold;">${labelName}</div>
                 <div class="add-input-group">
-                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:30px; font-size: 1.05rem;">${val || 0}</span>
+                    <span id="val-${day}-${key}" style="font-weight:bold; min-width:25px; font-size: 0.95rem;">${val || 0}</span>
                     <input type="number" id="input-${day}-${key}" placeholder="قيمة" onkeydown="if(event.key==='Enter') handleDailyInput(${day}, '${key}', true)">
                     <button class="action-btn btn-plus" onclick="handleDailyInput(${day}, '${key}', true)">+</button>
                     <button class="action-btn btn-minus" onclick="handleDailyInput(${day}, '${key}', false)">-</button>
                 </div>
             `;
+        }
+
+        function handleDailyTotalCalcInput(day) {
+            let inputField = document.getElementById(`input-total-calc-${day}`);
+            if (!inputField) return;
+            let val = parseFloat(inputField.value);
+            if (isNaN(val) || val < 0) return alert("الرجاء إدخال إيراد يوم شامل صحيح!");
+
+            setTotalDayAmount(day, val);
+            inputField.value = '';
         }
 
         function handleDailyInput(day, key, isAdd) {
@@ -1747,7 +1854,6 @@
             reader.readAsText(file);
         }
 
-        // تم إعادة ضبط وتفعيل الدالة لتبدأ مع تحميل الصفحة بشكل صحيح
         window.onload = () => {
             const theme = localStorage.getItem('theme');
             if(theme === 'light') toggleTheme();
