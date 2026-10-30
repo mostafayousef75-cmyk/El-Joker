@@ -157,11 +157,14 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
+        /* أنماط عرض الأجهزة المختلفة (تصغير وتكبير وشبكي) */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
         }
+        .grid.layout-standard { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+        .grid.layout-compact { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .grid.layout-large { grid-template-columns: 1fr; }
 
         .card {
             background: var(--card-bg);
@@ -458,6 +461,15 @@
                 <option value="2026-12">ديسمبر 2026</option>
             </select>
         </div>
+        <!-- قائمة التحكم في عرض وحجم كروت الأجهزة (تكبير/تصغير/شبكي) -->
+        <div>
+            <span style="font-size: 0.9rem; color: var(--text-color);">📐 عرض الأجهزة: </span>
+            <select id="layout-selector" onchange="changeDevicesLayout(this.value)" style="padding:6px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--accent); border-radius:6px; font-weight:bold;">
+                <option value="standard">شبكي قياسي</option>
+                <option value="compact">تصغير الكروت (صغير)</option>
+                <option value="large">تكبير الكروت (عرض واسع)</option>
+            </select>
+        </div>
         <div id="current-active-indicator" style="font-weight: bold; color: #fde047;"></div>
     </div>
 
@@ -515,7 +527,8 @@
             </div>
         </div>
 
-        <div class="grid" id="devices-grid"></div>
+        <!-- شبكة الأجهزة التي تقبل التغيير في العرض (قياسي، تصغير، تكبير) -->
+        <div class="grid layout-standard" id="devices-grid"></div>
     </div>
 
     <!-- 2. السجل اليومي -->
@@ -540,7 +553,7 @@
     <!-- 3. الخامات والمشتريات -->
     <div id="inventory" class="tab-content">
         <h2>تسجيل خامات ومشتريات المحل (تخصم تلقائياً من خزينة الشهر)</h2>
-        <div class="grid">
+        <div class="grid layout-standard">
             <div class="card">
                 <h3>🎮 خامات البلايستيشن</h3>
                 <div class="inventory-row">
@@ -597,7 +610,7 @@
             <h3 id="net-cash-title">💰 صافي الخزينة لشهر المعروض</h3>
             <div class="money-display" id="net-cash">0 ج.م</div>
         </div>
-        <div class="grid">
+        <div class="grid layout-standard">
             <div class="card">
                 <h3>📥 تسجيل وارد (أموال داخلة)</h3>
                 <input type="text" id="in-desc" placeholder="السبب" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
@@ -628,7 +641,7 @@
     <!-- 5. جرد الشهر والسنة -->
     <div id="reports" class="tab-content">
         <h2>📊 تقارير الأرباح للشهر والسنة الكاملة</h2>
-        <div class="grid">
+        <div class="grid layout-standard">
             <div class="card" style="text-align:center;">
                 <h3 id="current-month-report-title">إيرادات الشهر الحالي</h3>
                 <div class="money-display" id="gross-income" style="color:var(--accent);">0 ج.م</div>
@@ -723,6 +736,14 @@
             else if (themeName === 'light') document.body.classList.add('theme-light');
             // الافتراضي oled أسود ذهبي بدون كلاس
             localStorage.setItem('ps_theme', themeName);
+        }
+
+        // دالة تغيير وتكبير/تصغير عرض صفحة الأجهزة
+        function changeDevicesLayout(layoutType) {
+            let grid = document.getElementById('devices-grid');
+            if (!grid) return;
+            grid.className = "grid layout-" + layoutType;
+            localStorage.setItem('ps_devices_layout', layoutType);
         }
 
         function verifyAdminPassword() {
@@ -890,9 +911,9 @@
                 };
                 
                 container.innerHTML += `
-                    <div class="card" id="card-${idx}" data-idx="${idx}">
+                    <div class="card" id="card-${idx}" data-idx="${idx}" draggable="true" ondragstart="drag(event)">
                         <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span class="drag-handle" draggable="true" ondragstart="drag(event)" title="اضغط واسحب من هنا فقط لتحريك الكارت">⠿ اسحب</span>
+                            <span class="drag-handle" title="اسحب من هنا لتحريك الكارت">⠿ اسحب</span>
                             <span>${dev.name}</span>
                             <span>🎮</span>
                         </div>
@@ -928,10 +949,10 @@
                 `;
             });
 
-            // ربط أحداث السحب والإفلات للكروت بسلاسة وبدون أي مشاكل
-            document.querySelectorAll('.card').forEach((card, idx) => {
+            // ربط أحداث السحب والإفلات للكروت بسلاسة تامة
+            document.querySelectorAll('.card').forEach((card) => {
                 card.addEventListener('dragover', allowDrop);
-                card.addEventListener('drop', (e) => drop(e, idx));
+                card.addEventListener('drop', drop);
             });
 
             restoreTimers();
@@ -939,45 +960,37 @@
         }
 
         let draggedSrcIdx = null;
+        function drag(e) {
+            let cardElem = e.target.closest('.card');
+            if (cardElem) {
+                draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
+                e.dataTransfer.setData('text/plain', draggedSrcIdx);
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        }
+        function allowDrop(e) { 
+            e.preventDefault(); 
+            e.dataTransfer.dropEffect = 'move';
+        }
+        function drop(e) {
+            e.preventDefault();
+            let cardElem = e.target.closest('.card');
+            if (!cardElem) return;
+            
+            let targetIdx = parseInt(cardElem.getAttribute('data-idx'));
+            if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
 
-function drag(e) {
-    let cardElem = e.target.closest('.card');
-    if (cardElem) {
-        draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
-        e.dataTransfer.setData('text/plain', draggedSrcIdx);
-        e.dataTransfer.effectAllowed = 'move';
-    }
-}
+            let tempDev = devices[draggedSrcIdx];
+            devices[draggedSrcIdx] = devices[targetIdx];
+            devices[targetIdx] = tempDev;
 
-function allowDrop(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-}
+            let tempTimer = timerData[draggedSrcIdx];
+            timerData[draggedSrcIdx] = timerData[targetIdx];
+            timerData[targetIdx] = tempTimer;
 
-function drop(e, targetIdx) {
-    e.preventDefault();
-    let cardElem = e.target.closest('.card');
-    if (!cardElem) return;
-    
-    targetIdx = parseInt(cardElem.getAttribute('data-idx'));
-
-    if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
-
-    // تبديل الأجهزة في مصفوفة devices
-    let tempDev = devices[draggedSrcIdx];
-    devices[draggedSrcIdx] = devices[targetIdx];
-    devices[targetIdx] = tempDev;
-
-    // تبديل بيانات المؤقتات في timerData
-    let tempTimer = timerData[draggedSrcIdx];
-    timerData[draggedSrcIdx] = timerData[targetIdx];
-    timerData[targetIdx] = tempTimer;
-
-    draggedSrcIdx = null;
-    
-    // إعادة بناء الأجهزة بالشكل الصحيح والسلس
-    initDevices();
-}
+            draggedSrcIdx = null;
+            initDevices();
+        }
 
         function quickAddCurrentDay(key) {
             let inputField = document.getElementById(`quick-input-${key}`);
@@ -1828,6 +1841,12 @@ function drop(e, targetIdx) {
             let themeSelect = document.getElementById('theme-selector');
             if(themeSelect) themeSelect.value = savedTheme;
             changeTheme(savedTheme);
+
+            // استعادة حجم عرض الأجهزة المحفوظ (تكبير/تصغير/قياسي)
+            let savedLayout = localStorage.getItem('ps_devices_layout') || 'standard';
+            let layoutSelect = document.getElementById('layout-selector');
+            if(layoutSelect) layoutSelect.value = savedLayout;
+            changeDevicesLayout(savedLayout);
 
             initMonthSelector();
             loadMonthDataToUI();
