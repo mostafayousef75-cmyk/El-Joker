@@ -421,7 +421,6 @@
             <div class="author-tag">Developed by Mostafa Yosef <span class="status-badge" id="cloud-status">☁️ متصل بالسحابة</span></div>
         </div>
         <div class="top-tools">
-            <!-- قائمة اختيار السيمات الأربعة -->
             <select class="tool-select" id="theme-selector" onchange="changeTheme(this.value)">
                 <option value="oled">🖤 أسود ذهبي (OLED)</option>
                 <option value="charcoal">🛡️ رصاصي فحم</option>
@@ -462,7 +461,6 @@
                 <option value="2026-12">ديسمبر 2026</option>
             </select>
         </div>
-        <!-- قائمة التحكم في عرض وحجم كروت الأجهزة -->
         <div>
             <span style="font-size: 0.9rem; color: var(--text-color);">📐 عرض الأجهزة: </span>
             <select id="layout-selector" onchange="changeDevicesLayout(this.value)" style="padding:6px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--accent); border-radius:6px; font-weight:bold;">
@@ -484,20 +482,49 @@
 
     <!-- 1. الأجهزة والمؤقتات -->
     <div id="timers" class="tab-content active">
-        <!-- الكارت الصغير المختصر لحاسبة إيراد اليوم الشامل -->
-        <div class="card" style="margin-bottom: 25px; background: var(--input-bg); border: 1px solid var(--accent); max-width: 600px; margin-left: auto; margin-right: auto; padding: 15px;">
-            <h4 style="color: var(--accent); text-align: center; margin: 0 0 10px 0; font-size: 1.1rem;">⚡ حاسبة إيراد اليوم الشامل</h4>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="number" min="0" id="quick-input-total" placeholder="أدخل إيراد اليوم الشامل (مثلاً 500)" style="flex:1; padding:8px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--accent); border-radius:6px; text-align:center; font-weight:bold;" onkeydown="if(event.key==='Enter') processQuickTotalCalculated()">
-                <button class="action-btn btn-plus" style="padding:8px 14px; font-size:0.9rem;" onclick="processQuickTotalCalculated()">💡 احتساب وتحديث</button>
+        <!-- كارت حاسبة إيراد اليوم الشامل مع أزرار الأقسام السريعة -->
+        <div class="card" style="margin-bottom: 25px; background: var(--input-bg); border: 1px solid var(--accent); max-width: 750px; margin-left: auto; margin-right: auto; padding: 15px;">
+            <h4 style="color: var(--accent); text-align: center; margin: 0 0 12px 0; font-size: 1.1rem;" id="quick-panel-title">⚡ حاسبة إيراد اليوم الشامل</h4>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold;">🎮 بلايستيشن:</label>
+                    <div style="display:flex; gap:4px; margin-top:3px;">
+                        <button class="action-btn btn-plus" onclick="quickAddCurrentDay('ps')">+</button>
+                        <input type="number" min="0" id="quick-input-ps" placeholder="قيمة" style="width:100%; padding:5px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; text-align:center;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('ps')">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold;">☕ مشروبات:</label>
+                    <div style="display:flex; gap:4px; margin-top:3px;">
+                        <button class="action-btn btn-plus" onclick="quickAddCurrentDay('drink')">+</button>
+                        <input type="number" min="0" id="quick-input-drink" placeholder="قيمة" style="width:100%; padding:5px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; text-align:center;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('drink')">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold;">🍜 أندومي:</label>
+                    <div style="display:flex; gap:4px; margin-top:3px;">
+                        <button class="action-btn btn-plus" onclick="quickAddCurrentDay('indomie')">+</button>
+                        <input type="number" min="0" id="quick-input-indomie" placeholder="قيمة" style="width:100%; padding:5px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; text-align:center;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('indomie')">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold;">🛒 بقالة:</label>
+                    <div style="display:flex; gap:4px; margin-top:3px;">
+                        <button class="action-btn btn-plus" onclick="quickAddCurrentDay('grocery')">+</button>
+                        <input type="number" min="0" id="quick-input-grocery" placeholder="قيمة" style="width:100%; padding:5px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; text-align:center;" onkeydown="if(event.key==='Enter') quickAddCurrentDay('grocery')">
+                    </div>
+                </div>
             </div>
+
+            <div style="border-top: 1px dashed var(--border-color); padding-top: 10px; display:flex; gap:8px; align-items:center;">
+                <input type="number" min="0" id="quick-input-total" placeholder="أدخل إيراد اليوم الشامل (مثلاً 500)" style="flex:1; padding:7px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--accent); border-radius:6px; text-align:center; font-weight:bold;" onkeydown="if(event.key==='Enter') processQuickTotalCalculated()">
+                <button class="action-btn btn-plus" style="padding:7px 12px; font-size:0.85rem;" onclick="processQuickTotalCalculated()">💡 احتساب للبقالة</button>
+            </div>
+            
             <div style="text-align:center; margin-top:8px; font-size:0.95rem; color:#22c55e; font-weight:bold;" id="quick-today-total-view">
                 إجمالي إيراد اليوم السريع: 0 ج.م
             </div>
-        </div>
-
-        <div style="margin-bottom: 15px; font-size: 0.9rem; color: #94a3b8; text-align: center;">
-            💡 لتسجيل إيرادات الأقسام السريعة (بلايستيشن، مشروبات، أندومي، بقالة) استخدم السجل اليومي أو قم بالتحويل المباشر.
         </div>
 
         <!-- شبكة الأجهزة -->
@@ -867,6 +894,11 @@
             const container = document.getElementById('devices-grid');
             if (!container) return;
             container.innerHTML = '';
+            
+            const todayNum = new Date().getDate();
+            if(document.getElementById('quick-panel-title')) {
+                document.getElementById('quick-panel-title').innerText = `⚡ حاسبة إيراد اليوم الشامل (يوم ${todayNum})`;
+            }
 
             devices.forEach((dev, idx) => {
                 timerData[idx] = { 
@@ -914,7 +946,6 @@
                 `;
             });
 
-            // ربط أحداث السحب والإفلات للكروت
             document.querySelectorAll('.card').forEach((card) => {
                 card.addEventListener('dragover', allowDrop);
                 card.addEventListener('drop', drop);
@@ -955,6 +986,23 @@
 
             draggedSrcIdx = null;
             initDevices();
+        }
+
+        function quickAddCurrentDay(key) {
+            let inputField = document.getElementById(`quick-input-${key}`);
+            if (!inputField) return;
+            let val = parseFloat(inputField.value) || 0;
+            if (val <= 0) return alert("الرجاء إدخال قيمة صحيحة!");
+
+            let currentDay = new Date().getDate();
+            if (currentDay > 31) currentDay = 31;
+
+            let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
+            let desc = `توريد سريع يوم ${currentDay} (${labelNames[key]})`;
+
+            addValueToDailyAndFinance(currentDay, key, val, desc, true, currentDay);
+            inputField.value = '';
+            updateQuickTodayTotalView();
         }
 
         function processQuickTotalCalculated() {
