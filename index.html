@@ -914,10 +914,7 @@
 
             devices.forEach((dev, idx) => {
                 if (!timerData[dev.id]) {
-                    timerData[dev.id] = { 
-                        seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
-                        drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0
-                    };
+                    timerData[dev.id] = loadDeviceSession(dev.id);
                 }
                 
                 let t = timerData[dev.id];
@@ -943,7 +940,7 @@
                         <div class="btn-group">
                             <button class="btn btn-start" onclick="startStopwatch(${dev.id})">وقت مفتوح</button>
                             <button class="btn btn-stop" onclick="stopTimer(${dev.id})">إيقاف مؤقت</button>
-                            <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="حفظ وتراكم تكلفة الوقت المنتهي ومتابعة الفاتورة">➕ تراكم الوقت</button>
+                            <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="حفظ وتراكم تكلفة الوقت والمبلغ الثابت وتصفيرهما لمتابعة الفاتورة">➕ تراكم الوقت</button>
                             <button class="btn btn-reset" onclick="resetTimer(${dev.id})">إعادة ضبط</button>
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
                         </div>
@@ -1016,6 +1013,47 @@
                     }
                 } catch(e) {}
             }
+        }
+
+        function saveDeviceSession(devId) {
+            let t = timerData[devId];
+            if (!t) return;
+            let sessionObj = {
+                drinks: t.drinks || 0,
+                indomie: t.indomie || 0,
+                grocery: t.grocery || 0,
+                customPrice: t.customPrice || 0,
+                accumulatedCost: t.accumulatedCost || 0,
+                setMinutes: t.setMinutes || 0
+            };
+            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
+        }
+
+        function loadDeviceSession(devId) {
+            let saved = localStorage.getItem(`dev_session_${devId}`);
+            let defaultData = { 
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
+                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0 
+            };
+            if (saved) {
+                try {
+                    let parsed = JSON.parse(saved);
+                    return {
+                        ...defaultData,
+                        drinks: parsed.drinks || 0,
+                        indomie: parsed.indomie || 0,
+                        grocery: parsed.grocery || 0,
+                        customPrice: parsed.customPrice || 0,
+                        accumulatedCost: parsed.accumulatedCost || 0,
+                        setMinutes: parsed.setMinutes || 0
+                    };
+                } catch(e) {}
+            }
+            return defaultData;
+        }
+
+        function clearDeviceSession(devId) {
+            localStorage.removeItem(`dev_session_${devId}`);
         }
 
         function quickAddCurrentDay(key) {
@@ -1123,7 +1161,7 @@
         }
 
         function startMasterAlarm(deviceName) {
-            document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}! (يمكنك تمديد الوقت أو إغلاق الفاتورة)`;
+            document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}! (يمكنك الآن الضغط على "تراكم الوقت" أو الفاتورة)`;
             document.getElementById('alarm-modal').style.display = 'flex';
 
             if (!masterAlarmInterval) {
@@ -1185,6 +1223,7 @@
             t.setMinutes = mins;
             t.seconds = totalSeconds;
             t.isCountdown = true;
+            saveDeviceSession(devId);
             
             localStorage.setItem(`timer_end_${devId}`, endTime);
             localStorage.setItem(`timer_mins_${devId}`, mins);
@@ -1228,16 +1267,24 @@
         function accumulateCurrentTime(devId) {
             let t = timerData[devId];
             let currentPeriodCost = calculateTimeCost(devId);
+            let customPrice = t.customPrice || 0;
+            let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
             
-            if (currentPeriodCost <= 0 && t.seconds <= 0) {
-                return alert("لا يوجد وقت منقضٍ لتراكمه في الفاتورة!");
+            if (activeTimeCost <= 0 && t.seconds <= 0 && (t.accumulatedCost || 0) <= 0) {
+                return alert("لا يوجد وقت أو مبلغ ثابت لتراكمه في الفاتورة!");
             }
 
             stopTimer(devId);
 
-            t.accumulatedCost = (t.accumulatedCost || 0) + currentPeriodCost;
+            t.accumulatedCost = (t.accumulatedCost || 0) + activeTimeCost;
             t.seconds = 0;
             t.setMinutes = 0;
+            t.customPrice = 0;
+
+            let customElem = document.getElementById("custom-" + devId);
+            if (customElem) customElem.value = 0;
+
+            saveDeviceSession(devId);
 
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
@@ -1247,7 +1294,7 @@
 
             updateLiveBill(devId);
             let devObj = devices.find(d => d.id === devId);
-            alert(`➕ تم تراكم تكلفة الفترة (${currentPeriodCost} ج.م) على فاتورة جهاز ${devObj ? devObj.name : ''}.\nإجمالي الوقت المتراكم حتى الآن: ${t.accumulatedCost} ج.م.\nيمكنك الآن تمديد الوقت من جديد وسيستمر الجمع بنفس الفاتورة.`);
+            alert(`➕ تم تراكم تكلفة الفترة/المبلغ الثابت (${activeTimeCost} ج.م) وتصفير المبلغ الثابت والوقت.\nإجمالي الوقت المتراكم حتى الآن: ${t.accumulatedCost} ج.م.\nيمكنك الآن إضافة وقت أو عرض جديد ومتابعة الفاتورة بنفس الجهاز.`);
         }
 
         function resetTimer(devId) {
@@ -1257,6 +1304,7 @@
             }
 
             stopTimer(devId);
+            clearDeviceSession(devId);
 
             timerData[devId] = { 
                 seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
@@ -1396,6 +1444,7 @@
             t.indomie = parseFloat(document.getElementById("indomie-" + devId).value) || 0;
             t.grocery = parseFloat(document.getElementById("grocery-" + devId).value) || 0;
             t.customPrice = parseFloat(document.getElementById("custom-" + devId).value) || 0;
+            saveDeviceSession(devId);
             updateLiveBill(devId);
         }
 
@@ -1463,6 +1512,8 @@
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devName, true, currentDay);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay);
+
+            clearDeviceSession(devId);
 
             timerData[devId] = { 
                 seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
