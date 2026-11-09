@@ -271,6 +271,13 @@
             border: 1px dashed var(--accent);
         }
 
+        .periods-log {
+            font-size: 0.8rem;
+            color: #38bdf8;
+            margin-top: 4px;
+            font-weight: normal;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -412,7 +419,7 @@
         <div class="alarm-box">
             <h2 id="alarm-title" style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
             <p id="alarm-desc" style="font-size: 1.2rem; font-weight: bold; margin: 20px 0;">انتهى وقت الجهاز تماماً</p>
-            <button class="btn btn-stop" style="font-size: 1.1rem; padding: 12px 30px; width: 100%; cursor: pointer;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه وإغلاق</button>
+            <button class="btn btn-stop" style="font-size: 1.1rem; padding: 12px 30px; width: 100%; cursor: pointer;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه</button>
         </div>
     </div>
 
@@ -927,7 +934,7 @@
                             <span>🎮</span>
                         </div>
                         <div class="rate-box">
-                            سعر الساعة (ج.م): <input type="number" min="0" id="rate-${dev.id}" value="${dev.rate}" onchange="updateLiveBill(${dev.id})" onkeydown="if(event.key==='Enter') updateLiveBill(${dev.id})">
+                            سعر الساعة (ج.م): <input type="number" min="0" id="rate-${dev.id}" value="${dev.rate}" onchange="updateRate(${dev.id}, this.value)" onkeydown="if(event.key==='Enter') updateRate(${dev.id}, this.value)">
                         </div>
                         
                         <div class="controls-box">
@@ -935,12 +942,12 @@
                             <button class="btn btn-timer" onclick="startCountdown(${dev.id})">بدء مؤقت</button>
                         </div>
 
-                        <div class="timer-display" id="time-${dev.id}">00:00:00</div>
+                        <div class="timer-display ${t.isFinished ? 'finished' : ''}" id="time-${dev.id}">00:00:00</div>
                         
                         <div class="btn-group">
                             <button class="btn btn-start" onclick="startStopwatch(${dev.id})">وقت مفتوح</button>
                             <button class="btn btn-stop" onclick="stopTimer(${dev.id})">إيقاف مؤقت</button>
-                            <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="حفظ وتراكم تكلفة الوقت والمبلغ الثابت وتصفيرهما لمتابعة الفاتورة">➕ تراكم الوقت</button>
+                            <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="تراكم الوقت الحالي أو المبلغ الثابت على الفاتورة وتصفيرهما">➕ تراكم الوقت</button>
                             <button class="btn btn-reset" onclick="resetTimer(${dev.id})">إعادة ضبط</button>
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
                         </div>
@@ -953,7 +960,8 @@
                         </div>
 
                         <div class="bill-preview" id="bill-total-${dev.id}">
-                            إجمالي الفاتورة الحالية: 0 ج.م
+                            <div>إجمالي الفاتورة الحالية: 0 ج.م</div>
+                            <div class="periods-log" id="periods-log-${dev.id}"></div>
                         </div>
                     </div>
                 `;
@@ -966,6 +974,16 @@
 
             restoreTimers();
             updateQuickTodayTotalView();
+        }
+
+        function updateRate(devId, newRateVal) {
+            let val = parseFloat(newRateVal) || 20;
+            let devObj = devices.find(d => d.id === devId);
+            if (devObj) {
+                devObj.rate = val;
+                saveDevicesOrder();
+                updateLiveBill(devId);
+            }
         }
 
         let draggedSrcIdx = null;
@@ -1024,7 +1042,9 @@
                 grocery: t.grocery || 0,
                 customPrice: t.customPrice || 0,
                 accumulatedCost: t.accumulatedCost || 0,
-                setMinutes: t.setMinutes || 0
+                periodsLog: t.periodsLog || [],
+                setMinutes: t.setMinutes || 0,
+                isFinished: t.isFinished || false
             };
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
         }
@@ -1032,8 +1052,8 @@
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
-                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0 
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
+                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
                 try {
@@ -1045,7 +1065,9 @@
                         grocery: parsed.grocery || 0,
                         customPrice: parsed.customPrice || 0,
                         accumulatedCost: parsed.accumulatedCost || 0,
-                        setMinutes: parsed.setMinutes || 0
+                        periodsLog: parsed.periodsLog || [],
+                        setMinutes: parsed.setMinutes || 0,
+                        isFinished: parsed.isFinished || false
                     };
                 } catch(e) {}
             }
@@ -1161,7 +1183,7 @@
         }
 
         function startMasterAlarm(deviceName) {
-            document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}! (يمكنك الآن الضغط على "تراكم الوقت" أو الفاتورة)`;
+            document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}!`;
             document.getElementById('alarm-modal').style.display = 'flex';
 
             if (!masterAlarmInterval) {
@@ -1192,9 +1214,11 @@
             let startTime = Date.now();
             t.seconds = 0;
             t.isCountdown = false;
+            t.isFinished = false;
 
             localStorage.setItem(`timer_start_${devId}`, startTime);
             localStorage.setItem(`timer_type_${devId}`, 'stopwatch');
+            saveDeviceSession(devId);
 
             let cardElem = getDevCardElem(devId);
             if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
@@ -1223,6 +1247,7 @@
             t.setMinutes = mins;
             t.seconds = totalSeconds;
             t.isCountdown = true;
+            t.isFinished = false;
             saveDeviceSession(devId);
             
             localStorage.setItem(`timer_end_${devId}`, endTime);
@@ -1250,6 +1275,8 @@
                     clearInterval(t.interval);
                     t.interval = null;
                     t.seconds = 0;
+                    t.isFinished = true;
+                    saveDeviceSession(devId);
                     
                     localStorage.removeItem(`timer_end_${devId}`);
                     localStorage.removeItem(`timer_type_${devId}`);
@@ -1270,16 +1297,34 @@
             let customPrice = t.customPrice || 0;
             let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
             
-            if (activeTimeCost <= 0 && t.seconds <= 0 && (t.accumulatedCost || 0) <= 0) {
+            if (activeTimeCost <= 0 && t.seconds <= 0 && (t.accumulatedCost || 0) <= 0 && !t.isFinished) {
                 return alert("لا يوجد وقت أو مبلغ ثابت لتراكمه في الفاتورة!");
             }
 
+            let periodLabel = "";
+            if (customPrice > 0) {
+                periodLabel = `${customPrice}ج (مبلغ ثابت)`;
+            } else if (t.isCountdown && t.setMinutes > 0) {
+                periodLabel = `${t.setMinutes}د`;
+            } else if (t.seconds > 0) {
+                let minsPassed = Math.ceil(t.seconds / 60);
+                periodLabel = `${minsPassed}د`;
+            } else if (t.isFinished && t.setMinutes > 0) {
+                periodLabel = `${t.setMinutes}د`;
+            }
+
             stopTimer(devId);
+
+            if (periodLabel) {
+                if (!t.periodsLog) t.periodsLog = [];
+                t.periodsLog.push(periodLabel);
+            }
 
             t.accumulatedCost = (t.accumulatedCost || 0) + activeTimeCost;
             t.seconds = 0;
             t.setMinutes = 0;
             t.customPrice = 0;
+            t.isFinished = false;
 
             let customElem = document.getElementById("custom-" + devId);
             if (customElem) customElem.value = 0;
@@ -1293,8 +1338,7 @@
             }
 
             updateLiveBill(devId);
-            let devObj = devices.find(d => d.id === devId);
-            alert(`➕ تم تراكم تكلفة الفترة/المبلغ الثابت (${activeTimeCost} ج.م) وتصفير المبلغ الثابت والوقت.\nإجمالي الوقت المتراكم حتى الآن: ${t.accumulatedCost} ج.م.\nيمكنك الآن إضافة وقت أو عرض جديد ومتابعة الفاتورة بنفس الجهاز.`);
+            alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
         }
 
         function resetTimer(devId) {
@@ -1307,8 +1351,8 @@
             clearDeviceSession(devId);
 
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
-                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0 
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
+                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
             let timeDisplay = document.getElementById("time-" + devId);
@@ -1333,6 +1377,16 @@
                 let devId = dev.id;
                 let t = timerData[devId];
                 if (!t) return;
+
+                if (t.isFinished) {
+                    let timeDisplay = document.getElementById("time-" + devId);
+                    if (timeDisplay) {
+                        timeDisplay.innerText = "00:00:00";
+                        timeDisplay.classList.add('finished');
+                    }
+                    let cardElem = getDevCardElem(devId);
+                    if (cardElem) cardElem.style.border = "1px solid var(--danger)";
+                }
                 
                 let type = localStorage.getItem(`timer_type_${devId}`);
                 
@@ -1350,6 +1404,7 @@
                         t.setMinutes = mins;
                         t.seconds = remainingSeconds;
                         t.isCountdown = true;
+                        t.isFinished = false;
                         
                         let cardElem = getDevCardElem(devId);
                         if (cardElem) cardElem.style.border = "1px solid var(--accent)";
@@ -1369,6 +1424,8 @@
                                 clearInterval(t.interval);
                                 t.interval = null;
                                 t.seconds = 0;
+                                t.isFinished = true;
+                                saveDeviceSession(devId);
 
                                 localStorage.removeItem(`timer_end_${devId}`);
                                 localStorage.removeItem(`timer_type_${devId}`);
@@ -1384,6 +1441,8 @@
                     } else {
                         localStorage.removeItem(`timer_end_${devId}`);
                         localStorage.removeItem(`timer_type_${devId}`);
+                        t.isFinished = true;
+                        saveDeviceSession(devId);
                         let timeDisplay = document.getElementById("time-" + devId);
                         if (timeDisplay) {
                             timeDisplay.innerText = "00:00:00";
@@ -1404,6 +1463,7 @@
                         updateLiveBill(devId);
                     }, 1000);
                 }
+                updateLiveBill(devId);
             });
         }
 
@@ -1431,10 +1491,10 @@
             localStorage.removeItem(`timer_mins_${devId}`);
 
             let cardElem = getDevCardElem(devId);
-            if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
+            if (cardElem && !t.isFinished) cardElem.style.border = "1px solid var(--border-color)";
             
             let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) timeDisplay.classList.remove('finished');
+            if (timeDisplay && !t.isFinished) timeDisplay.classList.remove('finished');
         }
 
         function updateItems(devId) {
@@ -1478,7 +1538,10 @@
 
             let billElem = document.getElementById("bill-total-" + devId);
             if (billElem) {
-                billElem.innerText = `إجمالي الفاتورة: ${grandTotal} ج.م (الوقت الشامل: ${totalTimeCost} ج.م + إضافات: ${itemsCost} ج.م)`;
+                let logText = (t.periodsLog && t.periodsLog.length > 0) ? `📜 فترات الوقت: [ ${t.periodsLog.join(" + ")} ]` : '';
+                billElem.querySelector('div:first-child').innerText = `إجمالي الفاتورة: ${grandTotal} ج.م (الوقت: ${totalTimeCost} ج.م + إضافات: ${itemsCost} ج.م)`;
+                let logElem = document.getElementById("periods-log-" + devId);
+                if (logElem) logElem.innerText = logText;
             }
         }
 
@@ -1516,8 +1579,8 @@
             clearDeviceSession(devId);
 
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, 
-                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0 
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
+                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
             let timeDisplay = document.getElementById("time-" + devId);
