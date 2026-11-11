@@ -1914,94 +1914,107 @@
         }
 
         function updateReports() {
-            let monthData = getActiveMonthData();
-            let monthGrossIncome = 0;
-            
-            let breakdownBody = document.getElementById('report-daily-breakdown-body');
-            if (!breakdownBody) return;
-            breakdownBody.innerHTML = '';
+    let monthData = getActiveMonthData();
+    let records = monthData.financeRecords || [];
+    
+    let monthGrossIncome = 0;
+    let monthExpenses = 0;
 
-            let todayObj = new Date();
-            let currentRealDay = todayObj.getDate();
-            let currentRealYear = todayObj.getFullYear();
-            let currentRealMonth = todayObj.getMonth() + 1;
-            let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
-
-            for (let i = 1; i <= 31; i++) {
-                let d = monthData.dailyData && monthData.dailyData[i] ? monthData.dailyData[i] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
-                let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
-                monthGrossIncome += dayTotal;
-
-                let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
-                let rowClass = isToday ? 'today-highlight' : '';
-
-                breakdownBody.innerHTML += `
-                    <tr class="${rowClass}">
-                        <td><b>يوم ${i}</b> ${isToday ? '<span style="color:var(--accent); font-size:0.75rem;">(اليوم)</span>' : ''}</td>
-                        <td style="color:var(--accent);">${d.ps || 0} ج.م</td>
-                        <td>${d.drink || 0} ج.م</td>
-                        <td>${d.indomie || 0} ج.م</td>
-                        <td>${d.grocery || 0} ج.م</td>
-                        <td style="color:#22c55e; font-weight:bold;">${dayTotal} ج.م</td>
-                    </tr>
-                `;
-            }
-
-            let monthExpenses = monthData.expensesCount || 0;
-            let netProfit = monthGrossIncome - monthExpenses;
-
-            let monthSelectElem = document.getElementById('month-select');
-            let selectedMonthText = (monthSelectElem && monthSelectElem.selectedOptions[0]) ? monthSelectElem.selectedOptions[0].text : 'الشهر الحالي';
-            
-            let reportTitle = document.getElementById('current-month-report-title');
-            if (reportTitle) reportTitle.innerText = `إيرادات الشهر الحالي (${selectedMonthText})`;
-            
-            let grossIncomeElem = document.getElementById('gross-income');
-            if (grossIncomeElem) grossIncomeElem.innerText = monthGrossIncome + ' ج.م';
-            
-            let totalExpensesElem = document.getElementById('total-expenses');
-            if (totalExpensesElem) totalExpensesElem.innerText = monthExpenses + ' ج.م';
-            
-            let netProfitElem = document.getElementById('net-monthly-profit');
-            if (netProfitElem) {
-                netProfitElem.innerText = netProfit + ' ج.م';
-                netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
-            }
-
-            let yearTotalIncome = 0;
-            let summaryBody = document.getElementById('yearly-summary-body');
-            if (!summaryBody) return;
-            summaryBody.innerHTML = '';
-
-            for (let m = 1; m <= 12; m++) {
-                let mKey = `2026-${m}`;
-                let mObj = allMonthsData[mKey] || { dailyData: {}, expensesCount: 0 };
-                let mIncome = 0;
-
-                if (mObj.dailyData) {
-                    for (let day in mObj.dailyData) {
-                        let d = mObj.dailyData[day];
-                        mIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
-                    }
-                }
-
-                let mExpenses = mObj.expensesCount || 0;
-                let mNet = mIncome - mExpenses;
-                yearTotalIncome += mIncome;
-
-                summaryBody.innerHTML += `
-                    <tr>
-                        <td><b>${monthNames[m-1]} 2026</b></td>
-                        <td style="color:var(--accent); font-weight:bold;">${mIncome} ج.م</td>
-                        <td style="color:#ef4444; font-weight:bold;">${mExpenses} ج.م</td>
-                        <td style="color:${mNet >= 0 ? '#22c55e' : '#ef4444'}; font-weight:bold;">${mNet} ج.م</td>
-                    </tr>
-                `;
-            }
-
-            let yearTotalProfitElem = document.getElementById('year-total-profit');
-            if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalIncome + ' ج.م';
+    // حساب إجمالي الوارد (أخضر) وإجمالي المنصرف (أحمر) من السجل المالي بدقة مطابقة للخزينة
+    records.forEach(rec => {
+        if (rec.color === '#22c55e') {
+            monthGrossIncome += rec.amount;
+        } else if (rec.color === '#ef4444') {
+            monthExpenses += rec.amount;
         }
+    });
+
+    // صافي الربح يساوي تماماً صافي الخزينة (السيولة الفعلية للدرج)
+    let netProfit = monthData.totalCash !== undefined ? monthData.totalCash : (monthGrossIncome - monthExpenses);
+
+    // تحديث الشاشة بالقيم المتطابقة
+    let grossIncomeElem = document.getElementById('gross-income');
+    if (grossIncomeElem) grossIncomeElem.innerText = monthGrossIncome + ' ج.م';
+    
+    let totalExpensesElem = document.getElementById('total-expenses');
+    if (totalExpensesElem) totalExpensesElem.innerText = monthExpenses + ' ج.م';
+    
+    let netProfitElem = document.getElementById('net-monthly-profit');
+    if (netProfitElem) {
+        netProfitElem.innerText = netProfit + ' ج.م';
+        netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
+    }
+
+    // تفصيل إيرادات الأيام وجرد السنة الكاملة
+    let breakdownBody = document.getElementById('report-daily-breakdown-body');
+    if (breakdownBody) {
+        breakdownBody.innerHTML = '';
+        let todayObj = new Date();
+        let currentRealDay = todayObj.getDate();
+        let currentRealYear = todayObj.getFullYear();
+        let currentRealMonth = todayObj.getMonth() + 1;
+        let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
+
+        for (let i = 1; i <= 31; i++) {
+            let d = monthData.dailyData && monthData.dailyData[i] ? monthData.dailyData[i] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+            let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+
+            let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
+            let rowClass = isToday ? 'today-highlight' : '';
+
+            breakdownBody.innerHTML += `
+                <tr class="${rowClass}">
+                    <td><b>يوم ${i}</b> ${isToday ? '<span style="color:var(--accent); font-size:0.75rem;">(اليوم)</span>' : ''}</td>
+                    <td style="color:var(--accent);">${d.ps || 0} ج.م</td>
+                    <td>${d.drink || 0} ج.م</td>
+                    <td>${d.indomie || 0} ج.م</td>
+                    <td>${d.grocery || 0} ج.م</td>
+                    <td style="color:#22c55e; font-weight:bold;">${dayTotal} ج.م</td>
+                </tr>
+            `;
+        }
+    }
+
+    let yearTotalIncome = 0;
+    let summaryBody = document.getElementById('yearly-summary-body');
+    if (summaryBody) {
+        summaryBody.innerHTML = '';
+        for (let m = 1; m <= 12; m++) {
+            let mKey = `2026-${m}`;
+            let mObj = allMonthsData[mKey] || { dailyData: {}, expensesCount: 0, financeRecords: [] };
+            let mIncome = 0;
+            let mExpenses = 0;
+
+            if (mObj.financeRecords && mObj.financeRecords.length > 0) {
+                mObj.financeRecords.forEach(rec => {
+                    if (rec.color === '#22c55e') mIncome += rec.amount;
+                    if (rec.color === '#ef4444') mExpenses += rec.amount;
+                });
+            } else if (mObj.dailyData) {
+                for (let day in mObj.dailyData) {
+                    let d = mObj.dailyData[day];
+                    mIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+                }
+                mExpenses = mObj.expensesCount || 0;
+            }
+
+            let mNet = mIncome - mExpenses;
+            yearTotalIncome += mNet;
+
+            summaryBody.innerHTML += `
+                <tr>
+                    <td><b>${monthNames[m-1]} 2026</b></td>
+                    <td style="color:var(--accent); font-weight:bold;">${mIncome} ج.م</td>
+                    <td style="color:#ef4444; font-weight:bold;">${mExpenses} ج.م</td>
+                    <td style="color:${mNet >= 0 ? '#22c55e' : '#ef4444'}; font-weight:bold;">${mNet} ج.م</td>
+                </tr>
+            `;
+        }
+    }
+
+    let yearTotalProfitElem = document.getElementById('year-total-profit');
+    if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalIncome + ' ج.م';
+}
 
         function loadMonthDataToUI() {
             initDailyTable();
