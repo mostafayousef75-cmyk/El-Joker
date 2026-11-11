@@ -1976,41 +1976,37 @@
     if (summaryBody) {
         summaryBody.innerHTML = '';
         for (let m = 1; m <= 12; m++) {
-    let mKey = `2026-${m}`;
-    let mObj = allMonthsData[mKey];
-    let mIncome = 0;
-    let mExpenses = 0;
+            let mKey = `2026-${m}`;
+            let mObj = allMonthsData[mKey] || { dailyData: {}, expensesCount: 0, financeRecords: [] };
+            let mIncome = 0;
+            let mExpenses = 0;
 
-    // حماية إضافية لو الشهر غير موجود أو فارغ لتجنب أي توقف
-    if (mObj) {
-        if (mObj.financeRecords && mObj.financeRecords.length > 0) {
-            mObj.financeRecords.forEach(rec => {
-                if (rec.color === '#22c55e') mIncome += rec.amount;
-                if (rec.color === '#ef4444') mExpenses += rec.amount;
-            });
-        } else if (mObj.dailyData) {
-            for (let day in mObj.dailyData) {
-                let d = mObj.dailyData[day];
-                if (d) {
+            if (mObj.financeRecords && mObj.financeRecords.length > 0) {
+                mObj.financeRecords.forEach(rec => {
+                    if (rec.color === '#22c55e') mIncome += rec.amount;
+                    if (rec.color === '#ef4444') mExpenses += rec.amount;
+                });
+            } else if (mObj.dailyData) {
+                for (let day in mObj.dailyData) {
+                    let d = mObj.dailyData[day];
                     mIncome += (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
                 }
+                mExpenses = mObj.expensesCount || 0;
             }
-            mExpenses = mObj.expensesCount || 0;
+
+            let mNet = mIncome - mExpenses;
+            yearTotalProfit += mNet;
+
+            summaryBody.innerHTML += `
+                <tr>
+                    <td><b>${monthNames[m-1]} 2026</b></td>
+                    <td style="color:var(--accent); font-weight:bold;">${mIncome} ج.م</td>
+                    <td style="color:#ef4444; font-weight:bold;">${mExpenses} ج.م</td>
+                    <td style="color:${mNet >= 0 ? '#22c55e' : '#ef4444'}; font-weight:bold;">${mNet} ج.م</td>
+                </tr>
+            `;
         }
     }
-
-    let mNet = mIncome - mExpenses;
-    yearTotalProfit += mNet;
-
-    summaryBody.innerHTML += `
-        <tr>
-            <td><b>${monthNames[m-1]} 2026</b></td>
-            <td style="color:var(--accent); font-weight:bold;">${mIncome} ج.م</td>
-            <td style="color:#ef4444; font-weight:bold;">${mExpenses} ج.م</td>
-            <td style="color:${mNet >= 0 ? '#22c55e' : '#ef4444'}; font-weight:bold;">${mNet} ج.م</td>
-        </tr>
-    `;
-}
 
     let yearTotalProfitElem = document.getElementById('year-total-profit');
     if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalProfit + ' ج.م';
