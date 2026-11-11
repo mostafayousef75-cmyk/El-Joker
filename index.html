@@ -1325,6 +1325,13 @@
             updateLiveBill(devId);
 
             t.interval = setInterval(() => {
+                // إذا كان الجهاز بالفعل انتهى وقته، امنع تشغيل الـ Interval مرة أخرى نهائياً لمنع تكرار التنبيه
+                if (t.isFinished) {
+                    clearInterval(t.interval);
+                    t.interval = null;
+                    return;
+                }
+
                 let now = Date.now();
                 let remainingSeconds = Math.round((endTime - now) / 1000);
 
@@ -1333,6 +1340,7 @@
                     updateDisplay(devId);
                     updateLiveBill(devId);
                 } else {
+                    // إيقاف الـ Interval فوراً لمنع التكرار
                     clearInterval(t.interval);
                     t.interval = null;
                     t.seconds = 0;
@@ -1350,6 +1358,14 @@
                     startMasterAlarm(devObj ? devObj.name : 'الجهاز');
                 }
             }, 1000);
+        }
+
+        function stopAlarmAndDismiss() {
+            if (masterAlarmInterval) {
+                clearInterval(masterAlarmInterval);
+                masterAlarmInterval = null;
+            }
+            document.getElementById('alarm-modal').style.display = 'none';
         }
 
         function accumulateCurrentTime(devId) {
@@ -1485,9 +1501,12 @@
                         localStorage.removeItem(`timer_end_${devId}`);
                         localStorage.removeItem(`timer_type_${devId}`);
                         t.isFinished = true;
+                        if (t.interval) {
+                            clearInterval(t.interval);
+                            t.interval = null;
+                        }
                         saveDeviceSession(devId);
                     }
-                } 
                 else if (type === 'stopwatch') {
                     let startTime = parseInt(localStorage.getItem(`timer_start_${devId}`)) || Date.now();
                     t.isCountdown = false;
