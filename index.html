@@ -663,9 +663,9 @@
                 <div class="money-display" id="net-monthly-profit">0 ج.م</div>
             </div>
             <div class="card" style="text-align:center; grid-column: 1 / -1; background: var(--card-bg); border: 2px solid var(--accent);">
-                <h3 style="color: var(--accent); font-size: 1.5rem;">🌟 إجمالي إيرادات وأرباح السنة كاملة (2026)</h3>
+                <h3 style="color: var(--accent); font-size: 1.5rem;">🌟 إجمالي صافي أرباح السنة كاملة (2026)</h3>
                 <div class="money-display" id="year-total-profit" style="color: var(--accent); font-size: 2.5rem;">0 ج.م</div>
-                <p style="color:#94a3b8; margin-top:5px;">(مجموع إيرادات جميع شهور السنة مجمعة)</p>
+                <p style="color:#94a3b8; margin-top:5px;">(مجموع صافي أرباح جميع شهور السنة مجمعة)</p>
             </div>
         </div>
 
@@ -684,7 +684,7 @@
             <tbody id="report-daily-breakdown-body"></tbody>
         </table>
 
-        <h3 style="margin-top: 30px; color: var(--accent);">📑 ملخص إيرادات شهور السنة (2026)</h3>
+        <h3 style="margin-top: 30px; color: var(--accent);">📑 ملخص إيرادات وأرباح شهور السنة (2026)</h3>
         <table>
             <thead>
                 <tr>
@@ -1994,7 +1994,7 @@
                         mExpenses = mObj.expensesCount || 0;
                     }
 
-                    let mNet = mIncome - mExpenses;
+                    let mNet = (mObj.totalCash !== undefined) ? mObj.totalCash : (mIncome - mExpenses);
                     yearTotalProfit += mNet;
 
                     summaryBody.innerHTML += `
@@ -2009,7 +2009,10 @@
             }
 
             let yearTotalProfitElem = document.getElementById('year-total-profit');
-            if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalProfit + ' ج.م';
+            if (yearTotalProfitElem) {
+                yearTotalProfitElem.innerText = yearTotalProfit + ' ج.م';
+                yearTotalProfitElem.style.color = yearTotalProfit >= 0 ? 'var(--accent)' : '#ef4444';
+            }
         }
 
         function loadMonthDataToUI() {
