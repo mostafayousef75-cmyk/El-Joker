@@ -378,7 +378,7 @@
             border: 1px solid var(--border-color);
         }
         .stats-box h3 { color: var(--accent); margin-top: 0; }
-        .money-display { font-size: 2rem; font-weight: bold; color: var(--success); }
+        .money-display { font-size: 2rem; font-weight: bold; }
         
         .status-badge {
             font-size: 0.8rem;
@@ -645,7 +645,7 @@
     <div id="finance" class="tab-content">
         <div class="stats-box">
             <h3 id="net-cash-title">💰 صافي الخزينة لشهر المعروض</h3>
-            <div class="money-display" id="net-cash">0 ج.م</div>
+            <div class="money-display" id="net-cash" style="color: var(--success);">0 ج.م</div>
         </div>
         <div class="grid layout-standard">
             <div class="card">
@@ -693,13 +693,13 @@
             </div>
             <div class="card" style="text-align:center; grid-column: 1 / -1; background: var(--card-bg); border: 2px solid var(--accent);">
                 <h3 style="color: var(--accent); font-size: 1.5rem;">🌟 إجمالي صافي أرباح السنة كاملة (2026)</h3>
-                <div class="money-display" id="year-total-profit" style="color: var(--accent); font-size: 2.5rem;">0 ج.م</div>
+                <div class="money-display" id="year-total-profit" style="font-size: 2.5rem;">0 ج.م</div>
                 <p style="color:#94a3b8; margin-top:5px;">(مجموع صافي أرباح جميع شهور السنة مجمعة)</p>
             </div>
         </div>
 
-        <!-- 1. تفصيل إيرادات أيام الشهر الحالي (قابل للطي) -->
-        <div class="accordion-header" onclick="toggleAccordion('daily-breakdown-content', this)">
+        <!-- 1. تفصيل إيرادات أيام الشهر الحالي (قابل للطي مع حفظ الحالة) -->
+        <div class="accordion-header" id="header-daily-breakdown" onclick="toggleAccordion('daily-breakdown-content', 'header-daily-breakdown')">
             <span>📅 تفصيل إيرادات أيام الشهر الحالي</span>
             <span class="arrow-icon">▼</span>
         </div>
@@ -719,8 +719,8 @@
             </table>
         </div>
 
-        <!-- 2. ملخص إيرادات وأرباح شهور السنة (قابل للطي) -->
-        <div class="accordion-header" onclick="toggleAccordion('yearly-summary-content', this)">
+        <!-- 2. ملخص إيرادات وأرباح شهور السنة (قابل للطي مع حفظ الحالة) -->
+        <div class="accordion-header" id="header-yearly-summary" onclick="toggleAccordion('yearly-summary-content', 'header-yearly-summary')">
             <span>📑 ملخص إيرادات وأرباح شهور السنة (2026)</span>
             <span class="arrow-icon">▼</span>
         </div>
@@ -775,12 +775,36 @@
         let audioCtx = null;
         let adminPassword = "1234";
 
-        function toggleAccordion(contentId, headerElem) {
+        function toggleAccordion(contentId, headerId) {
             let content = document.getElementById(contentId);
-            if (content) {
+            let header = document.getElementById(headerId);
+            if (content && header) {
                 content.classList.toggle('active');
-                headerElem.classList.toggle('open');
+                header.classList.toggle('open');
+                
+                // حفظ الحالة في localStorage لتستمر بعد الـ Refresh
+                let isOpen = content.classList.contains('active');
+                localStorage.setItem('accordion_' + contentId, isOpen ? 'true' : 'false');
             }
+        }
+
+        function restoreAccordionsState() {
+            ['daily-breakdown-content', 'yearly-summary-content'].forEach(contentId => {
+                let headerId = contentId === 'daily-breakdown-content' ? 'header-daily-breakdown' : 'header-yearly-summary';
+                let savedState = localStorage.getItem('accordion_' + contentId);
+                let content = document.getElementById(contentId);
+                let header = document.getElementById(headerId);
+                
+                if (content && header) {
+                    if (savedState === 'true') {
+                        content.classList.add('active');
+                        header.classList.add('open');
+                    } else if (savedState === 'false') {
+                        content.classList.remove('active');
+                        header.classList.remove('open');
+                    }
+                }
+            });
         }
 
         function isSessionUnlocked() {
@@ -837,7 +861,10 @@
             }
 
             localStorage.setItem('activeTab', tabId);
-            if (tabId === 'reports') updateReports();
+            if (tabId === 'reports') {
+                updateReports();
+                restoreAccordionsState();
+            }
         }
 
         function changeAdminPassword() {
@@ -1714,8 +1741,13 @@
             
             let netCashTitle = document.getElementById('net-cash-title');
             if (netCashTitle) netCashTitle.innerText = `💰 صافي الخزينة لشهر (${selectedMonthText})`;
+            
             let netCashElem = document.getElementById('net-cash');
-            if (netCashElem) netCashElem.innerText = cash + ' ج.م';
+            if (netCashElem) {
+                netCashElem.innerText = cash + ' ج.م';
+                // تلوين صافي الخزينة أحمر إذا بالسالب وأخضر إذا بالموجب أو صفر
+                netCashElem.style.color = cash >= 0 ? 'var(--success)' : 'var(--danger)';
+            }
 
             let tbody = document.getElementById('finance-table-body');
             if (!tbody) return;
@@ -1877,10 +1909,8 @@
                 else if (rec.color === '#ef4444') monthExpenses += rec.amount;
             });
 
-            // حساب دقيق جداً لصافي الربح الشهري والسنوي
             let netProfit = 0;
             if (monthData.totalCash !== undefined && (monthData.totalCash !== 0 || records.length > 0)) {
-                // إذا وجدنا رصيد أو حركات، نحسب الإيرادات ناقص المصروفات والخامات من السجلات لتجنب الصفر
                 let totalInc = 0;
                 let totalExp = 0;
                 records.forEach(r => {
@@ -1901,6 +1931,7 @@
             let netProfitElem = document.getElementById('net-monthly-profit');
             if (netProfitElem) {
                 netProfitElem.innerText = netProfit + ' ج.م';
+                // تصحيح اللون: أخضر لو مكسب أو صفر، أحمر لو بالسالب (خسارة)
                 netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
             }
 
@@ -1974,6 +2005,7 @@
             let yearTotalProfitElem = document.getElementById('year-total-profit');
             if (yearTotalProfitElem) {
                 yearTotalProfitElem.innerText = yearTotalProfit + ' ج.م';
+                // تلوين إجمالي السنة أيضاً بناءً على كونها ربحاً أو خسارة
                 yearTotalProfitElem.style.color = yearTotalProfit >= 0 ? 'var(--accent)' : '#ef4444';
             }
         }
@@ -1996,6 +2028,7 @@
             let reportsTab = document.getElementById('reports');
             if(reportsTab && reportsTab.classList.contains('active')) {
                 updateReports();
+                restoreAccordionsState();
             }
         }
 
@@ -2116,6 +2149,7 @@
             restoreDevicesOrder();
             initDevices();
             loadData();
+            restoreAccordionsState();
         };
     </script>
 </body>
