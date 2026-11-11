@@ -11,7 +11,6 @@
 
     <style>
         :root {
-            /* الافتراضي: أسود في ذهبي OLED */
             --bg-color: #000000;
             --card-bg: #0a0a0a;
             --accent: #d4af37;
@@ -59,7 +58,6 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* إلغاء أسهم وسكرول الأرقام السالبة تماماً */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -157,7 +155,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* أنماط عرض الأجهزة المختلفة */
         .grid {
             display: grid;
             gap: 20px;
@@ -392,6 +389,40 @@
             font-weight: bold;
         }
 
+        /* تنسيق الأشرطة القابلة للطي (Accordion) */
+        .accordion-header {
+            background: var(--input-bg);
+            color: var(--accent);
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            border: 1px solid var(--accent);
+            user-select: none;
+        }
+        .accordion-header:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+        .accordion-content {
+            display: none;
+            margin-top: 10px;
+        }
+        .accordion-content.active {
+            display: block;
+        }
+        .arrow-icon {
+            transition: transform 0.3s ease;
+            font-size: 1rem;
+        }
+        .accordion-header.open .arrow-icon {
+            transform: rotate(180deg);
+        }
+
         #alarm-modal {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -490,7 +521,6 @@
 
     <!-- 1. الأجهزة والمؤقتات -->
     <div id="timers" class="tab-content active">
-        <!-- كارت حاسبة إيراد اليوم الشامل مع أزرار الأقسام الأربعة -->
         <div class="card" style="margin-bottom: 25px; background: var(--input-bg); border: 1px solid var(--accent); max-width: 750px; margin-left: auto; margin-right: auto; padding: 15px;">
             <h4 style="color: var(--accent); text-align: center; margin: 0 0 12px 0; font-size: 1.1rem;" id="quick-panel-title">⚡ حاسبة إيراد اليوم الشامل</h4>
             
@@ -535,7 +565,6 @@
             </div>
         </div>
 
-        <!-- شبكة الأجهزة -->
         <div class="grid layout-standard" id="devices-grid"></div>
     </div>
 
@@ -669,33 +698,45 @@
             </div>
         </div>
 
-        <h3 style="margin-top: 30px; color: var(--accent);">📅 تفصيل إيرادات أيام الشهر الحالي</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>اليوم</th>
-                    <th>إيراد البلايستيشن</th>
-                    <th>إيراد المشروبات</th>
-                    <th>إيراد الأندومي</th>
-                    <th>إيراد البقالة</th>
-                    <th>إجمالي اليوم</th>
-                </tr>
-            </thead>
-            <tbody id="report-daily-breakdown-body"></tbody>
-        </table>
+        <!-- 1. تفصيل إيرادات أيام الشهر الحالي (قابل للطي) -->
+        <div class="accordion-header" onclick="toggleAccordion('daily-breakdown-content', this)">
+            <span>📅 تفصيل إيرادات أيام الشهر الحالي</span>
+            <span class="arrow-icon">▼</span>
+        </div>
+        <div id="daily-breakdown-content" class="accordion-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>اليوم</th>
+                        <th>إيراد البلايستيشن</th>
+                        <th>إيراد المشروبات</th>
+                        <th>إيراد الأندومي</th>
+                        <th>إيراد البقالة</th>
+                        <th>إجمالي اليوم</th>
+                    </tr>
+                </thead>
+                <tbody id="report-daily-breakdown-body"></tbody>
+            </table>
+        </div>
 
-        <h3 style="margin-top: 30px; color: var(--accent);">📑 ملخص إيرادات وأرباح شهور السنة (2026)</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>الشهر</th>
-                    <th>إجمالي الإيرادات</th>
-                    <th>إجمالي المصروفات</th>
-                    <th>صافي الربح</th>
-                </tr>
-            </thead>
-            <tbody id="yearly-summary-body"></tbody>
-        </table>
+        <!-- 2. ملخص إيرادات وأرباح شهور السنة (قابل للطي) -->
+        <div class="accordion-header" onclick="toggleAccordion('yearly-summary-content', this)">
+            <span>📑 ملخص إيرادات وأرباح شهور السنة (2026)</span>
+            <span class="arrow-icon">▼</span>
+        </div>
+        <div id="yearly-summary-content" class="accordion-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الشهر</th>
+                        <th>إجمالي الإيرادات</th>
+                        <th>إجمالي المصروفات</th>
+                        <th>صافي الربح</th>
+                    </tr>
+                </thead>
+                <tbody id="yearly-summary-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -732,19 +773,23 @@
         let currentActiveMonthKey = "2026-10";
         let masterAlarmInterval = null; 
         let audioCtx = null;
-        
         let adminPassword = "1234";
+
+        function toggleAccordion(contentId, headerElem) {
+            let content = document.getElementById(contentId);
+            if (content) {
+                content.classList.toggle('active');
+                headerElem.classList.toggle('open');
+            }
+        }
 
         function isSessionUnlocked() {
             return sessionStorage.getItem('isUnlocked') === 'true';
         }
 
         function setSessionUnlocked(status) {
-            if (status) {
-                sessionStorage.setItem('isUnlocked', 'true');
-            } else {
-                sessionStorage.removeItem('isUnlocked');
-            }
+            if (status) sessionStorage.setItem('isUnlocked', 'true');
+            else sessionStorage.removeItem('isUnlocked');
         }
 
         function changeTheme(themeName) {
@@ -766,7 +811,6 @@
             if (isSessionUnlocked()) return true;
             let inputPin = prompt("🔒 هذه العملية محمية! الرجاء إدخال الرقم السري:");
             if (inputPin === null) return false;
-            
             if (inputPin === adminPassword) {
                 setSessionUnlocked(true);
                 return true;
@@ -799,21 +843,11 @@
         function changeAdminPassword() {
             let currentPin = prompt("🔒 أدخل الرقم السري الحالي:");
             if (currentPin === null) return;
-
-            if (currentPin !== adminPassword) {
-                return alert("❌ الرقم السري الحالي غير صحيح!");
-            }
-
+            if (currentPin !== adminPassword) return alert("❌ الرقم السري الحالي غير صحيح!");
             let newPin = prompt("🔑 أدخل الرقم السري الجديد:");
-            if (!newPin || newPin.trim() === "") {
-                return alert("❌ الرقم السري الجديد غير صالح!");
-            }
-
+            if (!newPin || newPin.trim() === "") return alert("❌ الرقم السري الجديد غير صالح!");
             let confirmPin = prompt("🔑 تأكيد الرقم السري الجديد:");
-            if (newPin !== confirmPin) {
-                return alert("❌ الرقم السري غير متطابق!");
-            }
-
+            if (newPin !== confirmPin) return alert("❌ الرقم السري غير متطابق!");
             adminPassword = newPin.trim();
             saveData();
             alert("✅ تم تغيير الرقم السري بنجاح وحفظه!");
@@ -860,7 +894,6 @@
         function handleResetSelection(selectElem) {
             let val = selectElem.value;
             selectElem.selectedIndex = 0;
-
             if (!val) return;
             if (!verifyAdminPassword()) return;
 
@@ -868,9 +901,7 @@
                 let dayNum = prompt("أدخل رقم اليوم المراد تصفيره (من 1 إلى 31):");
                 if (!dayNum) return;
                 let day = parseInt(dayNum);
-                if (isNaN(day) || day < 1 || day > 31) {
-                    return alert("❌ رقم يوم غير صحيح!");
-                }
+                if (isNaN(day) || day < 1 || day > 31) return alert("❌ رقم يوم غير صحيح!");
                 let selectText = document.getElementById('month-select').selectedOptions[0].text;
                 if (confirm(`⚠️ هل أنت متأكد من تصفير بيانات (يوم ${day}) في شهر (${selectText})؟`)) {
                     let monthData = getActiveMonthData();
@@ -923,7 +954,6 @@
                 if (!timerData[dev.id]) {
                     timerData[dev.id] = loadDeviceSession(dev.id);
                 }
-                
                 let t = timerData[dev.id];
 
                 container.innerHTML += `
@@ -995,22 +1025,16 @@
                 e.dataTransfer.effectAllowed = 'move';
             }
         }
-        function allowDrop(e) { 
-            e.preventDefault(); 
-            e.dataTransfer.dropEffect = 'move';
-        }
+        function allowDrop(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
         function drop(e) {
             e.preventDefault();
             let cardElem = e.target.closest('.card');
             if (!cardElem) return;
-            
             let targetIdx = parseInt(cardElem.getAttribute('data-idx'));
             if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
-
             let tempDev = devices[draggedSrcIdx];
             devices[draggedSrcIdx] = devices[targetIdx];
             devices[targetIdx] = tempDev;
-
             draggedSrcIdx = null;
             saveDevicesOrder();
             initDevices();
@@ -1086,7 +1110,6 @@
 
             let currentDay = new Date().getDate();
             if (currentDay > 31) currentDay = 31;
-
             let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
             let desc = `توريد سريع يوم ${currentDay} (${labelNames[key]})`;
 
@@ -1098,16 +1121,14 @@
         function processQuickTotalCalculated() {
             let totalInput = document.getElementById('quick-input-total');
             let targetTotal = parseFloat(totalInput.value);
-            if (isNaN(targetTotal) || targetTotal < 0) {
-                return alert("الرجاء إدخال إيراد يوم شامل صحيح!");
-            }
+            if (isNaN(targetTotal) || targetTotal < 0) return alert("الرجاء إدخال إيراد يوم شامل صحيح!");
 
             let currentDay = new Date().getDate();
             if (currentDay > 31) currentDay = 31;
 
             setTotalDayAmount(currentDay, targetTotal);
             totalInput.value = '';
-            alert(`✅ تم احتساب وضبط إيراد اليوم (${currentDay}) ليصل إلى ${targetTotal} ج.م وتحديث البقالة المتبقية بدقة بدون سالب!`);
+            alert(`✅ تم احتساب وضبط إيراد اليوم (${currentDay}) ليصل إلى ${targetTotal} ج.م وتحديث البقالة المتبقية بدقة!`);
         }
 
         function setTotalDayAmount(day, targetTotal) {
@@ -1116,7 +1137,6 @@
 
             let d = monthData.dailyData[day];
             let currentOthersSum = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0);
-            
             let newGrocery = targetTotal - currentOthersSum;
             if (newGrocery < 0) newGrocery = 0;
 
@@ -1158,19 +1178,13 @@
             let total = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
             
             let viewElem = document.getElementById('quick-today-total-view');
-            if (viewElem) {
-                viewElem.innerText = `إجمالي إيراد اليوم السريع (${currentDay}): ${total} ج.م`;
-            }
+            if (viewElem) viewElem.innerText = `إجمالي إيراد اليوم السريع (${currentDay}): ${total} ج.م`;
         }
 
         function playSingleBeep() {
             try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 let oscillator = audioCtx.createOscillator();
                 let gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
@@ -1185,12 +1199,9 @@
         function startMasterAlarm(deviceName) {
             document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}!`;
             document.getElementById('alarm-modal').style.display = 'flex';
-
             if (!masterAlarmInterval) {
                 playSingleBeep();
-                masterAlarmInterval = setInterval(() => {
-                    playSingleBeep();
-                }, 1000);
+                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
             }
         }
 
@@ -1222,7 +1233,6 @@
 
             let cardElem = getDevCardElem(devId);
             if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
-            
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
 
@@ -1256,7 +1266,6 @@
 
             let cardElem = getDevCardElem(devId);
             if (cardElem) cardElem.style.border = "1px solid var(--accent)";
-            
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
 
@@ -1302,16 +1311,10 @@
             }
 
             let periodLabel = "";
-            if (customPrice > 0) {
-                periodLabel = `${customPrice}ج (مبلغ ثابت)`;
-            } else if (t.isCountdown && t.setMinutes > 0) {
-                periodLabel = `${t.setMinutes}د`;
-            } else if (t.seconds > 0) {
-                let minsPassed = Math.ceil(t.seconds / 60);
-                periodLabel = `${minsPassed}د`;
-            } else if (t.isFinished && t.setMinutes > 0) {
-                periodLabel = `${t.setMinutes}د`;
-            }
+            if (customPrice > 0) periodLabel = `${customPrice}ج (مبلغ ثابت)`;
+            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
+            else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د`;
+            else if (t.isFinished && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
 
             stopTimer(devId);
 
@@ -1330,7 +1333,6 @@
             if (customElem) customElem.value = 0;
 
             saveDeviceSession(devId);
-
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
                 timeDisplay.innerText = "00:00:00";
@@ -1343,9 +1345,7 @@
 
         function resetTimer(devId) {
             let devObj = devices.find(d => d.id === devId);
-            if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت وحساب الجهاز ${devObj ? devObj.name : ''}؟ ولن يتم إصدار أي فاتورة.`)) {
-                return;
-            }
+            if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت وحساب الجهاز ${devObj ? devObj.name : ''}؟ ولن يتم إصدار أي فاتورة.`)) return;
 
             stopTimer(devId);
             clearDeviceSession(devId);
@@ -1369,7 +1369,7 @@
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
-            alert(`🔄 تم إعادة ضبط الجهاز ${devObj ? devObj.name : ''} بنجاح دون إصدار فاتورة.`);
+            alert(`🔄 تم إعادة ضبط الجهاز بنجاح دون إصدار فاتورة.`);
         }
 
         function restoreTimers() {
@@ -1389,33 +1389,26 @@
                 }
                 
                 let type = localStorage.getItem(`timer_type_${devId}`);
-                
                 if (type === 'countdown') {
                     let endTime = parseInt(localStorage.getItem(`timer_end_${devId}`)) || 0;
                     let mins = parseInt(localStorage.getItem(`timer_mins_${devId}`)) || 60;
                     let now = Date.now();
                     let remainingSeconds = Math.round((endTime - now) / 1000);
 
-                    if(document.getElementById(`input-mins-${devId}`)) {
-                        document.getElementById(`input-mins-${devId}`).value = mins;
-                    }
+                    if(document.getElementById(`input-mins-${devId}`)) document.getElementById(`input-mins-${devId}`).value = mins;
 
                     if (remainingSeconds > 0) {
                         t.setMinutes = mins;
                         t.seconds = remainingSeconds;
                         t.isCountdown = true;
                         t.isFinished = false;
-                        
                         let cardElem = getDevCardElem(devId);
                         if (cardElem) cardElem.style.border = "1px solid var(--accent)";
-
                         updateDisplay(devId);
                         updateLiveBill(devId);
 
                         t.interval = setInterval(() => {
-                            let curNow = Date.now();
-                            let remSec = Math.round((endTime - curNow) / 1000);
-
+                            let remSec = Math.round((endTime - Date.now()) / 1000);
                             if (remSec > 0) {
                                 t.seconds = remSec;
                                 updateDisplay(devId);
@@ -1426,10 +1419,8 @@
                                 t.seconds = 0;
                                 t.isFinished = true;
                                 saveDeviceSession(devId);
-
                                 localStorage.removeItem(`timer_end_${devId}`);
                                 localStorage.removeItem(`timer_type_${devId}`);
-
                                 let timeDisplay = document.getElementById("time-" + devId);
                                 if (timeDisplay) {
                                     timeDisplay.innerText = "00:00:00";
@@ -1443,22 +1434,13 @@
                         localStorage.removeItem(`timer_type_${devId}`);
                         t.isFinished = true;
                         saveDeviceSession(devId);
-                        let timeDisplay = document.getElementById("time-" + devId);
-                        if (timeDisplay) {
-                            timeDisplay.innerText = "00:00:00";
-                            timeDisplay.classList.add('finished');
-                        }
                     }
                 } 
                 else if (type === 'stopwatch') {
                     let startTime = parseInt(localStorage.getItem(`timer_start_${devId}`)) || Date.now();
                     t.isCountdown = false;
-                    let cardElem = getDevCardElem(devId);
-                    if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
-
                     t.interval = setInterval(() => {
-                        let now = Date.now();
-                        t.seconds = Math.floor((now - startTime) / 1000);
+                        t.seconds = Math.floor((Date.now() - startTime) / 1000);
                         updateDisplay(devId);
                         updateLiveBill(devId);
                     }, 1000);
@@ -1474,7 +1456,6 @@
             let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
             let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
             let secs = String(s % 60).padStart(2, '0');
-            
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.innerText = hrs + ":" + mins + ":" + secs;
         }
@@ -1492,7 +1473,6 @@
 
             let cardElem = getDevCardElem(devId);
             if (cardElem && !t.isFinished) cardElem.style.border = "1px solid var(--border-color)";
-            
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay && !t.isFinished) timeDisplay.classList.remove('finished');
         }
@@ -1515,13 +1495,8 @@
             let rateInput = document.getElementById("rate-" + devId);
             let currentRate = parseFloat(rateInput ? rateInput.value : 0) || (devObj ? devObj.rate : 20);
 
-            if (t.isCountdown) {
-                let hours = t.setMinutes / 60;
-                return Math.round(hours * currentRate);
-            } else {
-                let hours = t.seconds / 3600;
-                return Math.round(hours * currentRate);
-            }
+            if (t.isCountdown) return Math.round((t.setMinutes / 60) * currentRate);
+            else return Math.round((t.seconds / 3600) * currentRate);
         }
 
         function updateLiveBill(devId) {
@@ -1562,9 +1537,7 @@
             let groceryCost = t.grocery || 0;
             let grandTotal = finalTimeCost + drinksCost + indomieCost + groceryCost;
 
-            if (grandTotal <= 0) {
-                return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
-            }
+            if (grandTotal <= 0) return alert("الفاتورة فارغة ولا توجد قيمة للتصدير!");
 
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
@@ -1577,7 +1550,6 @@
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay);
 
             clearDeviceSession(devId);
-
             timerData[devId] = { 
                 seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
@@ -1598,7 +1570,6 @@
             
             updateLiveBill(devId);
             updateQuickTodayTotalView();
-
             alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
 
@@ -1614,17 +1585,12 @@
             let currentRealDay = todayObj.getDate();
             let currentRealYear = todayObj.getFullYear();
             let currentRealMonth = todayObj.getMonth() + 1;
-
             let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
 
             for (let i = 1; i <= 31; i++) {
-                if(!monthData.dailyData[i]) {
-                    monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
-                }
-                
+                if(!monthData.dailyData[i]) monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
                 let d = monthData.dailyData[i];
                 let rowTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
-
                 let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
                 let rowClass = isToday ? 'today-highlight' : '';
 
@@ -1667,7 +1633,6 @@
             if (!inputField) return;
             let val = parseFloat(inputField.value);
             if (isNaN(val) || val < 0) return alert("الرجاء إدخال إيراد يوم شامل صحيح!");
-
             setTotalDayAmount(day, val);
             inputField.value = '';
         }
@@ -1680,7 +1645,6 @@
 
             let labelNames = { ps: 'بلايستيشن', drink: 'مشروبات', indomie: 'أندومي', grocery: 'بقالة' };
             let desc = (isAdd ? `توريد يوم ${day} (${labelNames[key]})` : `خصم من يوم ${day} (${labelNames[key]})`);
-
             addValueToDailyAndFinance(day, key, val, desc, isAdd, day);
             inputField.value = '';
         }
@@ -1721,7 +1685,6 @@
             if (!descInput || !amountInput) return;
             let desc = descInput.value || (type === 'in' ? 'توريد نقدي' : 'صرف نقدي');
             let amount = parseFloat(amountInput.value) || 0;
-
             if(amount <= 0) return alert("الرجاء إدخال مبلغ صحيح!");
 
             let monthData = getActiveMonthData();
@@ -1751,7 +1714,6 @@
             
             let netCashTitle = document.getElementById('net-cash-title');
             if (netCashTitle) netCashTitle.innerText = `💰 صافي الخزينة لشهر (${selectedMonthText})`;
-            
             let netCashElem = document.getElementById('net-cash');
             if (netCashElem) netCashElem.innerText = cash + ' ج.م';
 
@@ -1776,12 +1738,10 @@
         function payInventoryItem(categoryKey, sectionName) {
             let nameInput = document.getElementById(`name-${categoryKey}`);
             let priceInput = document.getElementById(`price-${categoryKey}`);
-            
             if (!nameInput || !priceInput) return alert("خطأ في تحديد الحقول!");
 
             let itemName = nameInput.value.trim();
             let itemPrice = parseFloat(priceInput.value) || 0;
-
             if (!itemName) return alert("الرجاء كتابة اسم الصنف أو الخامة!");
             if (itemPrice <= 0) return alert("الرجاء إدخال سعر صحيح لشراء الخامة!");
 
@@ -1796,7 +1756,6 @@
                 price: itemPrice
             };
             monthData.purchasedItems[categoryKey].push(newItem);
-
             monthData.totalCash = (monthData.totalCash || 0) - itemPrice;
             monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
 
@@ -1811,7 +1770,6 @@
 
             nameInput.value = '';
             priceInput.value = '';
-
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
             saveData();
@@ -1824,7 +1782,6 @@
             if (!container) return;
 
             let items = monthData.purchasedItems && monthData.purchasedItems[categoryKey] ? monthData.purchasedItems[categoryKey] : [];
-
             if (items.length === 0) {
                 container.innerHTML = `<div style="font-size:0.85rem; color:#94a3b8; text-align:center;">لا توجد مشريات مسجلة بعد</div>`;
                 return;
@@ -1849,7 +1806,6 @@
         function editPurchasedItem(categoryKey, index) {
             let monthData = getActiveMonthData();
             let item = monthData.purchasedItems[categoryKey][index];
-
             let newName = prompt("تعديل اسم الصنف:", item.name);
             if (newName === null) return;
             newName = newName.trim();
@@ -1869,7 +1825,6 @@
             if (priceDiff !== 0) {
                 monthData.totalCash -= priceDiff;
                 monthData.expensesCount += priceDiff;
-                
                 if(!monthData.financeRecords) monthData.financeRecords = [];
                 monthData.financeRecords.unshift({ 
                     day: currentDay,
@@ -1889,12 +1844,10 @@
         function deletePurchasedItem(categoryKey, index) {
             let monthData = getActiveMonthData();
             let item = monthData.purchasedItems[categoryKey][index];
-
             if (!confirm(`⚠️ هل أنت متأكد من حذف الصنف (${item.name}) وإرجاع قيمته (${item.price} ج.م) للخزينة؟`)) return;
 
             monthData.totalCash = (monthData.totalCash || 0) + item.price;
             monthData.expensesCount = (monthData.expensesCount || 0) - item.price;
-
             let currentDay = new Date().getDate();
             if(!monthData.financeRecords) monthData.financeRecords = [];
             monthData.financeRecords.unshift({ 
@@ -1906,7 +1859,6 @@
             });
 
             monthData.purchasedItems[categoryKey].splice(index, 1);
-
             renderPurchasedItems(categoryKey);
             updateFinanceUI();
             saveData();
@@ -1921,14 +1873,24 @@
             let monthExpenses = 0;
 
             records.forEach(rec => {
-                if (rec.color === '#22c55e') {
-                    monthGrossIncome += rec.amount;
-                } else if (rec.color === '#ef4444') {
-                    monthExpenses += rec.amount;
-                }
+                if (rec.color === '#22c55e') monthGrossIncome += rec.amount;
+                else if (rec.color === '#ef4444') monthExpenses += rec.amount;
             });
 
-            let netProfit = monthData.totalCash !== undefined ? monthData.totalCash : (monthGrossIncome - monthExpenses);
+            // حساب دقيق جداً لصافي الربح الشهري والسنوي
+            let netProfit = 0;
+            if (monthData.totalCash !== undefined && (monthData.totalCash !== 0 || records.length > 0)) {
+                // إذا وجدنا رصيد أو حركات، نحسب الإيرادات ناقص المصروفات والخامات من السجلات لتجنب الصفر
+                let totalInc = 0;
+                let totalExp = 0;
+                records.forEach(r => {
+                    if (r.color === '#22c55e') totalInc += r.amount;
+                    if (r.color === '#ef4444') totalExp += r.amount;
+                });
+                netProfit = totalInc - totalExp;
+            } else {
+                netProfit = monthGrossIncome - monthExpenses;
+            }
 
             let grossIncomeElem = document.getElementById('gross-income');
             if (grossIncomeElem) grossIncomeElem.innerText = monthGrossIncome + ' ج.م';
@@ -1942,6 +1904,7 @@
                 netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
             }
 
+            // تفصيل أيام الشهر الحالي
             let breakdownBody = document.getElementById('report-daily-breakdown-body');
             if (breakdownBody) {
                 breakdownBody.innerHTML = '';
@@ -1954,7 +1917,6 @@
                 for (let i = 1; i <= 31; i++) {
                     let d = monthData.dailyData && monthData.dailyData[i] ? monthData.dailyData[i] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
                     let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
-
                     let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
                     let rowClass = isToday ? 'today-highlight' : '';
 
@@ -1971,6 +1933,7 @@
                 }
             }
 
+            // ملخص شهور السنة الـ 12 بالكامل
             let yearTotalProfit = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
             if (summaryBody) {
@@ -1994,7 +1957,7 @@
                         mExpenses = mObj.expensesCount || 0;
                     }
 
-                    let mNet = (mObj.totalCash !== undefined) ? mObj.totalCash : (mIncome - mExpenses);
+                    let mNet = mIncome - mExpenses;
                     yearTotalProfit += mNet;
 
                     summaryBody.innerHTML += `
@@ -2018,7 +1981,6 @@
         function loadMonthDataToUI() {
             initDailyTable();
             updateFinanceUI();
-            
             renderPurchasedItems('ps');
             renderPurchasedItems('drink');
             renderPurchasedItems('indomie');
@@ -2043,21 +2005,14 @@
                 adminPassword: adminPassword || "1234",
                 devicesOrder: devices || []
             };
-            
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
             let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
                 db.ref('ps_lounge_data').set(dataToSave).then(() => {
-                    if (cloudStatus) {
-                        cloudStatus.innerText = "☁️ متصل بالسحابة";
-                        cloudStatus.style.background = "#22c55e";
-                    }
+                    if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
                 }).catch(err => {
-                    if (cloudStatus) {
-                        cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
-                        cloudStatus.style.background = "#f59e0b";
-                    }
+                    if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
                 });
             } else if (cloudStatus) {
                 cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
@@ -2079,7 +2034,6 @@
             }
 
             restoreDevicesOrder();
-
             let savedTheme = localStorage.getItem('ps_theme') || 'oled';
             let themeSelect = document.getElementById('theme-selector');
             if(themeSelect) themeSelect.value = savedTheme;
@@ -2108,16 +2062,10 @@
                             initDevices();
                         }
                         loadMonthDataToUI();
-                        if (cloudStatus) {
-                            cloudStatus.innerText = "☁️ متصل بالسحابة";
-                            cloudStatus.style.background = "#22c55e";
-                        }
+                        if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
                     }
                 }).catch((err) => {
-                    if (cloudStatus) {
-                        cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
-                        cloudStatus.style.background = "#f59e0b";
-                    }
+                    if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
                 });
             } else if (cloudStatus) {
                 cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
@@ -2128,19 +2076,11 @@
         window.addEventListener('online', () => { saveData(); });
         window.addEventListener('offline', () => {
             let cloudStatus = document.getElementById('cloud-status');
-            if (cloudStatus) {
-                cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
-                cloudStatus.style.background = "#f59e0b";
-            }
+            if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
         });
 
         function exportData() {
-            const dataToExport = {
-                allMonthsData: allMonthsData,
-                adminPassword: adminPassword,
-                devicesOrder: devices
-            };
-
+            const dataToExport = { allMonthsData: allMonthsData, adminPassword: adminPassword, devicesOrder: devices };
             const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2154,17 +2094,13 @@
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
                     allMonthsData = imported.allMonthsData || {};
                     if(imported.adminPassword) adminPassword = imported.adminPassword;
-                    if(imported.devicesOrder && Array.isArray(imported.devicesOrder)) {
-                        devices = imported.devicesOrder;
-                    }
-                    
+                    if(imported.devicesOrder && Array.isArray(imported.devicesOrder)) devices = imported.devicesOrder;
                     saveData();
                     initDevices();
                     loadMonthDataToUI();
