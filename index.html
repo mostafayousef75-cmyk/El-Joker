@@ -678,6 +678,8 @@
     <!-- 5. جرد الشهر والسنة -->
     <div id="reports" class="tab-content">
         <h2>📊 تقارير الأرباح للشهر والسنة الكاملة</h2>
+        
+        <!-- الكروت العامة للشهر الحالي -->
         <div class="grid layout-standard">
             <div class="card" style="text-align:center;">
                 <h3 id="current-month-report-title">إيرادات الشهر الحالي</h3>
@@ -695,6 +697,31 @@
                 <h3 style="color: var(--accent); font-size: 1.5rem;">🌟 إجمالي صافي أرباح السنة كاملة (2026)</h3>
                 <div class="money-display" id="year-total-profit" style="font-size: 2.5rem;">0 ج.م</div>
                 <p style="color:#94a3b8; margin-top:5px;">(مجموع صافي أرباح جميع شهور السنة مجمعة)</p>
+            </div>
+        </div>
+
+        <!-- أرباح الأقسام التفصيلية للشهر الحالي -->
+        <h3 style="margin-top: 30px; color: var(--accent);">🎯 صافي أرباح الأقسام (للشهر الحالي)</h3>
+        <div class="grid layout-standard" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            <div class="card" style="text-align:center;">
+                <h4 style="color:var(--accent); margin-top:0;">🎮 ربح البلايستيشن</h4>
+                <div style="font-size: 1.4rem; font-weight: bold;" id="profit-ps">0 ج.م</div>
+                <div style="font-size: 0.8rem; color:#94a3b8; margin-top:5px;" id="breakdown-ps">إيراد: 0 | خامات: 0</div>
+            </div>
+            <div class="card" style="text-align:center;">
+                <h4 style="color:var(--accent); margin-top:0;">🍜 ربح الأندومي</h4>
+                <div style="font-size: 1.4rem; font-weight: bold;" id="profit-indomie">0 ج.م</div>
+                <div style="font-size: 0.8rem; color:#94a3b8; margin-top:5px;" id="breakdown-indomie">إيراد: 0 | خامات: 0</div>
+            </div>
+            <div class="card" style="text-align:center;">
+                <h4 style="color:var(--accent); margin-top:0;">☕ ربح المشروبات</h4>
+                <div style="font-size: 1.4rem; font-weight: bold;" id="profit-drink">0 ج.م</div>
+                <div style="font-size: 0.8rem; color:#94a3b8; margin-top:5px;" id="breakdown-drink">إيراد: 0 | خامات: 0</div>
+            </div>
+            <div class="card" style="text-align:center;">
+                <h4 style="color:var(--accent); margin-top:0;">🛒 ربح البقالة</h4>
+                <div style="font-size: 1.4rem; font-weight: bold;" id="profit-grocery">0 ج.م</div>
+                <div style="font-size: 0.8rem; color:#94a3b8; margin-top:5px;" id="breakdown-grocery">إيراد: 0 | خامات: 0</div>
             </div>
         </div>
 
@@ -781,8 +808,6 @@
             if (content && header) {
                 content.classList.toggle('active');
                 header.classList.toggle('open');
-                
-                // حفظ الحالة في localStorage لتستمر بعد الـ Refresh
                 let isOpen = content.classList.contains('active');
                 localStorage.setItem('accordion_' + contentId, isOpen ? 'true' : 'false');
             }
@@ -1745,7 +1770,6 @@
             let netCashElem = document.getElementById('net-cash');
             if (netCashElem) {
                 netCashElem.innerText = cash + ' ج.م';
-                // تلوين صافي الخزينة أحمر إذا بالسالب وأخضر إذا بالموجب أو صفر
                 netCashElem.style.color = cash >= 0 ? 'var(--success)' : 'var(--danger)';
             }
 
@@ -1931,9 +1955,44 @@
             let netProfitElem = document.getElementById('net-monthly-profit');
             if (netProfitElem) {
                 netProfitElem.innerText = netProfit + ' ج.م';
-                // تصحيح اللون: أخضر لو مكسب أو صفر، أحمر لو بالسالب (خسارة)
                 netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
             }
+
+            // ================= حساب أرباح الأقسام بالتفصيل =================
+            let catKeys = ['ps', 'indomie', 'drink', 'grocery'];
+            let catNames = { ps: 'البلايستيشن', indomie: 'الأندومي', drink: 'المشروبات', grocery: 'البقالة' };
+            
+            catKeys.forEach(k => {
+                // 1. إيرادات القسم من السجل اليومي
+                let catIncome = 0;
+                if (monthData.dailyData) {
+                    for (let day in monthData.dailyData) {
+                        let d = monthData.dailyData[day];
+                        if (d && d[k]) catIncome += d[k];
+                    }
+                }
+
+                // 2. خامات القسم
+                let catExpenses = 0;
+                if (monthData.purchasedItems && monthData.purchasedItems[k]) {
+                    monthData.purchasedItems[k].forEach(item => {
+                        catExpenses += (item.price || 0);
+                    });
+                }
+
+                let catProfit = catIncome - catExpenses;
+
+                let profitElem = document.getElementById(`profit-${k}`);
+                let breakdownElem = document.getElementById(`breakdown-${k}`);
+                
+                if (profitElem) {
+                    profitElem.innerText = catProfit + ' ج.م';
+                    profitElem.style.color = catProfit >= 0 ? '#22c55e' : '#ef4444';
+                }
+                if (breakdownElem) {
+                    breakdownElem.innerText = `إيراد: ${catIncome} | خامات: ${catExpenses}`;
+                }
+            });
 
             // تفصيل أيام الشهر الحالي
             let breakdownBody = document.getElementById('report-daily-breakdown-body');
@@ -2005,7 +2064,6 @@
             let yearTotalProfitElem = document.getElementById('year-total-profit');
             if (yearTotalProfitElem) {
                 yearTotalProfitElem.innerText = yearTotalProfit + ' ج.م';
-                // تلوين إجمالي السنة أيضاً بناءً على كونها ربحاً أو خسارة
                 yearTotalProfitElem.style.color = yearTotalProfit >= 0 ? 'var(--accent)' : '#ef4444';
             }
         }
