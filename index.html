@@ -1273,7 +1273,10 @@
 
         function startStopwatch(devId) {
             let t = timerData[devId];
-            clearInterval(t.interval);
+            if (t.interval) {
+                clearInterval(t.interval);
+                t.interval = null;
+            }
             let startTime = Date.now();
             t.seconds = 0;
             t.isCountdown = false;
@@ -1298,7 +1301,10 @@
 
         function startCountdown(devId) {
             let t = timerData[devId];
-            clearInterval(t.interval);
+            if (t.interval) {
+                clearInterval(t.interval);
+                t.interval = null;
+            }
             let inputElem = document.getElementById("input-mins-" + devId);
             let mins = parseInt(inputElem ? inputElem.value : 60) || 0;
             if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
@@ -1325,7 +1331,6 @@
             updateLiveBill(devId);
 
             t.interval = setInterval(() => {
-                // إذا كان الجهاز بالفعل انتهى وقته، امنع تشغيل الـ Interval مرة أخرى نهائياً لمنع تكرار التنبيه
                 if (t.isFinished) {
                     clearInterval(t.interval);
                     t.interval = null;
@@ -1340,7 +1345,6 @@
                     updateDisplay(devId);
                     updateLiveBill(devId);
                 } else {
-                    // إيقاف الـ Interval فوراً لمنع التكرار
                     clearInterval(t.interval);
                     t.interval = null;
                     t.seconds = 0;
@@ -1358,14 +1362,6 @@
                     startMasterAlarm(devObj ? devObj.name : 'الجهاز');
                 }
             }, 1000);
-        }
-
-        function stopAlarmAndDismiss() {
-            if (masterAlarmInterval) {
-                clearInterval(masterAlarmInterval);
-                masterAlarmInterval = null;
-            }
-            document.getElementById('alarm-modal').style.display = 'none';
         }
 
         function accumulateCurrentTime(devId) {
@@ -1475,7 +1471,13 @@
                         updateDisplay(devId);
                         updateLiveBill(devId);
 
+                        if (t.interval) clearInterval(t.interval);
                         t.interval = setInterval(() => {
+                            if (t.isFinished) {
+                                clearInterval(t.interval);
+                                t.interval = null;
+                                return;
+                            }
                             let remSec = Math.round((endTime - Date.now()) / 1000);
                             if (remSec > 0) {
                                 t.seconds = remSec;
@@ -1507,9 +1509,11 @@
                         }
                         saveDeviceSession(devId);
                     }
+                } 
                 else if (type === 'stopwatch') {
                     let startTime = parseInt(localStorage.getItem(`timer_start_${devId}`)) || Date.now();
                     t.isCountdown = false;
+                    if (t.interval) clearInterval(t.interval);
                     t.interval = setInterval(() => {
                         t.seconds = Math.floor((Date.now() - startTime) / 1000);
                         updateDisplay(devId);
@@ -1979,10 +1983,8 @@
 
             // ================= حساب أرباح الأقسام بالتفصيل =================
             let catKeys = ['ps', 'indomie', 'drink', 'grocery'];
-            let catNames = { ps: 'البلايستيشن', indomie: 'الأندومي', drink: 'المشروبات', grocery: 'البقالة' };
             
             catKeys.forEach(k => {
-                // 1. إيرادات القسم من السجل اليومي
                 let catIncome = 0;
                 if (monthData.dailyData) {
                     for (let day in monthData.dailyData) {
@@ -1991,7 +1993,6 @@
                     }
                 }
 
-                // 2. خامات القسم
                 let catExpenses = 0;
                 if (monthData.purchasedItems && monthData.purchasedItems[k]) {
                     monthData.purchasedItems[k].forEach(item => {
