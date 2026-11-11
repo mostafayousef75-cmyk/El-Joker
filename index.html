@@ -1920,7 +1920,6 @@
     let monthGrossIncome = 0;
     let monthExpenses = 0;
 
-    // حساب إجمالي الوارد (أخضر) وإجمالي المنصرف (أحمر) من السجل المالي بدقة مطابقة للخزينة
     records.forEach(rec => {
         if (rec.color === '#22c55e') {
             monthGrossIncome += rec.amount;
@@ -1929,10 +1928,8 @@
         }
     });
 
-    // صافي الربح يساوي تماماً صافي الخزينة (السيولة الفعلية للدرج)
     let netProfit = monthData.totalCash !== undefined ? monthData.totalCash : (monthGrossIncome - monthExpenses);
 
-    // تحديث الشاشة بالقيم المتطابقة
     let grossIncomeElem = document.getElementById('gross-income');
     if (grossIncomeElem) grossIncomeElem.innerText = monthGrossIncome + ' ج.م';
     
@@ -1945,7 +1942,6 @@
         netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
     }
 
-    // تفصيل إيرادات الأيام وجرد السنة الكاملة
     let breakdownBody = document.getElementById('report-daily-breakdown-body');
     if (breakdownBody) {
         breakdownBody.innerHTML = '';
@@ -1975,7 +1971,7 @@
         }
     }
 
-    let yearTotalIncome = 0;
+    let yearTotalProfit = 0;
     let summaryBody = document.getElementById('yearly-summary-body');
     if (summaryBody) {
         summaryBody.innerHTML = '';
@@ -1999,7 +1995,7 @@
             }
 
             let mNet = mIncome - mExpenses;
-            yearTotalIncome += mNet;
+            yearTotalProfit += mNet;
 
             summaryBody.innerHTML += `
                 <tr>
@@ -2013,9 +2009,8 @@
     }
 
     let yearTotalProfitElem = document.getElementById('year-total-profit');
-    if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalIncome + ' ج.م';
+    if (yearTotalProfitElem) yearTotalProfitElem.innerText = yearTotalProfit + ' ج.م';
 }
-
         function loadMonthDataToUI() {
             initDailyTable();
             updateFinanceUI();
