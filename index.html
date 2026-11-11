@@ -955,13 +955,32 @@
                 let day = parseInt(dayNum);
                 if (isNaN(day) || day < 1 || day > 31) return alert("❌ رقم يوم غير صحيح!");
                 let selectText = document.getElementById('month-select').selectedOptions[0].text;
-                if (confirm(`⚠️ هل أنت متأكد من تصفير بيانات (يوم ${day}) في شهر (${selectText})؟`)) {
+                
+                if (confirm(`⚠️ هل أنت متأكد من تصفير وإلغاء إيرادات (يوم ${day}) في شهر (${selectText})؟ سيتم خصم إيراداته من الخزينة.`)) {
                     let monthData = getActiveMonthData();
                     if (monthData.dailyData && monthData.dailyData[day]) {
+                        let d = monthData.dailyData[day];
+                        let dayTotalIncome = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
+
+                        // خصم إيرادات اليوم من الخزينة الإجمالية
+                        if (dayTotalIncome > 0) {
+                            monthData.totalCash = (monthData.totalCash || 0) - dayTotalIncome;
+                            if (!monthData.financeRecords) monthData.financeRecords = [];
+                            monthData.financeRecords.unshift({
+                                day: day,
+                                type: 'منصرف (تصفير يوم)',
+                                desc: `تصفير كامل إيرادات يوم ${day} وإزالتها من الخزينة`,
+                                amount: dayTotalIncome,
+                                color: '#ef4444'
+                            });
+                        }
+
+                        // تصفير بيانات اليوم
                         monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
+                        
                         saveData();
                         loadMonthDataToUI();
-                        alert(`✅ تم تصفير يوم ${day} بنجاح.`);
+                        alert(`✅ تم تصفير يوم ${day} وخصم إيراداته (${dayTotalIncome} ج.م) من الخزينة بنجاح.`);
                     } else {
                         alert("لا توجد بيانات مسجلة لهذا اليوم لتصفيرها.");
                     }
