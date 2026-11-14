@@ -1047,7 +1047,7 @@
                         
                         <div class="btn-group">
                             <button class="btn btn-start" onclick="startStopwatch(${dev.id})">وقت مفتوح</button>
-                            <button class="btn btn-stop" onclick="stopTimer(${dev.id})">إيقاف مؤقت</button>
+                            <button class="btn btn-stop" onclick="stopTimer(${dev.id})">⏹️ إيقاف مؤقت</button>
                             <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="تراكم الوقت الحالي أو المبلغ الثابت على الفاتورة وتصفيرهما">➕ تراكم الوقت</button>
                             <button class="btn btn-reset" onclick="resetTimer(${dev.id})">إعادة ضبط</button>
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
@@ -1555,21 +1555,99 @@
         }
 
         function stopTimer(devId) {
-            let t = timerData[devId];
-            if (t && t.interval) {
-                clearInterval(t.interval);
-                t.interval = null;
-            }
-            localStorage.removeItem(`timer_end_${devId}`);
-            localStorage.removeItem(`timer_start_${devId}`);
-            localStorage.removeItem(`timer_type_${devId}`);
-            localStorage.removeItem(`timer_mins_${devId}`);
+    let t = timerData[devId];
+    if (!t) return;
 
-            let cardElem = getDevCardElem(devId);
-            if (cardElem && !t.isFinished) cardElem.style.border = "1px solid var(--border-color)";
-            let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay && !t.isFinished) timeDisplay.classList.remove('finished');
+    let btnElem = document.querySelector(`.card[data-devid="${devId}"] .btn-stop`);
+
+    // إذا كان المؤقت يعمل بالفعل -> نقوم بعمله "إيقاف مؤقت" (Pause) ونحفظ الوقت المتبقي
+    if (t.interval) {
+        clearInterval(t.interval);
+        t.interval = null;
+
+        // حساب الوقت المتبقي بدقة للعد التنازلي
+        if (t.isCountdown) {
+            let endTime = parseInt(localStorage.getItem(`timer_end_${devId}`)) || Date.now();
+            t.seconds = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+            localStorage.removeItem(`timer_end_${devId}`);
+        } else {
+            // لو وقت مفتوح (Stopwatch)، نحتفظ بالثواني التي انقضت
+            let startTime = parseInt(localStorage.getItem(`timer_start_${devId}`)) || Date.now();
+            t.seconds = Math.floor((Date.now() - startTime) / 1000);
+            localStorage.removeItem(`timer_start_${devId}`);
         }
+
+        localStorage.removeItem(`timer_type_${devId}`);
+        saveDeviceSession(devId);
+
+        // تغيير شكل الزر إلى "استكمال"
+        if (btnElem) {
+            btnElem.innerText = "▶️ استكمال";
+            btnElem.style.background = "var(--success)";
+        }
+    } 
+    // إذا كان متوقفاً بالفعل ومكتوب عليه "استكمال" -> نقوم باستئناف العد (Resume)
+    else {
+        if (t.seconds <= 0 && !t.isCountdown) {
+            return alert("لا يوجد وقت سابق لاستكماله!");
+        }
+
+        if (t.isCountdown) {
+            let endTime = Date.now() + (t.seconds * 1000);
+            localStorage.setItem(`timer_end_${devId}`, endTime);
+            localStorage.setItem(`timer_mins_${devId}`, t.setMinutes);
+            localStorage.setItem(`timer_type_${devId}`, 'countdown');
+
+            t.interval = setInterval(() => {
+                if (t.isFinished) {
+                    clearInterval(t.interval);
+                    t.interval = null;
+                    return;
+                }
+                let remSec = Math.round((endTime - Date.now()) / 1000);
+                if (remSec > 0) {
+                    t.seconds = remSec;
+                    updateDisplay(devId);
+                    updateLiveBill(devId);
+                } else {
+                    clearInterval(t.interval);
+                    t.interval = null;
+                    t.seconds = 0;
+                    t.isFinished = true;
+                    saveDeviceSession(devId);
+                    localStorage.removeItem(`timer_end_${devId}`);
+                    localStorage.removeItem(`timer_type_${devId}`);
+                    let timeDisplay = document.getElementById("time-" + devId);
+                    if (timeDisplay) {
+                        timeDisplay.innerText = "00:00:00";
+                        timeDisplay.classList.add('finished');
+                    }
+                    let devObj = devices.find(d => d.id === devId);
+                    startMasterAlarm(devObj ? devObj.name : 'الجهاز');
+                }
+            }, 1000);
+        } else {
+            // استئناف الوقت المفتوح (Stopwatch)
+            let startTime = Date.now() - (t.seconds * 1000);
+            localStorage.setItem(`timer_start_${devId}`, startTime);
+            localStorage.setItem(`timer_type_${devId}`, 'stopwatch');
+
+            t.interval = setInterval(() => {
+                t.seconds = Math.floor((Date.now() - startTime) / 1000);
+                updateDisplay(devId);
+                updateLiveBill(devId);
+            }, 1000);
+        }
+
+        saveDeviceSession(devId);
+
+        // إعادة شكل الزر إلى "إيقاف مؤقت"
+        if (btnElem) {
+            btnElem.innerText = "⏹️ إيقاف مؤقت";
+            btnElem.style.background = "var(--danger)";
+        }
+    }
+}
 
         function updateItems(devId) {
             let t = timerData[devId];
