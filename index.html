@@ -198,23 +198,28 @@
         .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
         .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
         
-        /* ألوان الأزرار المخصصة والمميزة بدقة */
-        .btn-open-time { background: #10b981; color: #fff; } /* أخضر لـ وقت مفتوح */
-        .btn-pause     { background: #f59e0b; color: #000; } /* برتقالي لـ إيقاف مؤقت */
-        .btn-resume    { background: #3b82f6; color: #fff; } /* أزرق لـ استكمال */
+        /* ألوان الأزرار المخصصة والمميزة */
+        .btn-open-time { background: #059669; color: #fff; } /* أخضر لزر مفتوح */
+        .btn-pause     { background: #8b5cf6; color: #fff; } /* بنفسجي لزر إيقاف مؤقت */
+        .btn-resume    { background: #0ea5e9; color: #fff; } /* أزرق سماوي لزر استكمال */
         
         .btn-reset { background: #64748b; }
         .btn-add { background: var(--warning); color: #000; }
         .btn-timer { background: var(--accent); color: #000; }
-        .btn-accumulate { background: #8b5cf6; color: #fff; }
+        .btn-accumulate { background: #d97706; color: #fff; }
 
         .controls-box {
             background: var(--input-bg);
-            padding: 8px;
+            padding: 10px;
             border-radius: 8px;
             margin-bottom: 10px;
             text-align: center;
             font-size: 0.9rem;
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .controls-box input {
@@ -1005,14 +1010,15 @@
                         </div>
                         
                         <div class="controls-box">
-                            حجز وقت محدد (دقائق): <input type="number" min="1" id="input-mins-${dev.id}" value="60" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
+                            <span>حجز وقت (دقائق):</span>
+                            <input type="number" min="1" id="input-mins-${dev.id}" value="60" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
                             <button class="btn btn-timer" onclick="startCountdown(${dev.id})">بدء مؤقت</button>
+                            <button class="btn btn-open-time" onclick="startStopwatch(${dev.id})">⏱️ مفتوح</button>
                         </div>
 
                         <div class="timer-display ${t.isFinished ? 'finished' : ''}" id="time-${dev.id}">00:00:00</div>
                         
                         <div class="btn-group">
-                            <button class="btn btn-open-time" onclick="startStopwatch(${dev.id})">🔓 وقت مفتوح</button>
                             <button class="btn ${stopBtnClass}" id="stop-btn-${dev.id}" onclick="stopTimer(${dev.id})">${stopBtnText}</button>
                             <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="تراكم الوقت الحالي أو المبلغ الثابت على الفاتورة وتصفيرهما">➕ تراكم الوقت</button>
                             <button class="btn btn-reset" onclick="resetTimer(${dev.id})">إعادة ضبط</button>
