@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة صالة البلايستيشن - Mostafa Yosef</title>
+    <title>نظام إدارة محل البلايستيشن - Mostafa Yosef</title>
     
     <!-- مكتبات Firebase السحابية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -155,10 +155,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .grid {
-            display: grid;
-            gap: 20px;
-        }
+        .grid { display: grid; gap: 20px; }
         .grid.layout-standard { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
         .grid.layout-compact { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
         .grid.layout-large { grid-template-columns: 1fr; }
@@ -214,7 +211,7 @@
         .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
         .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
         .btn-start { background: var(--success); }
-        .btn-stop { background: var(--danger); }
+        .btn-stop { background: #475569; } /* لون ثابت لزر الإيقاف/الاستكمال */
         .btn-reset { background: #64748b; }
         .btn-add { background: var(--warning); color: #000; }
         .btn-timer { background: var(--accent); color: #000; }
@@ -364,10 +361,7 @@
             align-items: center;
             gap: 5px;
         }
-        .purchased-item-info {
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
+        .purchased-item-info { font-size: 0.9rem; font-weight: bold; }
 
         .stats-box {
             background: var(--card-bg);
@@ -389,7 +383,6 @@
             font-weight: bold;
         }
 
-        /* تنسيق الأشرطة القابلة للطي (Accordion) */
         .accordion-header {
             background: var(--input-bg);
             color: var(--accent);
@@ -405,23 +398,11 @@
             border: 1px solid var(--accent);
             user-select: none;
         }
-        .accordion-header:hover {
-            background: rgba(212, 175, 55, 0.1);
-        }
-        .accordion-content {
-            display: none;
-            margin-top: 10px;
-        }
-        .accordion-content.active {
-            display: block;
-        }
-        .arrow-icon {
-            transition: transform 0.3s ease;
-            font-size: 1rem;
-        }
-        .accordion-header.open .arrow-icon {
-            transform: rotate(180deg);
-        }
+        .accordion-header:hover { background: rgba(212, 175, 55, 0.1); }
+        .accordion-content { display: none; margin-top: 10px; }
+        .accordion-content.active { display: block; }
+        .arrow-icon { transition: transform 0.3s ease; font-size: 1rem; }
+        .accordion-header.open .arrow-icon { transform: rotate(180deg); }
 
         #alarm-modal {
             position: fixed;
@@ -658,7 +639,7 @@
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
                 <input type="text" id="out-desc" placeholder="السبب" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
                 <input type="number" min="0" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
-                <button class="btn btn-stop" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
+                <button class="btn btn-stop" style="width:100%; background:var(--danger);" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
         </div>
         <h3 style="margin-top:20px;">سجل الحركات المالية للشهر</h3>
@@ -679,7 +660,6 @@
     <div id="reports" class="tab-content">
         <h2>📊 تقارير الأرباح للشهر والسنة الكاملة</h2>
         
-        <!-- الكروت العامة للشهر الحالي -->
         <div class="grid layout-standard">
             <div class="card" style="text-align:center;">
                 <h3 id="current-month-report-title">إيرادات الشهر الحالي</h3>
@@ -700,7 +680,6 @@
             </div>
         </div>
 
-        <!-- أرباح الأقسام التفصيلية للشهر الحالي -->
         <h3 style="margin-top: 30px; color: var(--accent);">🎯 صافي أرباح الأقسام (للشهر الحالي)</h3>
         <div class="grid layout-standard" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
             <div class="card" style="text-align:center;">
@@ -725,7 +704,6 @@
             </div>
         </div>
 
-        <!-- 1. تفصيل إيرادات أيام الشهر الحالي (قابل للطي مع حفظ الحالة) -->
         <div class="accordion-header" id="header-daily-breakdown" onclick="toggleAccordion('daily-breakdown-content', 'header-daily-breakdown')">
             <span>📅 تفصيل إيرادات أيام الشهر الحالي</span>
             <span class="arrow-icon">▼</span>
@@ -746,7 +724,6 @@
             </table>
         </div>
 
-        <!-- 2. ملخص إيرادات وأرباح شهور السنة (قابل للطي مع حفظ الحالة) -->
         <div class="accordion-header" id="header-yearly-summary" onclick="toggleAccordion('yearly-summary-content', 'header-yearly-summary')">
             <span>📑 ملخص إيرادات وأرباح شهور السنة (2026)</span>
             <span class="arrow-icon">▼</span>
@@ -962,7 +939,6 @@
                         let d = monthData.dailyData[day];
                         let dayTotalIncome = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
 
-                        // خصم إيرادات اليوم من الخزينة الإجمالية
                         if (dayTotalIncome > 0) {
                             monthData.totalCash = (monthData.totalCash || 0) - dayTotalIncome;
                             if (!monthData.financeRecords) monthData.financeRecords = [];
@@ -975,7 +951,6 @@
                             });
                         }
 
-                        // تصفير بيانات اليوم
                         monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
                         
                         saveData();
@@ -1021,18 +996,17 @@
                 document.getElementById('quick-panel-title').innerText = `⚡ حاسبة إيراد اليوم الشامل (يوم ${todayNum})`;
             }
 
-            devices.forEach((dev, idx) => {
+            devices.forEach((dev) => {
                 if (!timerData[dev.id]) {
                     timerData[dev.id] = loadDeviceSession(dev.id);
                 }
                 let t = timerData[dev.id];
+                let stopBtnText = t.isPaused ? "▶️ استكمال" : "⏹️ إيقاف مؤقت";
 
                 container.innerHTML += `
-                    <div class="card" id="card-${idx}" data-idx="${idx}" data-devid="${dev.id}">
-                        <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span class="drag-handle" draggable="true" ondragstart="drag(event)" title="اسحب من هنا لتحريك الكارت">⠿ اسحب</span>
+                    <div class="card" data-devid="${dev.id}">
+                        <div class="device-title">
                             <span>${dev.name}</span>
-                            <span>🎮</span>
                         </div>
                         <div class="rate-box">
                             سعر الساعة (ج.م): <input type="number" min="0" id="rate-${dev.id}" value="${dev.rate}" onchange="updateRate(${dev.id}, this.value)" onkeydown="if(event.key==='Enter') updateRate(${dev.id}, this.value)">
@@ -1047,7 +1021,7 @@
                         
                         <div class="btn-group">
                             <button class="btn btn-start" onclick="startStopwatch(${dev.id})">وقت مفتوح</button>
-                            <button class="btn btn-stop" onclick="stopTimer(${dev.id})">⏹️ إيقاف مؤقت</button>
+                            <button class="btn btn-stop" id="stop-btn-${dev.id}" onclick="stopTimer(${dev.id})">${stopBtnText}</button>
                             <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="تراكم الوقت الحالي أو المبلغ الثابت على الفاتورة وتصفيرهما">➕ تراكم الوقت</button>
                             <button class="btn btn-reset" onclick="resetTimer(${dev.id})">إعادة ضبط</button>
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
@@ -1068,11 +1042,6 @@
                 `;
             });
 
-            document.querySelectorAll('.card').forEach((card) => {
-                card.addEventListener('dragover', allowDrop);
-                card.addEventListener('drop', drop);
-            });
-
             restoreTimers();
             updateQuickTodayTotalView();
         }
@@ -1082,49 +1051,8 @@
             let devObj = devices.find(d => d.id === devId);
             if (devObj) {
                 devObj.rate = val;
-                saveDevicesOrder();
+                saveData();
                 updateLiveBill(devId);
-            }
-        }
-
-        let draggedSrcIdx = null;
-        function drag(e) {
-            let cardElem = e.target.closest('.card');
-            if (cardElem) {
-                draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
-                e.dataTransfer.setData('text/plain', draggedSrcIdx);
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        }
-        function allowDrop(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-        function drop(e) {
-            e.preventDefault();
-            let cardElem = e.target.closest('.card');
-            if (!cardElem) return;
-            let targetIdx = parseInt(cardElem.getAttribute('data-idx'));
-            if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
-            let tempDev = devices[draggedSrcIdx];
-            devices[draggedSrcIdx] = devices[targetIdx];
-            devices[targetIdx] = tempDev;
-            draggedSrcIdx = null;
-            saveDevicesOrder();
-            initDevices();
-        }
-
-        function saveDevicesOrder() {
-            localStorage.setItem('ps_devices_order', JSON.stringify(devices));
-            saveData();
-        }
-
-        function restoreDevicesOrder() {
-            let savedOrder = localStorage.getItem('ps_devices_order');
-            if (savedOrder) {
-                try {
-                    let parsedOrder = JSON.parse(savedOrder);
-                    if (Array.isArray(parsedOrder) && parsedOrder.length === devices.length) {
-                        devices = parsedOrder;
-                    }
-                } catch(e) {}
             }
         }
 
@@ -1139,7 +1067,12 @@
                 accumulatedCost: t.accumulatedCost || 0,
                 periodsLog: t.periodsLog || [],
                 setMinutes: t.setMinutes || 0,
-                isFinished: t.isFinished || false
+                seconds: t.seconds || 0,
+                isCountdown: t.isCountdown || false,
+                isPaused: t.isPaused || false,
+                isFinished: t.isFinished || false,
+                endTime: t.endTime || 0,
+                startTime: t.startTime || 0
             };
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
         }
@@ -1147,23 +1080,13 @@
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
                 try {
                     let parsed = JSON.parse(saved);
-                    return {
-                        ...defaultData,
-                        drinks: parsed.drinks || 0,
-                        indomie: parsed.indomie || 0,
-                        grocery: parsed.grocery || 0,
-                        customPrice: parsed.customPrice || 0,
-                        accumulatedCost: parsed.accumulatedCost || 0,
-                        periodsLog: parsed.periodsLog || [],
-                        setMinutes: parsed.setMinutes || 0,
-                        isFinished: parsed.isFinished || false
-                    };
+                    return { ...defaultData, ...parsed };
                 } catch(e) {}
             }
             return defaultData;
@@ -1284,103 +1207,148 @@
             document.getElementById('alarm-modal').style.display = 'none';
         }
 
-        function getDevCardElem(devId) {
-            let devObj = devices.find(d => d.id === devId);
-            if (!devObj) return null;
-            return document.querySelector(`.card[data-devid="${devId}"]`);
-        }
-
         function startStopwatch(devId) {
             let t = timerData[devId];
-            if (t.interval) {
-                clearInterval(t.interval);
-                t.interval = null;
-            }
-            let startTime = Date.now();
+            if (t.interval) clearInterval(t.interval);
+
             t.seconds = 0;
+            t.startTime = Date.now();
             t.isCountdown = false;
+            t.isPaused = false;
             t.isFinished = false;
 
-            localStorage.setItem(`timer_start_${devId}`, startTime);
-            localStorage.setItem(`timer_type_${devId}`, 'stopwatch');
             saveDeviceSession(devId);
-
-            let cardElem = getDevCardElem(devId);
-            if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
-            let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) timeDisplay.classList.remove('finished');
-
-            t.interval = setInterval(() => {
-                let now = Date.now();
-                t.seconds = Math.floor((now - startTime) / 1000);
-                updateDisplay(devId);
-                updateLiveBill(devId);
-            }, 1000);
+            runInterval(devId);
+            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
         }
 
         function startCountdown(devId) {
             let t = timerData[devId];
-            if (t.interval) {
-                clearInterval(t.interval);
-                t.interval = null;
-            }
+            if (t.interval) clearInterval(t.interval);
+
             let inputElem = document.getElementById("input-mins-" + devId);
-            let mins = parseInt(inputElem ? inputElem.value : 60) || 0;
-            if (mins <= 0) return alert("الرجاء إدخال عدد دقائق صحيح!");
-
-            let totalSeconds = mins * 60;
-            let endTime = Date.now() + (totalSeconds * 1000);
-
+            let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
             t.setMinutes = mins;
-            t.seconds = totalSeconds;
+            t.seconds = mins * 60;
+            t.endTime = Date.now() + (t.seconds * 1000);
             t.isCountdown = true;
+            t.isPaused = false;
             t.isFinished = false;
+
             saveDeviceSession(devId);
-            
-            localStorage.setItem(`timer_end_${devId}`, endTime);
-            localStorage.setItem(`timer_mins_${devId}`, mins);
-            localStorage.setItem(`timer_type_${devId}`, 'countdown');
+            runInterval(devId);
+            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+        }
 
-            let cardElem = getDevCardElem(devId);
-            if (cardElem) cardElem.style.border = "1px solid var(--accent)";
-            let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) timeDisplay.classList.remove('finished');
+        function stopTimer(devId) {
+            let t = timerData[devId];
+            if (!t) return;
 
-            updateDisplay(devId);
-            updateLiveBill(devId);
-
-            t.interval = setInterval(() => {
-                if (t.isFinished) {
+            if (!t.isPaused) {
+                if (t.interval) {
                     clearInterval(t.interval);
                     t.interval = null;
+                }
+                if (t.isCountdown) {
+                    t.seconds = Math.max(0, Math.round((t.endTime - Date.now()) / 1000));
+                } else {
+                    t.seconds = Math.floor((Date.now() - t.startTime) / 1000);
+                }
+                t.isPaused = true;
+                saveDeviceSession(devId);
+                updateStopBtnText(devId, "▶️ استكمال");
+            } else {
+                t.isPaused = false;
+                if (t.isCountdown) {
+                    t.endTime = Date.now() + (t.seconds * 1000);
+                } else {
+                    t.startTime = Date.now() - (t.seconds * 1000);
+                }
+                saveDeviceSession(devId);
+                runInterval(devId);
+                updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+            }
+        }
+
+        function runInterval(devId) {
+            let t = timerData[devId];
+            if (t.interval) clearInterval(t.interval);
+
+            t.interval = setInterval(() => {
+                if (t.isPaused || t.isFinished) return;
+
+                if (t.isCountdown) {
+                    let rem = Math.round((t.endTime - Date.now()) / 1000);
+                    if (rem > 0) {
+                        t.seconds = rem;
+                        updateDisplay(devId);
+                        updateLiveBill(devId);
+                    } else {
+                        clearInterval(t.interval);
+                        t.interval = null;
+                        t.seconds = 0;
+                        t.isFinished = true;
+                        saveDeviceSession(devId);
+                        let timeDisplay = document.getElementById("time-" + devId);
+                        if (timeDisplay) {
+                            timeDisplay.innerText = "00:00:00";
+                            timeDisplay.classList.add('finished');
+                        }
+                        let devObj = devices.find(d => d.id === devId);
+                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
+                    }
+                } else {
+                    t.seconds = Math.floor((Date.now() - t.startTime) / 1000);
+                    updateDisplay(devId);
+                    updateLiveBill(devId);
+                }
+            }, 1000);
+        }
+
+        function restoreTimers() {
+            devices.forEach((dev) => {
+                let devId = dev.id;
+                let t = timerData[devId];
+                if (!t) return;
+
+                updateDisplay(devId);
+                updateLiveBill(devId);
+
+                if (t.isFinished) {
+                    let timeDisplay = document.getElementById("time-" + devId);
+                    if (timeDisplay) timeDisplay.classList.add('finished');
+                    updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
                     return;
                 }
 
-                let now = Date.now();
-                let remainingSeconds = Math.round((endTime - now) / 1000);
-
-                if (remainingSeconds > 0) {
-                    t.seconds = remainingSeconds;
-                    updateDisplay(devId);
-                    updateLiveBill(devId);
+                if (t.isPaused) {
+                    updateStopBtnText(devId, "▶️ استكمال");
                 } else {
-                    clearInterval(t.interval);
-                    t.interval = null;
-                    t.seconds = 0;
-                    t.isFinished = true;
-                    saveDeviceSession(devId);
-                    
-                    localStorage.removeItem(`timer_end_${devId}`);
-                    localStorage.removeItem(`timer_type_${devId}`);
-
-                    if (timeDisplay) {
-                        timeDisplay.innerText = "00:00:00";
-                        timeDisplay.classList.add('finished');
+                    if (t.isCountdown && t.endTime > Date.now()) {
+                        runInterval(devId);
+                        updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+                    } else if (!t.isCountdown && t.startTime > 0) {
+                        runInterval(devId);
+                        updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
                     }
-                    let devObj = devices.find(d => d.id === devId);
-                    startMasterAlarm(devObj ? devObj.name : 'الجهاز');
                 }
-            }, 1000);
+            });
+        }
+
+        function updateDisplay(devId) {
+            let t = timerData[devId];
+            if (!t) return;
+            let s = t.seconds;
+            let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
+            let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            let secs = String(s % 60).padStart(2, '0');
+            let timeDisplay = document.getElementById("time-" + devId);
+            if (timeDisplay) timeDisplay.innerText = hrs + ":" + mins + ":" + secs;
+        }
+
+        function updateStopBtnText(devId, text) {
+            let btn = document.getElementById(`stop-btn-${devId}`);
+            if (btn) btn.innerText = text;
         }
 
         function accumulateCurrentTime(devId) {
@@ -1397,9 +1365,9 @@
             if (customPrice > 0) periodLabel = `${customPrice}ج (مبلغ ثابت)`;
             else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
             else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د`;
-            else if (t.isFinished && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
 
-            stopTimer(devId);
+            if (t.interval) clearInterval(t.interval);
+            t.interval = null;
 
             if (periodLabel) {
                 if (!t.periodsLog) t.periodsLog = [];
@@ -1410,6 +1378,7 @@
             t.seconds = 0;
             t.setMinutes = 0;
             t.customPrice = 0;
+            t.isPaused = false;
             t.isFinished = false;
 
             let customElem = document.getElementById("custom-" + devId);
@@ -1421,20 +1390,19 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
+            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
 
             updateLiveBill(devId);
             alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
         }
 
         function resetTimer(devId) {
-            let devObj = devices.find(d => d.id === devId);
-            if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت وحساب الجهاز ${devObj ? devObj.name : ''}؟ ولن يتم إصدار أي فاتورة.`)) return;
-
-            stopTimer(devId);
+            let t = timerData[devId];
+            if (t && t.interval) clearInterval(t.interval);
             clearDeviceSession(devId);
 
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
@@ -1443,8 +1411,7 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
-            let cardElem = getDevCardElem(devId);
-            if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
+            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
@@ -1452,202 +1419,8 @@
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
-            alert(`🔄 تم إعادة ضبط الجهاز بنجاح دون إصدار فاتورة.`);
+            alert(`🔄 تم إعادة ضبط الجهاز بنجاح.`);
         }
-
-        function restoreTimers() {
-            devices.forEach((dev) => {
-                let devId = dev.id;
-                let t = timerData[devId];
-                if (!t) return;
-
-                if (t.isFinished) {
-                    let timeDisplay = document.getElementById("time-" + devId);
-                    if (timeDisplay) {
-                        timeDisplay.innerText = "00:00:00";
-                        timeDisplay.classList.add('finished');
-                    }
-                    let cardElem = getDevCardElem(devId);
-                    if (cardElem) cardElem.style.border = "1px solid var(--danger)";
-                }
-                
-                let type = localStorage.getItem(`timer_type_${devId}`);
-                if (type === 'countdown') {
-                    let endTime = parseInt(localStorage.getItem(`timer_end_${devId}`)) || 0;
-                    let mins = parseInt(localStorage.getItem(`timer_mins_${devId}`)) || 60;
-                    let now = Date.now();
-                    let remainingSeconds = Math.round((endTime - now) / 1000);
-
-                    if(document.getElementById(`input-mins-${devId}`)) document.getElementById(`input-mins-${devId}`).value = mins;
-
-                    if (remainingSeconds > 0) {
-                        t.setMinutes = mins;
-                        t.seconds = remainingSeconds;
-                        t.isCountdown = true;
-                        t.isFinished = false;
-                        let cardElem = getDevCardElem(devId);
-                        if (cardElem) cardElem.style.border = "1px solid var(--accent)";
-                        updateDisplay(devId);
-                        updateLiveBill(devId);
-
-                        if (t.interval) clearInterval(t.interval);
-                        t.interval = setInterval(() => {
-                            if (t.isFinished) {
-                                clearInterval(t.interval);
-                                t.interval = null;
-                                return;
-                            }
-                            let remSec = Math.round((endTime - Date.now()) / 1000);
-                            if (remSec > 0) {
-                                t.seconds = remSec;
-                                updateDisplay(devId);
-                                updateLiveBill(devId);
-                            } else {
-                                clearInterval(t.interval);
-                                t.interval = null;
-                                t.seconds = 0;
-                                t.isFinished = true;
-                                saveDeviceSession(devId);
-                                localStorage.removeItem(`timer_end_${devId}`);
-                                localStorage.removeItem(`timer_type_${devId}`);
-                                let timeDisplay = document.getElementById("time-" + devId);
-                                if (timeDisplay) {
-                                    timeDisplay.innerText = "00:00:00";
-                                    timeDisplay.classList.add('finished');
-                                }
-                                startMasterAlarm(dev.name);
-                            }
-                        }, 1000);
-                    } else {
-                        localStorage.removeItem(`timer_end_${devId}`);
-                        localStorage.removeItem(`timer_type_${devId}`);
-                        t.isFinished = true;
-                        if (t.interval) {
-                            clearInterval(t.interval);
-                            t.interval = null;
-                        }
-                        saveDeviceSession(devId);
-                    }
-                } 
-                else if (type === 'stopwatch') {
-                    let startTime = parseInt(localStorage.getItem(`timer_start_${devId}`)) || Date.now();
-                    t.isCountdown = false;
-                    if (t.interval) clearInterval(t.interval);
-                    t.interval = setInterval(() => {
-                        t.seconds = Math.floor((Date.now() - startTime) / 1000);
-                        updateDisplay(devId);
-                        updateLiveBill(devId);
-                    }, 1000);
-                }
-                updateLiveBill(devId);
-            });
-        }
-
-        function updateDisplay(devId) {
-            let t = timerData[devId];
-            if (!t) return;
-            let s = t.seconds;
-            let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
-            let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-            let secs = String(s % 60).padStart(2, '0');
-            let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) timeDisplay.innerText = hrs + ":" + mins + ":" + secs;
-        }
-
-        function stopTimer(devId) {
-    let t = timerData[devId];
-    if (!t) return;
-
-    let btnElem = document.querySelector(`.card[data-devid="${devId}"] .btn-stop`);
-
-    // إذا كان المؤقت يعمل بالفعل -> نقوم بعمله "إيقاف مؤقت" (Pause) ونحفظ الوقت المتبقي
-    if (t.interval) {
-        clearInterval(t.interval);
-        t.interval = null;
-
-        // حساب الوقت المتبقي بدقة للعد التنازلي
-        if (t.isCountdown) {
-            let endTime = parseInt(localStorage.getItem(`timer_end_${devId}`)) || Date.now();
-            t.seconds = Math.max(0, Math.round((endTime - Date.now()) / 1000));
-            localStorage.removeItem(`timer_end_${devId}`);
-        } else {
-            // لو وقت مفتوح (Stopwatch)، نحتفظ بالثواني التي انقضت
-            let startTime = parseInt(localStorage.getItem(`timer_start_${devId}`)) || Date.now();
-            t.seconds = Math.floor((Date.now() - startTime) / 1000);
-            localStorage.removeItem(`timer_start_${devId}`);
-        }
-
-        localStorage.removeItem(`timer_type_${devId}`);
-        saveDeviceSession(devId);
-
-        // تغيير شكل الزر إلى "استكمال"
-        if (btnElem) {
-            btnElem.innerText = "▶️ استكمال";
-            btnElem.style.background = "var(--success)";
-        }
-    } 
-    // إذا كان متوقفاً بالفعل ومكتوب عليه "استكمال" -> نقوم باستئناف العد (Resume)
-    else {
-        if (t.seconds <= 0 && !t.isCountdown) {
-            return alert("لا يوجد وقت سابق لاستكماله!");
-        }
-
-        if (t.isCountdown) {
-            let endTime = Date.now() + (t.seconds * 1000);
-            localStorage.setItem(`timer_end_${devId}`, endTime);
-            localStorage.setItem(`timer_mins_${devId}`, t.setMinutes);
-            localStorage.setItem(`timer_type_${devId}`, 'countdown');
-
-            t.interval = setInterval(() => {
-                if (t.isFinished) {
-                    clearInterval(t.interval);
-                    t.interval = null;
-                    return;
-                }
-                let remSec = Math.round((endTime - Date.now()) / 1000);
-                if (remSec > 0) {
-                    t.seconds = remSec;
-                    updateDisplay(devId);
-                    updateLiveBill(devId);
-                } else {
-                    clearInterval(t.interval);
-                    t.interval = null;
-                    t.seconds = 0;
-                    t.isFinished = true;
-                    saveDeviceSession(devId);
-                    localStorage.removeItem(`timer_end_${devId}`);
-                    localStorage.removeItem(`timer_type_${devId}`);
-                    let timeDisplay = document.getElementById("time-" + devId);
-                    if (timeDisplay) {
-                        timeDisplay.innerText = "00:00:00";
-                        timeDisplay.classList.add('finished');
-                    }
-                    let devObj = devices.find(d => d.id === devId);
-                    startMasterAlarm(devObj ? devObj.name : 'الجهاز');
-                }
-            }, 1000);
-        } else {
-            // استئناف الوقت المفتوح (Stopwatch)
-            let startTime = Date.now() - (t.seconds * 1000);
-            localStorage.setItem(`timer_start_${devId}`, startTime);
-            localStorage.setItem(`timer_type_${devId}`, 'stopwatch');
-
-            t.interval = setInterval(() => {
-                t.seconds = Math.floor((Date.now() - startTime) / 1000);
-                updateDisplay(devId);
-                updateLiveBill(devId);
-            }, 1000);
-        }
-
-        saveDeviceSession(devId);
-
-        // إعادة شكل الزر إلى "إيقاف مؤقت"
-        if (btnElem) {
-            btnElem.innerText = "⏹️ إيقاف مؤقت";
-            btnElem.style.background = "var(--danger)";
-        }
-    }
-}
 
         function updateItems(devId) {
             let t = timerData[devId];
@@ -1697,7 +1470,7 @@
             let devName = devObj ? devObj.name : 'الجهاز';
             let t = timerData[devId];
 
-            stopTimer(devId);
+            if (t && t.interval) clearInterval(t.interval);
 
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
@@ -1723,7 +1496,7 @@
 
             clearDeviceSession(devId);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
@@ -1732,8 +1505,7 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
-            let cardElem = getDevCardElem(devId);
-            if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
+            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
@@ -2078,9 +1850,7 @@
                 netProfitElem.style.color = netProfit >= 0 ? '#22c55e' : '#ef4444';
             }
 
-            // ================= حساب أرباح الأقسام بالتفصيل =================
             let catKeys = ['ps', 'indomie', 'drink', 'grocery'];
-            
             catKeys.forEach(k => {
                 let catIncome = 0;
                 if (monthData.dailyData) {
@@ -2111,7 +1881,6 @@
                 }
             });
 
-            // تفصيل أيام الشهر الحالي
             let breakdownBody = document.getElementById('report-daily-breakdown-body');
             if (breakdownBody) {
                 breakdownBody.innerHTML = '';
@@ -2140,7 +1909,6 @@
                 }
             }
 
-            // ملخص شهور السنة الـ 12 بالكامل
             let yearTotalProfit = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
             if (summaryBody) {
@@ -2241,7 +2009,6 @@
                 } catch(e) {}
             }
 
-            restoreDevicesOrder();
             let savedTheme = localStorage.getItem('ps_theme') || 'oled';
             let themeSelect = document.getElementById('theme-selector');
             if(themeSelect) themeSelect.value = savedTheme;
@@ -2254,6 +2021,7 @@
 
             initMonthSelector();
             loadMonthDataToUI();
+            initDevices();
 
             let savedTab = localStorage.getItem('activeTab') || 'timers';
             switchTab(null, savedTab);
@@ -2321,8 +2089,6 @@
         }
 
         window.onload = () => {
-            restoreDevicesOrder();
-            initDevices();
             loadData();
             restoreAccordionsState();
         };
