@@ -167,8 +167,9 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             position: relative;
+            transition: all 0.3s ease;
         }
-
+        
         .device-title { font-size: 1.4rem; color: var(--accent); text-align: center; font-weight: bold; }
         
         .rate-box {
@@ -829,6 +830,28 @@
             localStorage.setItem('ps_devices_layout', layoutType);
         }
 
+        function setCardState(devId, state) {
+            let cardElem = getDevCardElem(devId);
+            if (!cardElem) return;
+            
+            if (state === 'running') {
+                // حالة التشغيل (إطار ذهبي/لون الثيم أسمك + إضاءة ساطعة + خلفية مميزة)
+                cardElem.style.border = "3px solid var(--accent)";
+                cardElem.style.boxShadow = "0 0 18px rgba(212, 175, 55, 0.6)";
+                cardElem.style.backgroundColor = "rgba(212, 175, 55, 0.04)";
+            } else if (state === 'finished') {
+                // حالة انتهاء الوقت (إطار أحمر ناري + إضاءة تحذيرية)
+                cardElem.style.border = "3px solid var(--danger)";
+                cardElem.style.boxShadow = "0 0 20px rgba(239, 68, 68, 0.7)";
+                cardElem.style.backgroundColor = "rgba(239, 68, 68, 0.06)";
+            } else {
+                // الحالة العادية (إطار رمادي هادئ)
+                cardElem.style.border = "1px solid var(--border-color)";
+                cardElem.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+                cardElem.style.backgroundColor = "var(--card-bg)";
+            }
+        }
+
         function verifyAdminPassword() {
             if (isSessionUnlocked()) return true;
             let inputPin = prompt("🔒 هذه العملية محمية! الرجاء إدخال الرقم السري:");
@@ -899,6 +922,8 @@
             currentActiveMonthKey = select.value;
             loadMonthDataToUI();
         }
+
+        
 
         function getActiveMonthData() {
             if (!allMonthsData[currentActiveMonthKey]) {
@@ -1045,16 +1070,8 @@
                 let stopBtnClass = t.isPaused ? "btn-resume" : "btn-pause";
                 let stopBtnText = t.isPaused ? "▶️ استكمال" : "⏹️ إيقاف مؤقت";
 
-                // تحديد إطار الكارت حسب حالة التشغيل ليبقى ظاهراً بعد الريفرش
-                let cardBorderStyle = "1px solid var(--border-color)";
-                if (t.isFinished) {
-                    cardBorderStyle = "2px solid var(--danger)";
-                } else if ((t.isCountdown && t.endTime > Date.now() && !t.isPaused) || (!t.isCountdown && t.startTime > 0 && !t.isPaused)) {
-                    cardBorderStyle = "2px solid var(--accent)";
-                }
-
                 container.innerHTML += `
-                    <div class="card" id="card-${idx}" data-idx="${idx}" data-devid="${dev.id}" style="border: ${cardBorderStyle};">
+                    <div class="card" id="card-${idx}" data-idx="${idx}" data-devid="${dev.id}">
                         <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
                             <span class="drag-handle" draggable="true" ondragstart="drag(event)" title="اسحب من هنا لتحريك الكارت">⠿ اسحب</span>
                             <span>${dev.name}</span>
@@ -1082,7 +1099,7 @@
                         
                         <div class="item-inputs">
                             <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
-                            <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label>أندومي: <input type="number" min="0" id="input-indomie-${dev.id}" value="${t.indomie || 0}" oninput="updateItems(${dev.id})"></label>
                             <label>بقالة: <input type="number" min="0" id="grocery-${dev.id}" value="${t.grocery || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                             <label style="color: var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${dev.id}" value="${t.customPrice || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                         </div>
@@ -1095,7 +1112,6 @@
                 `;
             });
 
-            // تفعيل السحب والإفلات للكروت
             document.querySelectorAll('.card').forEach((card) => {
                 card.addEventListener('dragover', allowDrop);
                 card.addEventListener('drop', drop);
@@ -1280,6 +1296,7 @@
 
             t.seconds = 0;
             t.startTime = Date.now();
+            t.endTime = 0;
             t.isCountdown = false;
             t.isPaused = false;
             t.isFinished = false;
@@ -1287,6 +1304,11 @@
             saveDeviceSession(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            
+            // تفعيل الإضاءة البارزة للكارت الشغال
+            setCardState(devId, 'running');
+            let timeDisplay = document.getElementById("time-" + devId);
+            if (timeDisplay) timeDisplay.classList.remove('finished');
         }
 
         function startCountdown(devId) {
@@ -1298,6 +1320,7 @@
             t.setMinutes = mins;
             t.seconds = mins * 60;
             t.endTime = Date.now() + (t.seconds * 1000);
+            t.startTime = 0;
             t.isCountdown = true;
             t.isPaused = false;
             t.isFinished = false;
@@ -1305,6 +1328,11 @@
             saveDeviceSession(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            
+            // تفعيل الإضاءة البارزة للكارت الشغال
+            setCardState(devId, 'running');
+            let timeDisplay = document.getElementById("time-" + devId);
+            if (timeDisplay) timeDisplay.classList.remove('finished');
         }
 
         function stopTimer(devId) {
@@ -1324,6 +1352,7 @@
                 t.isPaused = true;
                 saveDeviceSession(devId);
                 updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                if (!t.isFinished) setCardState(devId, 'normal');
             } else {
                 t.isPaused = false;
                 if (t.isCountdown) {
@@ -1334,42 +1363,8 @@
                 saveDeviceSession(devId);
                 runInterval(devId);
                 updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                if (!t.isFinished) setCardState(devId, 'running');
             }
-        }
-
-        function runInterval(devId) {
-            let t = timerData[devId];
-            if (t.interval) clearInterval(t.interval);
-
-            t.interval = setInterval(() => {
-                if (t.isPaused || t.isFinished) return;
-
-                if (t.isCountdown) {
-                    let rem = Math.round((t.endTime - Date.now()) / 1000);
-                    if (rem > 0) {
-                        t.seconds = rem;
-                        updateDisplay(devId);
-                        updateLiveBill(devId);
-                    } else {
-                        clearInterval(t.interval);
-                        t.interval = null;
-                        t.seconds = 0;
-                        t.isFinished = true;
-                        saveDeviceSession(devId);
-                        let timeDisplay = document.getElementById("time-" + devId);
-                        if (timeDisplay) {
-                            timeDisplay.innerText = "00:00:00";
-                            timeDisplay.classList.add('finished');
-                        }
-                        let devObj = devices.find(d => d.id === devId);
-                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
-                    }
-                } else {
-                    t.seconds = Math.floor((Date.now() - t.startTime) / 1000);
-                    updateDisplay(devId);
-                    updateLiveBill(devId);
-                }
-            }, 1000);
         }
 
         function restoreTimers() {
@@ -1384,22 +1379,67 @@
                 if (t.isFinished) {
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
+                    setCardState(devId, 'finished');
                     updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                     return;
                 }
 
                 if (t.isPaused) {
                     updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                    setCardState(devId, 'normal');
                 } else {
                     if (t.isCountdown && t.endTime > Date.now()) {
                         runInterval(devId);
                         updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        setCardState(devId, 'running');
                     } else if (!t.isCountdown && t.startTime > 0) {
                         runInterval(devId);
                         updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        setCardState(devId, 'running');
+                    } else {
+                        setCardState(devId, 'normal');
                     }
                 }
             });
+        }
+
+        function resetTimer(devId) {
+            let devObj = devices.find(d => d.id === devId);
+            if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت وحساب الجهاز ${devObj ? devObj.name : ''}؟`)) return;
+
+            let t = timerData[devId];
+            if (t && t.interval) clearInterval(t.interval);
+            clearDeviceSession(devId);
+
+            timerData[devId] = { 
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
+                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
+            };
+
+            let timeDisplay = document.getElementById("time-" + devId);
+            if (timeDisplay) {
+                timeDisplay.innerText = "00:00:00";
+                timeDisplay.classList.remove('finished');
+            }
+            
+            setCardState(devId, 'normal');
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            
+            if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
+            if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
+            if(document.getElementById("grocery-" + devId)) document.getElementById("grocery-" + devId).value = 0;
+            if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
+            
+            updateLiveBill(devId);
+        }
+
+        function checkout(devId) {
+            let t = timerData[devId];
+            if (t && t.interval) clearInterval(t.interval);
+
+            // باقي كود الـ checkout الأصلي الخاص بك...
+            // وتأكد من إعادة تعيين شكل الكارت للحالة العادية بعد الإغلاق:
+            setCardState(devId, 'normal');
         }
 
         function updateDisplay(devId) {
