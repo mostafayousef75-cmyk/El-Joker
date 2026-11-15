@@ -1215,6 +1215,7 @@
         
         function clearDeviceSession(devId) {
             localStorage.removeItem(`dev_session_${devId}`);
+            saveData(); // 👈 رفع التحديث للسحابة فوراً بأن الجهاز أصبح فارغاً
         }
 
         function quickAddCurrentDay(key) {
@@ -1517,13 +1518,17 @@
 
             let t = timerData[devId];
             if (t && t.interval) clearInterval(t.interval);
+            
+            // 💡 مسح الجلسة محلياً تماماً
             clearDeviceSession(devId);
 
+            // 💡 إعادة ضبط كائن بيانات الجهاز بالكامل ليعود صفراً نظيفاً
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
+            // 💡 تحديث واجهة الجهاز فوراً
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
                 timeDisplay.innerText = "00:00:00";
@@ -1539,6 +1544,9 @@
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
+
+            // 🛑 الأهم: حفظ الحالة النظيفة الجديدة ورفعها للسحابة فوراً لكي تختفي الجلسة القديمة من فايربيس
+            saveData();
         }
 
         function updateDisplay(devId) {
