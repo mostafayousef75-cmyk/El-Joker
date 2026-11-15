@@ -20,6 +20,10 @@
             --warning: #f59e0b;
             --border-color: #222222;
             --input-bg: #141414;
+            /* ألوان التشغيل للجهاز الشغال (نبيتي فخم للسيم الأسود الذهبي) */
+            --running-color: #9f1239;
+            --running-glow: rgba(159, 18, 57, 0.6);
+            --running-bg: rgba(159, 18, 57, 0.05);
         }
 
         body.theme-charcoal {
@@ -29,6 +33,10 @@
             --text-color: #f8fafc;
             --border-color: #334155;
             --input-bg: #0f172a;
+            /* لون التشغيل لسيم الرصاصي الفحم (أخضر زمردي هادئ) */
+            --running-color: #10b981;
+            --running-glow: rgba(16, 185, 129, 0.6);
+            --running-bg: rgba(16, 185, 129, 0.05);
         }
 
         body.theme-dark-blue {
@@ -38,6 +46,10 @@
             --text-color: #f3f4f6;
             --border-color: #1e293b;
             --input-bg: #020617;
+            /* لون التشغيل لسيم الأزرق الغامق (أصفر كهرماني دافئ) */
+            --running-color: #f59e0b;
+            --running-glow: rgba(245, 158, 11, 0.6);
+            --running-bg: rgba(245, 158, 11, 0.05);
         }
 
         body.theme-light {
@@ -47,6 +59,10 @@
             --text-color: #0f172a;
             --border-color: #cbd5e1;
             --input-bg: #f8fafc;
+            /* لون التشغيل لسيم المظهر الفاتح (بنفسجي ملكي أنيق) */
+            --running-color: #7c3aed;
+            --running-glow: rgba(124, 58, 237, 0.5);
+            --running-bg: rgba(124, 58, 237, 0.05);
         }
 
         body {
@@ -834,14 +850,17 @@
             if (!cardElem) return;
             
             if (state === 'running') {
-                cardElem.style.border = "3px solid var(--accent)";
-                cardElem.style.boxShadow = "0 0 18px rgba(212, 175, 55, 0.6)";
-                cardElem.style.backgroundColor = "rgba(212, 175, 55, 0.04)";
+                // حالة التشغيل: استخدام الألوان المميزة والهادئة الخاصة بالتشغيل لكل سيم
+                cardElem.style.border = "3px solid var(--running-color)";
+                cardElem.style.boxShadow = "0 0 18px var(--running-glow)";
+                cardElem.style.backgroundColor = "var(--running-bg)";
             } else if (state === 'finished') {
+                // حالة انتهاء الوقت (إطار أحمر ناري تنبيهي)
                 cardElem.style.border = "3px solid var(--danger)";
                 cardElem.style.boxShadow = "0 0 20px rgba(239, 68, 68, 0.7)";
                 cardElem.style.backgroundColor = "rgba(239, 68, 68, 0.06)";
             } else {
+                // الحالة العادية (إطار هادئ)
                 cardElem.style.border = "1px solid var(--border-color)";
                 cardElem.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
                 cardElem.style.backgroundColor = "var(--card-bg)";
