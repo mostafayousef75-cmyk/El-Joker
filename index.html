@@ -982,6 +982,51 @@
             }
         }
 
+        let draggedSrcIdx = null;
+        function drag(e) {
+            let cardElem = e.target.closest('.card');
+            if (cardElem) {
+                draggedSrcIdx = parseInt(cardElem.getAttribute('data-idx'));
+                e.dataTransfer.setData('text/plain', draggedSrcIdx);
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        }
+        function allowDrop(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+        function drop(e) {
+            e.preventDefault();
+            let cardElem = e.target.closest('.card');
+            if (!cardElem) return;
+            let targetIdx = parseInt(cardElem.getAttribute('data-idx'));
+            if (draggedSrcIdx === null || draggedSrcIdx === targetIdx) return;
+            let tempDev = devices[draggedSrcIdx];
+            devices[draggedSrcIdx] = devices[targetIdx];
+            devices[targetIdx] = tempDev;
+            draggedSrcIdx = null;
+            saveDevicesOrder();
+            initDevices();
+        }
+
+        function saveDevicesOrder() {
+            localStorage.setItem('ps_devices_order', JSON.stringify(devices));
+            saveData();
+        }
+
+        function restoreDevicesOrder() {
+            let savedOrder = localStorage.getItem('ps_devices_order');
+            if (savedOrder) {
+                try {
+                    let parsedOrder = JSON.parse(savedOrder);
+                    if (Array.isArray(parsedOrder) && parsedOrder.length === devices.length) {
+                        devices = parsedOrder;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        function getDevCardElem(devId) {
+            return document.querySelector(`.card[data-devid="${devId}"]`);
+        }
+
         function initDevices() {
             const container = document.getElementById('devices-grid');
             if (!container) return;
@@ -992,7 +1037,7 @@
                 document.getElementById('quick-panel-title').innerText = `⚡ حاسبة إيراد اليوم الشامل (يوم ${todayNum})`;
             }
 
-            devices.forEach((dev) => {
+            devices.forEach((dev, idx) => {
                 if (!timerData[dev.id]) {
                     timerData[dev.id] = loadDeviceSession(dev.id);
                 }
@@ -1000,10 +1045,20 @@
                 let stopBtnClass = t.isPaused ? "btn-resume" : "btn-pause";
                 let stopBtnText = t.isPaused ? "▶️ استكمال" : "⏹️ إيقاف مؤقت";
 
+                // تحديد إطار الكارت حسب حالة التشغيل ليبقى ظاهراً بعد الريفرش
+                let cardBorderStyle = "1px solid var(--border-color)";
+                if (t.isFinished) {
+                    cardBorderStyle = "2px solid var(--danger)";
+                } else if ((t.isCountdown && t.endTime > Date.now() && !t.isPaused) || (!t.isCountdown && t.startTime > 0 && !t.isPaused)) {
+                    cardBorderStyle = "2px solid var(--accent)";
+                }
+
                 container.innerHTML += `
-                    <div class="card" data-devid="${dev.id}">
-                        <div class="device-title">
+                    <div class="card" id="card-${idx}" data-idx="${idx}" data-devid="${dev.id}" style="border: ${cardBorderStyle};">
+                        <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="drag-handle" draggable="true" ondragstart="drag(event)" title="اسحب من هنا لتحريك الكارت">⠿ اسحب</span>
                             <span>${dev.name}</span>
+                            <span>🎮</span>
                         </div>
                         <div class="rate-box">
                             سعر الساعة (ج.م): <input type="number" min="0" id="rate-${dev.id}" value="${dev.rate}" onchange="updateRate(${dev.id}, this.value)" onkeydown="if(event.key==='Enter') updateRate(${dev.id}, this.value)">
@@ -1038,6 +1093,12 @@
                         </div>
                     </div>
                 `;
+            });
+
+            // تفعيل السحب والإفلات للكروت
+            document.querySelectorAll('.card').forEach((card) => {
+                card.addEventListener('dragover', allowDrop);
+                card.addEventListener('drop', drop);
             });
 
             restoreTimers();
