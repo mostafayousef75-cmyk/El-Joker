@@ -850,17 +850,17 @@
             if (!cardElem) return;
             
             if (state === 'running') {
-                // حالة التشغيل: استخدام الألوان المميزة والهادئة الخاصة بالتشغيل لكل سيم
+                // حالة التشغيل (إطار والجلو بلون التشغيل الخاص بالسيم)
                 cardElem.style.border = "3px solid var(--running-color)";
                 cardElem.style.boxShadow = "0 0 18px var(--running-glow)";
                 cardElem.style.backgroundColor = "var(--running-bg)";
             } else if (state === 'finished') {
-                // حالة انتهاء الوقت (إطار أحمر ناري تنبيهي)
+                // حالة انتهاء الوقت (إطار أحمر ناري)
                 cardElem.style.border = "3px solid var(--danger)";
                 cardElem.style.boxShadow = "0 0 20px rgba(239, 68, 68, 0.7)";
                 cardElem.style.backgroundColor = "rgba(239, 68, 68, 0.06)";
             } else {
-                // الحالة العادية (إطار هادئ)
+                // الحالة العادية أو وقت الإيقاف المؤقت (إطار رمادي هادئ وبدون جلو قوي)
                 cardElem.style.border = "1px solid var(--border-color)";
                 cardElem.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
                 cardElem.style.backgroundColor = "var(--card-bg)";
@@ -1387,7 +1387,10 @@
             let t = timerData[devId];
             if (!t) return;
 
+            let cardElem = getDevCardElem(devId);
+
             if (!t.isPaused) {
+                // حالة: ضغط على زر إيقاف مؤقت ⏸️
                 if (t.interval) {
                     clearInterval(t.interval);
                     t.interval = null;
@@ -1400,17 +1403,29 @@
                 t.isPaused = true;
                 saveDeviceSession(devId);
                 updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                
+                // 💡 هنا لما بنعمل إيقاف مؤقت، الجلو بيتغير ويرجع للحالة العادية الهادئة
                 if (!t.isFinished) setCardState(devId, 'normal');
             } else {
+                // حالة: ضغط على زر استكمال ▶️
                 t.isPaused = false;
                 if (t.isCountdown) {
-                    t.endTime = Date.now() + (t.seconds * 1000);
+                    // لو مؤقت تنازلي، بنظبط وقت النهاية بالثواني المتبقية الصح
+                    if (t.seconds > 0) {
+                        t.endTime = Date.now() + (t.seconds * 1000);
+                    } else {
+                        t.endTime = Date.now() + (60 * 1000); // احتياطي لو الوقت خلص
+                        t.seconds = 60;
+                    }
                 } else {
+                    // لو وقت مفتوح، بنظبط وقت البداية بناءً على الثواني اللي فاتت
                     t.startTime = Date.now() - (t.seconds * 1000);
                 }
                 saveDeviceSession(devId);
                 runInterval(devId);
                 updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                
+                // 💡 عند الاستكمال، يرجع الجلو ينور بلون التشغيل المميز تاني
                 if (!t.isFinished) setCardState(devId, 'running');
             }
         }
