@@ -1596,8 +1596,9 @@
 
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
-            let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
-            let totalTimeCost = (t.accumulatedCost || 0) + activeTimeCost;
+            
+            // إذا تم إدخال مبلغ ثابت، يتم اعتماده حصرياً وتجاهل الوقت تماماً (سواء الوقت الحالي أو المتراكم)
+            let totalTimeCost = (customPrice > 0) ? customPrice : ((t.accumulatedCost || 0) + currentPeriodCost);
 
             let itemsCost = (t.drinks || 0) + (t.indomie || 0) + (t.grocery || 0);
             let grandTotal = totalTimeCost + itemsCost;
@@ -1605,7 +1606,7 @@
             let billElem = document.getElementById("bill-total-" + devId);
             if (billElem) {
                 let logText = (t.periodsLog && t.periodsLog.length > 0) ? `📜 فترات الوقت: [ ${t.periodsLog.join(" + ")} ]` : '';
-                billElem.querySelector('div:first-child').innerText = `إجمالي الفاتورة: ${grandTotal} ج.م (الوقت: ${totalTimeCost} ج.م + إضافات: ${itemsCost} ج.م)`;
+                billElem.querySelector('div:first-child').innerText = `إجمالي الفاتورة: ${grandTotal} ج.م (الوقت/الثابت: ${totalTimeCost} ج.م + إضافات: ${itemsCost} ج.م)`;
                 let logElem = document.getElementById("periods-log-" + devId);
                 if (logElem) logElem.innerText = logText;
             }
@@ -1616,12 +1617,13 @@
             let devName = devObj ? devObj.name : 'الجهاز';
             let t = timerData[devId];
 
-            if (t && t.interval) clearInterval(t.interval);
+            stopTimer(devId);
 
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
-            let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
-            let finalTimeCost = (t.accumulatedCost || 0) + activeTimeCost;
+            
+            // عند الإغلاق والدفع، اعتماد المبلغ الثابت وتجاهل الوقت تماماً
+            let finalTimeCost = (customPrice > 0) ? customPrice : ((t.accumulatedCost || 0) + currentPeriodCost);
 
             let drinksCost = t.drinks || 0;
             let indomieCost = t.indomie || 0;
@@ -1633,7 +1635,7 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            let descText = customPrice > 0 ? 'مبلغ مخصص/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
+            let descText = customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
             
             if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText, true, currentDay);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devName, true, currentDay);
@@ -1642,7 +1644,7 @@
 
             clearDeviceSession(devId);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isFinished: false,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
@@ -1653,6 +1655,9 @@
             }
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
+let cardElem = getDevCardElem(devId);
+            if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
+
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
             if(document.getElementById("grocery-" + devId)) document.getElementById("grocery-" + devId).value = 0;
@@ -1662,7 +1667,7 @@
             updateQuickTodayTotalView();
             alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
-
+        
         function initDailyTable() {
             const tbody = document.getElementById('daily-table-body');
             if (!tbody) return;
