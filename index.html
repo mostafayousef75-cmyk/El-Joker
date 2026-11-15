@@ -64,13 +64,15 @@
             --running-bg: rgba(124, 58, 237, 0.05);
         }
 
-        /* 💡 هذا السطر يجعل أرقام العداد سوداء وواضحة تماماً في الوضع الفاتح */
+        /* 💡 تعديلات الوضع الفاتح: عداد الوقت عريض وأسود، وفترات الوقت سوداء واضحة */
         body.theme-light .timer-display {
             color: #0f172a !important;
+            font-weight: bold !important;
         }
-        body.theme-light .timer-display {
-            color: #0f172a !important; /* لون أسود داكن وواضح جداً في الوضع الفاتح */
-            text-shadow: none; /* إزالة أي توهج مزعج مع الخلفية البيضاء */
+
+        body.theme-light .periods-log {
+            color: #0f172a !important;
+            font-weight: bold !important;
         }
 
         body {
