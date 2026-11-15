@@ -1366,28 +1366,28 @@
             if (!cardElem) return;
             
             if (state === 'running') {
-                // حالة التشغيل: إطار وجلو ملون خاص بالـ Theme الحالي
+                // حالة التشغيل: إطار وجلو بلون التشغيل الأساسي (نبيتي مثلاً أو لون السيم)
                 cardElem.style.border = "3px solid var(--running-color)";
                 cardElem.style.boxShadow = "0 0 18px var(--running-glow)";
                 cardElem.style.backgroundColor = "var(--running-bg)";
             } else if (state === 'paused') {
-                // حالة الإيقاف المؤقت: إطار برتقالي هادئ ومميز يوضح إن الجهاز مستريح
-                cardElem.style.border = "2px dashed var(--warning)";
-                cardElem.style.boxShadow = "0 0 12px rgba(245, 158, 11, 0.4)";
-                cardElem.style.backgroundColor = "rgba(245, 158, 11, 0.03)";
+                // حالة الإيقاف المؤقت: إطار وجلو بلون هادئ جداً (أزرق فاتح/لبني هادئ بدل الأصفر)
+                cardElem.style.border = "2px solid #38bdf8";
+                cardElem.style.boxShadow = "0 0 15px rgba(56, 189, 248, 0.4)";
+                cardElem.style.backgroundColor = "rgba(56, 189, 248, 0.03)";
             } else if (state === 'finished') {
-                // حالة انتهاء الوقت: إطار أحمر ناري تنبيهي
+                // حالة انتهاء الوقت: إطار أحمر ناري
                 cardElem.style.border = "3px solid var(--danger)";
                 cardElem.style.boxShadow = "0 0 20px rgba(239, 68, 68, 0.7)";
                 cardElem.style.backgroundColor = "rgba(239, 68, 68, 0.06)";
             } else {
-                // الحالة العادية (قبل بدء الجهاز أو بعد الإغلاق)
+                // الحالة العادية
                 cardElem.style.border = "1px solid var(--border-color)";
                 cardElem.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
                 cardElem.style.backgroundColor = "var(--card-bg)";
             }
         }
-
+        
         function stopTimer(devId) {
             let t = timerData[devId];
             if (!t) return;
@@ -1401,21 +1401,20 @@
                 if (t.isCountdown) {
                     t.seconds = Math.max(0, Math.round((t.endTime - Date.now()) / 1000));
                 } else {
-                    t.seconds = Math.floor((Date.now() - t.startTime) / 1000);
+                    let calculatedSecs = Math.floor((Date.now() - t.startTime) / 1000);
+                    t.seconds = (calculatedSecs > 0 && calculatedSecs < 86400) ? calculatedSecs : 0;
                 }
                 t.isPaused = true;
                 saveDeviceSession(devId);
                 updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                 
-                // تحديث الجلو ليكون وضع إيقاف مؤقت (برتقالي هادئ)
                 if (!t.isFinished) setCardState(devId, 'paused');
             } else {
-                // ▶️ استكمال العمل
+                // ▶️ استكمال
                 t.isPaused = false;
                 
                 if (t.isCountdown) {
-                    // مؤقت تنازلي
-                    if (t.seconds > 0) {
+                    if (t.seconds > 0 && t.seconds < 86400) {
                         t.endTime = Date.now() + (t.seconds * 1000);
                     } else {
                         let inputElem = document.getElementById("input-mins-" + devId);
@@ -1425,8 +1424,10 @@
                         t.endTime = Date.now() + (t.seconds * 1000);
                     }
                 } else {
-                    // وقت مفتوح (Stopwatch) - تم إصلاح مشكلة الأرقام الفلكية تماماً هنا
-                    if (isNaN(t.seconds) || t.seconds < 0) t.seconds = 0;
+                    // حماية صارمة ضد الأرقام الفلكية في الوقت المفتوح
+                    if (!t.seconds || isNaN(t.seconds) || t.seconds < 0 || t.seconds > 86400) {
+                        t.seconds = 0;
+                    }
                     t.startTime = Date.now() - (t.seconds * 1000);
                 }
 
@@ -1434,7 +1435,6 @@
                 runInterval(devId);
                 updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                 
-                // إعادة جلو التشغيل الملون الخاص بالسيم فوراً
                 if (!t.isFinished) setCardState(devId, 'running');
             }
         }
