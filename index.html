@@ -890,7 +890,7 @@
                 restoreAccordionsState();
             }
         }
-        
+
         function changeAdminPassword() {
             let currentPin = prompt("🔒 أدخل الرقم السري الحالي:");
             if (currentPin === null) return;
@@ -1313,8 +1313,8 @@
             document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}!`;
             document.getElementById('alarm-modal').style.display = 'flex';
             
-            // حفظ حالة أن الجهاز في حالة تنبيه إنهاء في التخزين المحلي
-            if(devId !== null) {
+            // 💡 حفظ حالة التنبيه محلياً لكي لا تختفي عند عمل Refresh
+            if (devId !== null) {
                 localStorage.setItem(`device_alarm_active_${devId}`, 'true');
             }
 
@@ -1331,7 +1331,7 @@
             }
             document.getElementById('alarm-modal').style.display = 'none';
             
-            // إزالة علامة التنبيه لكل الأجهزة عند الإيقاف
+            // 💡 مسح علامة التنبيه لكل الأجهزة عند الضغط على إيقاف
             devices.forEach(dev => {
                 localStorage.removeItem(`device_alarm_active_${dev.id}`);
             });
@@ -1475,6 +1475,11 @@
                 updateDisplay(devId);
                 updateLiveBill(devId);
 
+                // 💡 فحص واسترجاع التنبيه المستمر حتى بعد الـ Refresh
+                if (localStorage.getItem(`device_alarm_active_${dev.id}`) === 'true') {
+                    startMasterAlarm(dev.name, dev.id);
+                }
+
                 if (t.isFinished) {
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
@@ -1485,7 +1490,7 @@
 
                 if (t.isPaused) {
                     updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
-                    setCardState(devId, 'normal');
+                    setCardState(devId, 'paused'); // وضع الإيقاف المؤقت بالإطار المقطع
                 } else {
                     if (t.isCountdown && t.endTime > Date.now()) {
                         runInterval(devId);
@@ -2185,24 +2190,16 @@
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
             let cloudStatus = document.getElementById('cloud-status');
-            
-            // 🔄 استبدل الاتصال السحابي القديم في دالة loadData بهذا الكود الفوري
-        if (db && navigator.onLine) {
-            db.ref('ps_lounge_data').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if(data) {
-                    if(data.allMonthsData) allMonthsData = data.allMonthsData;
-                    if(data.adminPassword) adminPassword = data.adminPassword;
-                    if(data.devicesOrder && Array.isArray(data.devicesOrder) && data.devicesOrder.length === devices.keys) {
-                        devices = data.devicesOrder;
-                        initDevices();
-                    }
-                    loadMonthDataToUI();
+            if (db && navigator.onLine) {
+                db.ref('ps_lounge_data').set(dataToSave).then(() => {
                     if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
-                }
-            }, (err) => {
-                if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
-            });
+                }).catch(err => {
+                    if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
+                });
+            } else if (cloudStatus) {
+                cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
+                cloudStatus.style.background = "#f59e0b";
+            }
         }
 
         function loadData() {
@@ -2237,7 +2234,8 @@
 
             let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
-                db.ref('ps_lounge_data').once('value').then((snapshot) => {
+                // 🔄 التزامن الحي الفوري بين الموبايل واللاب باستخدام .on بدل .once
+                db.ref('ps_lounge_data').on('value', (snapshot) => {
                     const data = snapshot.val();
                     if(data) {
                         if(data.allMonthsData) allMonthsData = data.allMonthsData;
@@ -2249,7 +2247,7 @@
                         loadMonthDataToUI();
                         if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
                     }
-                }).catch((err) => {
+                }, (err) => {
                     if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
                 });
             } else if (cloudStatus) {
