@@ -1467,6 +1467,9 @@
         }
         
         function restoreTimers() {
+            let anyFinished = false;
+            let finishedDeviceName = "";
+
             devices.forEach((dev) => {
                 let devId = dev.id;
                 let t = timerData[devId];
@@ -1475,18 +1478,36 @@
                 updateDisplay(devId);
                 updateLiveBill(devId);
 
-                // 💡 فحص واسترجاع التنبيه المستمر حتى بعد الـ Refresh
-                if (localStorage.getItem(`device_alarm_active_${dev.id}`) === 'true') {
-                    startMasterAlarm(dev.name, dev.id);
-                }
-
                 if (t.isFinished) {
+                    anyFinished = true;
+                    finishedDeviceName = dev.name;
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
                     setCardState(devId, 'finished');
                     updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                    return;
+                } else if (t.isPaused) {
+                    updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                    setCardState(devId, 'paused');
+                } else {
+                    if (t.isCountdown && t.endTime > Date.now()) {
+                        runInterval(devId);
+                        updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        setCardState(devId, 'running');
+                    } else if (!t.isCountdown && t.startTime > 0) {
+                        runInterval(devId);
+                        updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        setCardState(devId, 'running');
+                    } else {
+                        setCardState(devId, 'normal');
+                    }
                 }
+            });
+
+            // 💡 لو فيه أي جهاز وقته انتهى وعملت Refresh، التنبيه والزمر هيشتغلوا فوراً ومش هيختفوا
+            if (anyFinished) {
+                startMasterAlarm(finishedDeviceName);
+            }
+        }
 
                 if (t.isPaused) {
                     updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
@@ -2181,11 +2202,21 @@
             }
         }
 
-        function saveData() {
+function saveData() {
+            // تجميع جلسات كل الأجهزة النشطة لحفظها ورفعها للسحابة
+            let allSessions = {};
+            devices.forEach(dev => {
+                let saved = localStorage.getItem(`dev_session_${dev.id}`);
+                if (saved) {
+                    try { allSessions[dev.id] = JSON.parse(saved); } catch(e) {}
+                }
+            });
+
             const dataToSave = {
                 allMonthsData: allMonthsData || {},
                 adminPassword: adminPassword || "1234",
-                devicesOrder: devices || []
+                devicesOrder: devices || [],
+                deviceSessions: allSessions // 👈 حفظ وتشامز العدادات والجلسات سحابياً
             };
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
@@ -2212,6 +2243,11 @@
                     if (parsed.devicesOrder && Array.isArray(parsed.devicesOrder) && parsed.devicesOrder.length === devices.length) {
                         devices = parsed.devicesOrder;
                     }
+                    if (parsed.deviceSessions) {
+                        for (let devId in parsed.deviceSessions) {
+                            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(parsed.deviceSessions[devId]));
+                        }
+                    }
                 } catch(e) {}
             }
 
@@ -2234,7 +2270,7 @@
 
             let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
-                // 🔄 التزامن الحي الفوري بين الموبايل واللاب باستخدام .on بدل .once
+                // 🔄 مزامنة حية ولحظية لكل التعديلات والجلسات بين الموبايل والكمبيوتر
                 db.ref('ps_lounge_data').on('value', (snapshot) => {
                     const data = snapshot.val();
                     if(data) {
@@ -2242,9 +2278,16 @@
                         if(data.adminPassword) adminPassword = data.adminPassword;
                         if(data.devicesOrder && Array.isArray(data.devicesOrder) && data.devicesOrder.length === devices.length) {
                             devices = data.devicesOrder;
-                            initDevices();
+                        }
+                        if(data.deviceSessions) {
+                            for (let devId in data.deviceSessions) {
+                                localStorage.setItem(`dev_session_${devId}`, JSON.stringify(data.deviceSessions[devId]));
+                                timerData[devId] = loadDeviceSession(devId);
+                            }
+                            initDevices(); // إعادة رسم الكروت بالوقت المحدث من الجهاز الآخر فوراً
                         }
                         loadMonthDataToUI();
+                        restoreTimers();
                         if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
                     }
                 }, (err) => {
