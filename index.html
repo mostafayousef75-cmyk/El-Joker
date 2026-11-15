@@ -1410,15 +1410,19 @@
                 // حالة: ضغط على زر استكمال ▶️
                 t.isPaused = false;
                 if (t.isCountdown) {
-                    // لو مؤقت تنازلي، بنظبط وقت النهاية بالثواني المتبقية الصح
+                    // لو مؤقت تنازلي، بنظبط وقت النهاية بالثواني المتبقية الصح (ولو مش متوفرة بنخليه يفتح دقيقة افتراضية لتجنب أي أرقام فلكية)
                     if (t.seconds > 0) {
                         t.endTime = Date.now() + (t.seconds * 1000);
                     } else {
-                        t.endTime = Date.now() + (60 * 1000); // احتياطي لو الوقت خلص
-                        t.seconds = 60;
+                        let inputElem = document.getElementById("input-mins-" + devId);
+                        let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
+                        t.setMinutes = mins;
+                        t.seconds = mins * 60;
+                        t.endTime = Date.now() + (t.seconds * 1000);
                     }
                 } else {
-                    // لو وقت مفتوح، بنظبط وقت البداية بناءً على الثواني اللي فاتت
+                    // لو وقت مفتوح، بنظبط وقت البداية بناءً على الثواني المسجلة أو يبدأ من الصفر
+                    if (isNaN(t.seconds) || t.seconds < 0) t.seconds = 0;
                     t.startTime = Date.now() - (t.seconds * 1000);
                 }
                 saveDeviceSession(devId);
