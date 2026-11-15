@@ -1513,7 +1513,6 @@
             }
             document.getElementById('alarm-modal').style.display = 'none';
             
-            // تسجيل أن التنبيه تم إسكاته حتى لا يتكرر عند الريفرش
             devices.forEach(dev => {
                 let t = timerData[dev.id];
                 if (t && t.isFinished) {
@@ -2227,7 +2226,9 @@
                     const parsed = JSON.parse(localData);
                     if (parsed.allMonthsData) allMonthsData = parsed.allMonthsData;
                     if (parsed.adminPassword) adminPassword = parsed.adminPassword;
-                    if (parsed.devicesOrder && Array.isArray(parsed.devicesOrder)) devices = parsed.devicesOrder;
+                    if (parsed.devicesOrder && Array.isArray(parsed.devicesOrder) && parsed.devicesOrder.length === devices.length) {
+                        devices = parsed.devicesOrder;
+                    }
                     if (parsed.deviceSessions) {
                         for (let devId in parsed.deviceSessions) {
                             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(parsed.deviceSessions[devId]));
@@ -2235,8 +2236,6 @@
                     }
                 } catch(e) {}
             }
-            // باقي الكود الخاص بالثيمات والشهر...
-        }
 
             let savedTheme = localStorage.getItem('ps_theme') || 'oled';
             let themeSelect = document.getElementById('theme-selector');
@@ -2266,6 +2265,11 @@
                             devices = data.devicesOrder;
                             initDevices();
                         }
+                        if (data.deviceSessions) {
+                            for (let devId in data.deviceSessions) {
+                                localStorage.setItem(`dev_session_${devId}`, JSON.stringify(data.deviceSessions[devId]));
+                            }
+                        }
                         loadMonthDataToUI();
                         if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
                     }
@@ -2277,12 +2281,6 @@
                 cloudStatus.style.background = "#f59e0b";
             }
         }
-
-        window.addEventListener('online', () => { saveData(); });
-        window.addEventListener('offline', () => {
-            let cloudStatus = document.getElementById('cloud-status');
-            if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
-        });
 
         function exportData() {
             const dataToExport = { allMonthsData: allMonthsData, adminPassword: adminPassword, devicesOrder: devices };
