@@ -1465,6 +1465,7 @@
         function restoreTimers() {
             let anyFinished = false;
             let finishedDeviceName = "";
+            let finishedCount = 0;
 
             devices.forEach((dev) => {
                 let devId = dev.id;
@@ -1475,9 +1476,13 @@
                 updateLiveBill(devId);
 
                 if (t.isFinished) {
+                    // 💡 فحص كل جهاز منتهي: إذا لم يتم الضغط على إيقاف تنبيهه مמّن يظهر
                     if (!t.alarmDismissed) {
                         anyFinished = true;
-                        finishedDeviceName = dev.name;
+                        finishedCount++;
+                        if (finishedDeviceName === "") {
+                            finishedDeviceName = dev.name;
+                        }
                     }
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
@@ -1501,8 +1506,23 @@
                 }
             });
 
+            // 💡 إذا كان هناك أكثر من جهاز منتهي ولم تُسكت تنبيهاتها، يتم عرض العدد وأسماء الأجهزة بوضوح
             if (anyFinished) {
-                startMasterAlarm(finishedDeviceName);
+                let descText = finishedCount > 1 
+                    ? `⚠️ انتهت وقت عدة أجهزة في نفس الوقت! (مثل: ${finishedDeviceName} وآخرون)` 
+                    : `انتهى وقت الجهاز: ${finishedDeviceName}!`;
+                
+                startMasterAlarmMulti(descText);
+            }
+        }
+
+        // 💡 دالة مساعدة لدعم رسائل الأجهزة المتعددة في النافذة التنبيهية
+        function startMasterAlarmMulti(descMessage) {
+            document.getElementById('alarm-desc').innerText = descMessage;
+            document.getElementById('alarm-modal').style.display = 'flex';
+            if (!masterAlarmInterval) {
+                playSingleBeep();
+                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
             }
         }
 
@@ -1513,11 +1533,12 @@
             }
             document.getElementById('alarm-modal').style.display = 'none';
             
+            // 🛑 الأهم: المرور على *جميع* الأجهزة وتثبيت أن أي جهاز منتهي تم إسكات تنبيهه وحفظه نهائياً للسحابة
             devices.forEach(dev => {
                 let t = timerData[dev.id];
                 if (t && t.isFinished) {
                     t.alarmDismissed = true;
-                    saveDeviceSession(dev.id);
+                    saveDeviceSession(dev.id); // يحفظ حالة الإسكات لكل جهاز على حدة بدقة
                 }
             });
         }
