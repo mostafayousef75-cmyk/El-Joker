@@ -1509,25 +1509,6 @@
             }
         }
 
-                if (t.isPaused) {
-                    updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
-                    setCardState(devId, 'paused'); // وضع الإيقاف المؤقت بالإطار المقطع
-                } else {
-                    if (t.isCountdown && t.endTime > Date.now()) {
-                        runInterval(devId);
-                        updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                        setCardState(devId, 'running');
-                    } else if (!t.isCountdown && t.startTime > 0) {
-                        runInterval(devId);
-                        updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                        setCardState(devId, 'running');
-                    } else {
-                        setCardState(devId, 'normal');
-                    }
-                }
-            });
-        }
-
         function resetTimer(devId) {
             let devObj = devices.find(d => d.id === devId);
             if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت وحساب الجهاز ${devObj ? devObj.name : ''}؟`)) return;
