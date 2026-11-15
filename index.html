@@ -169,19 +169,6 @@
             position: relative;
         }
 
-        .drag-handle {
-            font-size: 0.85rem;
-            color: var(--accent);
-            cursor: grab;
-            background: rgba(212, 175, 55, 0.1);
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid var(--accent);
-            user-select: none;
-            display: inline-block;
-        }
-        .drag-handle:active { cursor: grabbing; }
-
         .device-title { font-size: 1.4rem; color: var(--accent); text-align: center; font-weight: bold; }
         
         .rate-box {
@@ -210,8 +197,12 @@
 
         .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
         .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #fff; }
-        .btn-start { background: var(--success); }
-        .btn-stop { background: #475569; } /* لون ثابت لزر الإيقاف/الاستكمال */
+        
+        /* ألوان الأزرار المخصصة والمميزة بدقة */
+        .btn-open-time { background: #10b981; color: #fff; } /* أخضر لـ وقت مفتوح */
+        .btn-pause     { background: #f59e0b; color: #000; } /* برتقالي لـ إيقاف مؤقت */
+        .btn-resume    { background: #3b82f6; color: #fff; } /* أزرق لـ استكمال */
+        
         .btn-reset { background: #64748b; }
         .btn-add { background: var(--warning); color: #000; }
         .btn-timer { background: var(--accent); color: #000; }
@@ -431,7 +422,7 @@
         <div class="alarm-box">
             <h2 id="alarm-title" style="color: var(--danger); margin-top: 0;">⚠️ تنبيه انتهاء الوقت!</h2>
             <p id="alarm-desc" style="font-size: 1.2rem; font-weight: bold; margin: 20px 0;">انتهى وقت الجهاز تماماً</p>
-            <button class="btn btn-stop" style="font-size: 1.1rem; padding: 12px 30px; width: 100%; cursor: pointer;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه</button>
+            <button class="btn btn-pause" style="font-size: 1.1rem; padding: 12px 30px; width: 100%; cursor: pointer;" onclick="stopAlarmAndDismiss()">إيقاف التنبيه</button>
         </div>
     </div>
 
@@ -633,13 +624,13 @@
                 <h3>📥 تسجيل وارد (أموال داخلة)</h3>
                 <input type="text" id="in-desc" placeholder="السبب" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
                 <input type="number" min="0" id="in-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('in')">
-                <button class="btn btn-start" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
+                <button class="btn btn-open-time" style="width:100%;" onclick="addFinance('in')">إضافة للوارد</button>
             </div>
             <div class="card">
                 <h3>📤 تسجيل منصرف (أموال خارجة)</h3>
                 <input type="text" id="out-desc" placeholder="السبب" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
                 <input type="number" min="0" id="out-amount" placeholder="المبلغ" style="width:90%; padding:8px; margin-bottom:10px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:6px;" onkeydown="if(event.key==='Enter') addFinance('out')">
-                <button class="btn btn-stop" style="width:100%; background:var(--danger);" onclick="addFinance('out')">خصم من الخزينة</button>
+                <button class="btn btn-pause" style="width:100%;" onclick="addFinance('out')">خصم من الخزينة</button>
             </div>
         </div>
         <h3 style="margin-top:20px;">سجل الحركات المالية للشهر</h3>
@@ -1001,6 +992,7 @@
                     timerData[dev.id] = loadDeviceSession(dev.id);
                 }
                 let t = timerData[dev.id];
+                let stopBtnClass = t.isPaused ? "btn-resume" : "btn-pause";
                 let stopBtnText = t.isPaused ? "▶️ استكمال" : "⏹️ إيقاف مؤقت";
 
                 container.innerHTML += `
@@ -1020,8 +1012,8 @@
                         <div class="timer-display ${t.isFinished ? 'finished' : ''}" id="time-${dev.id}">00:00:00</div>
                         
                         <div class="btn-group">
-                            <button class="btn btn-start" onclick="startStopwatch(${dev.id})">وقت مفتوح</button>
-                            <button class="btn btn-stop" id="stop-btn-${dev.id}" onclick="stopTimer(${dev.id})">${stopBtnText}</button>
+                            <button class="btn btn-open-time" onclick="startStopwatch(${dev.id})">🔓 وقت مفتوح</button>
+                            <button class="btn ${stopBtnClass}" id="stop-btn-${dev.id}" onclick="stopTimer(${dev.id})">${stopBtnText}</button>
                             <button class="btn btn-accumulate" onclick="accumulateCurrentTime(${dev.id})" title="تراكم الوقت الحالي أو المبلغ الثابت على الفاتورة وتصفيرهما">➕ تراكم الوقت</button>
                             <button class="btn btn-reset" onclick="resetTimer(${dev.id})">إعادة ضبط</button>
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
@@ -1031,7 +1023,7 @@
                             <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
                             <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
                             <label>بقالة: <input type="number" min="0" id="grocery-${dev.id}" value="${t.grocery || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
-                            <label style="color: var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${dev.id}" value="${t.customPrice || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
+                            <label style="color: var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${dev.id}" value="${t.customPrice || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${dev.id}">
@@ -1044,6 +1036,14 @@
 
             restoreTimers();
             updateQuickTodayTotalView();
+        }
+
+        function confirmAndCheckout(devId) {
+            let devObj = devices.find(d => d.id === devId);
+            let devName = devObj ? devObj.name : 'الجهاز';
+            if (confirm(`هل تريد بالتأكيد إغلاق وتصدير فاتورة الجهاز ${devName}؟`)) {
+                checkout(devId);
+            }
         }
 
         function updateRate(devId, newRateVal) {
@@ -1219,7 +1219,7 @@
 
             saveDeviceSession(devId);
             runInterval(devId);
-            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
         }
 
         function startCountdown(devId) {
@@ -1237,7 +1237,7 @@
 
             saveDeviceSession(devId);
             runInterval(devId);
-            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
         }
 
         function stopTimer(devId) {
@@ -1256,7 +1256,7 @@
                 }
                 t.isPaused = true;
                 saveDeviceSession(devId);
-                updateStopBtnText(devId, "▶️ استكمال");
+                updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
             } else {
                 t.isPaused = false;
                 if (t.isCountdown) {
@@ -1266,7 +1266,7 @@
                 }
                 saveDeviceSession(devId);
                 runInterval(devId);
-                updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             }
         }
 
@@ -1317,19 +1317,19 @@
                 if (t.isFinished) {
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
-                    updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+                    updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                     return;
                 }
 
                 if (t.isPaused) {
-                    updateStopBtnText(devId, "▶️ استكمال");
+                    updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                 } else {
                     if (t.isCountdown && t.endTime > Date.now()) {
                         runInterval(devId);
-                        updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+                        updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                     } else if (!t.isCountdown && t.startTime > 0) {
                         runInterval(devId);
-                        updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+                        updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                     }
                 }
             });
@@ -1346,9 +1346,13 @@
             if (timeDisplay) timeDisplay.innerText = hrs + ":" + mins + ":" + secs;
         }
 
-        function updateStopBtnText(devId, text) {
+        function updateStopBtnState(devId, text, className) {
             let btn = document.getElementById(`stop-btn-${devId}`);
-            if (btn) btn.innerText = text;
+            if (btn) {
+                btn.innerText = text;
+                btn.classList.remove('btn-pause', 'btn-resume');
+                btn.classList.add(className);
+            }
         }
 
         function accumulateCurrentTime(devId) {
@@ -1390,7 +1394,7 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
-            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
             updateLiveBill(devId);
             alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
@@ -1411,7 +1415,7 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
-            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
@@ -1505,7 +1509,7 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
-            updateStopBtnText(devId, "⏹️ إيقاف مؤقت");
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
