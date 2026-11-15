@@ -1026,9 +1026,9 @@
                         </div>
                         
                         <div class="item-inputs">
-                            <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
-                            <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
-                            <label>بقالة: <input type="number" min="0" id="grocery-${dev.id}" value="${t.grocery || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') checkout(${dev.id})"></label>
+                            <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label>بقالة: <input type="number" min="0" id="grocery-${dev.id}" value="${t.grocery || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                             <label style="color: var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${dev.id}" value="${t.customPrice || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                         </div>
 
