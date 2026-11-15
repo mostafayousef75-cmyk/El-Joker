@@ -1139,6 +1139,41 @@
             }
         }
 
+        function runInterval(devId) {
+            let t = timerData[devId];
+            if (t.interval) clearInterval(t.interval);
+
+            t.interval = setInterval(() => {
+                if (t.isPaused || t.isFinished) return;
+
+                if (t.isCountdown) {
+                    let rem = Math.round((t.endTime - Date.now()) / 1000);
+                    if (rem > 0) {
+                        t.seconds = rem;
+                        updateDisplay(devId);
+                        updateLiveBill(devId);
+                    } else {
+                        clearInterval(t.interval);
+                        t.interval = null;
+                        t.seconds = 0;
+                        t.isFinished = true;
+                        saveDeviceSession(devId);
+                        let timeDisplay = document.getElementById("time-" + devId);
+                        if (timeDisplay) {
+                            timeDisplay.innerText = "00:00:00";
+                            timeDisplay.classList.add('finished');
+                        }
+                        let devObj = devices.find(d => d.id === devId);
+                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
+                    }
+                } else {
+                    t.seconds = Math.floor((Date.now() - t.startTime) / 1000);
+                    updateDisplay(devId);
+                    updateLiveBill(devId);
+                }
+            }, 1000);
+        }
+
         function saveDeviceSession(devId) {
             let t = timerData[devId];
             if (!t) return;
