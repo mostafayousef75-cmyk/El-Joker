@@ -1653,9 +1653,7 @@
                 timeDisplay.innerText = "00:00:00";
                 timeDisplay.classList.remove('finished');
             }
-            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-
-let cardElem = getDevCardElem(devId);
+            let cardElem = getDevCardElem(devId);
             if (cardElem) cardElem.style.border = "1px solid var(--border-color)";
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
