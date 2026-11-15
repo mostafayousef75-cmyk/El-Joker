@@ -1190,17 +1190,18 @@
                 isCountdown: t.isCountdown || false,
                 isPaused: t.isPaused || false,
                 isFinished: t.isFinished || false,
+                alarmDismissed: t.alarmDismissed || false,
                 endTime: t.endTime || 0,
                 startTime: t.startTime || 0
             };
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
-            saveData(); // 👈 لحفظ المزامنة السحابية فوراً
+            saveData();
         }
-        
+            
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, endTime: 0, startTime: 0,
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
@@ -1211,7 +1212,7 @@
             }
             return defaultData;
         }
-
+        
         function clearDeviceSession(devId) {
             localStorage.removeItem(`dev_session_${devId}`);
         }
@@ -1313,12 +1314,13 @@
         function startMasterAlarm(deviceName, devId = null) {
             document.getElementById('alarm-desc').innerText = `انتهى وقت الجهاز: ${deviceName}!`;
             document.getElementById('alarm-modal').style.display = 'flex';
-            
-            // 💡 حفظ حالة التنبيه محلياً لكي لا تختفي عند عمل Refresh
-            if (devId !== null) {
-                localStorage.setItem(`device_alarm_active_${devId}`, 'true');
-            }
 
+            if (!masterAlarmInterval) {
+                playSingleBeep();
+                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
+            }
+        }
+        
             if (!masterAlarmInterval) {
                 playSingleBeep();
                 masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
@@ -1332,9 +1334,13 @@
             }
             document.getElementById('alarm-modal').style.display = 'none';
             
-            // 💡 مسح علامة التنبيه لكل الأجهزة عند الضغط على إيقاف
+            // 💡 تسجيل أن هذا الجهاز تم إسكات تنبيهه ولن يتكرر الصوت عند التحديث
             devices.forEach(dev => {
-                localStorage.removeItem(`device_alarm_active_${dev.id}`);
+                let t = timerData[dev.id];
+                if (t && t.isFinished) {
+                    t.alarmDismissed = true;
+                    saveDeviceSession(dev.id);
+                }
             });
         }
 
@@ -1480,8 +1486,10 @@
                 updateLiveBill(devId);
 
                 if (t.isFinished) {
-                    anyFinished = true;
-                    finishedDeviceName = dev.name;
+                    if (!t.alarmDismissed) { // 👈 عدم إعادة إطلاق الصوت إذا قام المستخدم بإيقافه مسبقاً
+                        anyFinished = true;
+                        finishedDeviceName = dev.name;
+                    }
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
                     setCardState(devId, 'finished');
@@ -1542,12 +1550,16 @@
         function updateDisplay(devId) {
             let t = timerData[devId];
             if (!t) return;
-            let s = t.seconds;
+            let s = Math.max(0, t.seconds || 0); // 👈 منع أي أرقام سالبة
             let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
             let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
             let secs = String(s % 60).padStart(2, '0');
             let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) timeDisplay.innerText = hrs + ":" + mins + ":" + secs;
+            if (timeDisplay) {
+                timeDisplay.style.direction = "ltr"; // 👈 تثبيت اتجاه العداد ليعرض (00:00:00) بالشكل الصحيح دائماً
+                timeDisplay.style.unicodeBidi = "bidi-override";
+                timeDisplay.innerText = hrs + ":" + mins + ":" + secs;
+            }
         }
 
         function updateStopBtnState(devId, text, className) {
