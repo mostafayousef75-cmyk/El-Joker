@@ -1190,14 +1190,14 @@
                 isCountdown: t.isCountdown || false,
                 isPaused: t.isPaused || false,
                 isFinished: t.isFinished || false,
-                alarmDismissed: t.alarmDismissed || false,
+                alarmDismissed: t.alarmDismissed || false, // 👈 حفظ حالة إسكات التنبيه بدقة
                 endTime: t.endTime || 0,
                 startTime: t.startTime || 0
             };
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
             saveData();
         }
-            
+
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
@@ -1320,12 +1320,6 @@
                 masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
             }
         }
-        
-            if (!masterAlarmInterval) {
-                playSingleBeep();
-                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
-            }
-        }
 
         function stopAlarmAndDismiss() {
             if (masterAlarmInterval) {
@@ -1334,12 +1328,12 @@
             }
             document.getElementById('alarm-modal').style.display = 'none';
             
-            // 💡 تسجيل أن هذا الجهاز تم إسكات تنبيهه ولن يتكرر الصوت عند التحديث
+            // 💡 تسجيل وتثبيت أن جميع الأجهزة المنتهية تم إيقاف تنبيهها محلياً وسحابياً
             devices.forEach(dev => {
                 let t = timerData[dev.id];
                 if (t && t.isFinished) {
                     t.alarmDismissed = true;
-                    saveDeviceSession(dev.id);
+                    saveDeviceSession(dev.id); // 👈 تحديث وحفظ الحالة للسحابة فوراً
                 }
             });
         }
@@ -1486,7 +1480,7 @@
                 updateLiveBill(devId);
 
                 if (t.isFinished) {
-                    if (!t.alarmDismissed) { // 👈 عدم إعادة إطلاق الصوت إذا قام المستخدم بإيقافه مسبقاً
+                    if (!t.alarmDismissed) { // 👈 لا تقم بإعادة تشغيل المنبه إذا كان المستخدم قد أوقفه مسبقاً
                         anyFinished = true;
                         finishedDeviceName = dev.name;
                     }
@@ -1516,7 +1510,7 @@
                 startMasterAlarm(finishedDeviceName);
             }
         }
-
+        
         function resetTimer(devId) {
             let devObj = devices.find(d => d.id === devId);
             if (!confirm(`⚠️ هل أنت متأكد من إعادة ضبط (إلغاء) وقت وحساب الجهاز ${devObj ? devObj.name : ''}؟`)) return;
