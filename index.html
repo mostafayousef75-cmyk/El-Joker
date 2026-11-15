@@ -1194,9 +1194,9 @@
                 startTime: t.startTime || 0
             };
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
-            saveData(); // 👈 هذا السطر هو المسؤول عن إرسال أي حركة من الموبايل للكمبيوتر فوراً عبر السحابة
+            saveData(); // 👈 لحفظ المزامنة السحابية فوراً
         }
-
+        
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
@@ -1504,7 +1504,6 @@
                 }
             });
 
-            // 💡 لو فيه أي جهاز وقته انتهى وعملت Refresh، التنبيه والزمر هيشتغلوا فوراً ومش هيختفوا
             if (anyFinished) {
                 startMasterAlarm(finishedDeviceName);
             }
