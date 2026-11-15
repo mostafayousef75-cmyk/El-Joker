@@ -1366,31 +1366,36 @@
             if (!cardElem) return;
             
             if (state === 'running') {
-                // حالة التشغيل: إطار وجلو بلون التشغيل الأساسي (نبيتي مثلاً أو لون السيم)
+                // حالة التشغيل: إطار متصل بلون التشغيل الأساسي للجهاز والجلو الخاص بالسيم
                 cardElem.style.border = "3px solid var(--running-color)";
                 cardElem.style.boxShadow = "0 0 18px var(--running-glow)";
                 cardElem.style.backgroundColor = "var(--running-bg)";
             } else if (state === 'paused') {
-                // حالة الإيقاف المؤقت: إطار وجلو بلون هادئ جداً (أزرق فاتح/لبني هادئ بدل الأصفر)
-                cardElem.style.border = "2px solid #38bdf8";
-                cardElem.style.boxShadow = "0 0 15px rgba(56, 189, 248, 0.4)";
-                cardElem.style.backgroundColor = "rgba(56, 189, 248, 0.03)";
+                // حالة الإيقاف المؤقت: إطار مقطع (خطوط Dash على الفريم) باللون الأزرق مع الجلو الأزرق المميز
+                cardElem.style.border = "3px dashed #38bdf8";
+                cardElem.style.boxShadow = "0 0 16px rgba(56, 189, 248, 0.5)";
+                cardElem.style.backgroundColor = "rgba(56, 189, 248, 0.04)";
             } else if (state === 'finished') {
-                // حالة انتهاء الوقت: إطار أحمر ناري
+                // حالة انتهاء الوقت: إطار أحمر ناري تنبيهي
                 cardElem.style.border = "3px solid var(--danger)";
                 cardElem.style.boxShadow = "0 0 20px rgba(239, 68, 68, 0.7)";
                 cardElem.style.backgroundColor = "rgba(239, 68, 68, 0.06)";
             } else {
-                // الحالة العادية
+                // الحالة العادية (قبل بدء الجهاز أو بعد الإغلاق)
                 cardElem.style.border = "1px solid var(--border-color)";
                 cardElem.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
                 cardElem.style.backgroundColor = "var(--card-bg)";
             }
         }
-        
+
         function stopTimer(devId) {
             let t = timerData[devId];
             if (!t) return;
+
+            // 🛡️ حماية تامة: لو الجهاز لسه مبدأش أي وقت نهائياً وكل قيمه صفرية، لا يتم تنفيذ أي شيء ولا يبدأ وقت مفتوح عشوائي
+            if (t.seconds === 0 && !t.startTime && !t.endTime && !t.isCountdown && t.accumulatedCost === 0 && !t.isPaused) {
+                return;
+            }
 
             if (!t.isPaused) {
                 // ⏸️ إيقاف مؤقت
@@ -1408,6 +1413,7 @@
                 saveDeviceSession(devId);
                 updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                 
+                // تحويل الفريم إلى خطوط مقطعة (Dashed) مع الجلو الأزرق عند الإيقاف المؤقت
                 if (!t.isFinished) setCardState(devId, 'paused');
             } else {
                 // ▶️ استكمال
@@ -1424,7 +1430,6 @@
                         t.endTime = Date.now() + (t.seconds * 1000);
                     }
                 } else {
-                    // حماية صارمة ضد الأرقام الفلكية في الوقت المفتوح
                     if (!t.seconds || isNaN(t.seconds) || t.seconds < 0 || t.seconds > 86400) {
                         t.seconds = 0;
                     }
@@ -1435,6 +1440,7 @@
                 runInterval(devId);
                 updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                 
+                // إعادة جلو وإطار التشغيل العادي الخاص بالسيم
                 if (!t.isFinished) setCardState(devId, 'running');
             }
         }
