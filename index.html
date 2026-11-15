@@ -59,10 +59,18 @@
             --text-color: #0f172a;
             --border-color: #cbd5e1;
             --input-bg: #f8fafc;
-            /* لون التشغيل لسيم المظهر الفاتح (بنفسجي ملكي أنيق) */
             --running-color: #7c3aed;
             --running-glow: rgba(124, 58, 237, 0.5);
             --running-bg: rgba(124, 58, 237, 0.05);
+        }
+
+        /* 💡 هذا السطر يجعل أرقام العداد سوداء وواضحة تماماً في الوضع الفاتح */
+        body.theme-light .timer-display {
+            color: #0f172a !important;
+        }
+        body.theme-light .timer-display {
+            color: #0f172a !important; /* لون أسود داكن وواضح جداً في الوضع الفاتح */
+            text-shadow: none; /* إزالة أي توهج مزعج مع الخلفية البيضاء */
         }
 
         body {
