@@ -1607,7 +1607,7 @@
             t.grocery = parseFloat(groceryInput ? groceryInput.value : 0) || 0;
             t.customPrice = parseFloat(customInput ? customInput.value : 0) || 0;
 
-            saveDeviceSession(devId);
+            saveDeviceSession(devId); // 🚀 يرفع التعديلات فوراً للسحابة لتظهر على الجهازين معاً
             updateLiveBill(devId);
         }
 
@@ -2252,10 +2252,23 @@
                         if (cloudSession) {
                             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(cloudSession));
                             timerData[devId] = loadDeviceSession(devId);
+                            
+                            // 💡 تحديث قيم الحقول على الشاشة (المشروبات، البقالة، المبلغ الثابت) فوراً لتتطابق بين الجهازين
+                            let currentT = timerData[devId];
+                            let drinkElem = document.getElementById("drink-" + devId);
+                            let indomieElem = document.getElementById("indomie-" + devId);
+                            let groceryElem = document.getElementById("grocery-" + devId);
+                            let customElem = document.getElementById("custom-" + devId);
+
+                            if (drinkElem && document.activeElement !== drinkElem) drinkElem.value = currentT.drinks || 0;
+                            if (indomieElem && document.activeElement !== indomieElem) indomieElem.value = currentT.indomie || 0;
+                            if (groceryElem && document.activeElement !== groceryElem) groceryElem.value = currentT.grocery || 0;
+                            if (customElem && document.activeElement !== customElem) customElem.value = currentT.customPrice || 0;
+
                         } else {
                             localStorage.removeItem(`dev_session_${devId}`);
                             timerData[devId] = { 
-                                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
+                                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
                                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
                             };
                             let timeDisplay = document.getElementById("time-" + devId);
@@ -2284,7 +2297,11 @@
                         } else if (currentT.isPaused) {
                             updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                             setCardState(devId, 'paused');
-                        } else if ((currentT.isCountdown && currentT.endTime > Date.now()) || (!currentT.isCountdown && currentT.startTime > 0)) {
+                        } else if (currentT.isCountdown && currentT.startTime > 0) {
+                            runInterval(devId);
+                            setCardState(devId, 'running');
+                            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        } else if (!currentT.isCountdown && currentT.startTime > 0) {
                             runInterval(devId);
                             setCardState(devId, 'running');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
