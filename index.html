@@ -2293,36 +2293,59 @@
                     if (data.allMonthsData) allMonthsData = data.allMonthsData;
                     if (data.adminPassword) adminPassword = data.adminPassword;
                     
-                    if (data.deviceSessions) {
-                        for (let devId in data.deviceSessions) {
-                            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(data.deviceSessions[devId]));
-                            timerData[devId] = loadDeviceSession(devId);
-                            
-                            // 🚀 تحديث عناصر الجهاز المحددة فقط على الشاشة بسلاسة وبدون إعادة بناء
-                            updateDisplay(devId);
-                            updateLiveBill(devId);
-
-                            let t = timerData[devId];
-                            if (t) {
-                                if (t.isFinished) {
-                                    let timeDisplay = document.getElementById("time-" + devId);
-                                    if (timeDisplay) timeDisplay.classList.add('finished');
-                                    setCardState(devId, 'finished');
-                                    updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                                } else if (t.isPaused) {
-                                    updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
-                                    setCardState(devId, 'paused');
-                                } else if ((t.isCountdown && t.endTime > Date.now()) || (!t.isCountdown && t.startTime > 0)) {
-                                    setCardState(devId, 'running');
-                                    updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                                } else {
-                                    setCardState(devId, 'normal');
-                                    let timeDisplay = document.getElementById("time-" + devId);
-                                    if (timeDisplay) timeDisplay.classList.remove('finished');
-                                }
-                            }
+                    // 💡 فحص كل جهاز وتحديث حالته بدقة (تشغيل العداد أو تصفيره فوراً)
+                    devices.forEach(dev => {
+                        let devId = dev.id;
+                        let cloudSession = data.deviceSessions && data.deviceSessions[devId] ? data.deviceSessions[devId] : null;
+                        
+                        let t = timerData[devId];
+                        if (t && t.interval) {
+                            clearInterval(t.interval);
+                            t.interval = null;
                         }
-                    }
+
+                        if (cloudSession) {
+                            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(cloudSession));
+                            timerData[devId] = loadDeviceSession(devId);
+                        } else {
+                            // 🛑 إذا تم تصدير الجهاز أو إغلاقه على الجهاز الآخر، يتم تصفيره وإغلاقه هنا فوراً لمنع التصدير مرتين!
+                            localStorage.removeItem(`dev_session_${devId}`);
+                            timerData[devId] = { 
+                                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
+                                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
+                            };
+                            let timeDisplay = document.getElementById("time-" + devId);
+                            if (timeDisplay) {
+                                timeDisplay.innerText = "00:00:00";
+                                timeDisplay.classList.remove('finished');
+                            }
+                            setCardState(devId, 'normal');
+                            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                            
+                            if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
+                            if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
+                            if(document.getElementById("grocery-" + devId)) document.getElementById("grocery-" + devId).value = 0;
+                            if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
+                        }
+
+                        let currentT = timerData[devId];
+                        updateDisplay(devId);
+                        updateLiveBill(devId);
+
+                        if (currentT.isFinished) {
+                            let timeDisplay = document.getElementById("time-" + devId);
+                            if (timeDisplay) timeDisplay.classList.add('finished');
+                            setCardState(devId, 'finished');
+                            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        } else if (currentT.isPaused) {
+                            updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                            setCardState(devId, 'paused');
+                        } else if ((currentT.isCountdown && currentT.endTime > Date.now()) || (!currentT.isCountdown && currentT.startTime > 0)) {
+                            runInterval(devId); // 🚀 تشغيل عداد الوقت محلياً فوراً على الجهاز الثاني ليتطابق مع الأول تماماً
+                            setCardState(devId, 'running');
+                            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        }
+                    });
 
                     loadMonthDataToUI();
                     isSyncingFromCloud = false;
@@ -2332,11 +2355,7 @@
                         cloudStatus.style.background = "#22c55e"; 
                     }
                 });
-            } else if (cloudStatus) {
-                cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
-                cloudStatus.style.background = "#f59e0b";
             }
-        }
         
         function exportData() {
             const dataToExport = { allMonthsData: allMonthsData, adminPassword: adminPassword, devicesOrder: devices };
