@@ -20,6 +20,7 @@
             --warning: #f59e0b;
             --border-color: #222222;
             --input-bg: #141414;
+            /* ألوان التشغيل للجهاز الشغال (نبيتي فخم للسيم الأسود الذهبي) */
             --running-color: #9f1239;
             --running-glow: rgba(159, 18, 57, 0.6);
             --running-bg: rgba(159, 18, 57, 0.05);
@@ -32,6 +33,7 @@
             --text-color: #f8fafc;
             --border-color: #334155;
             --input-bg: #0f172a;
+            /* لون التشغيل لسيم الرصاصي الفحم (أخضر زمردي هادئ) */
             --running-color: #10b981;
             --running-glow: rgba(16, 185, 129, 0.6);
             --running-bg: rgba(16, 185, 129, 0.05);
@@ -44,6 +46,7 @@
             --text-color: #f3f4f6;
             --border-color: #1e293b;
             --input-bg: #020617;
+            /* لون التشغيل لسيم الأزرق الغامق (أصفر كهرماني دافئ) */
             --running-color: #f59e0b;
             --running-glow: rgba(245, 158, 11, 0.6);
             --running-bg: rgba(245, 158, 11, 0.05);
@@ -61,6 +64,7 @@
             --running-bg: rgba(124, 58, 237, 0.05);
         }
 
+        /* 💡 تعديلات الوضع الفاتح: عداد الوقت عريض وأسود، وفترات الوقت سوداء واضحة */
         body.theme-light .timer-display {
             color: #0f172a !important;
             font-weight: bold !important;
@@ -775,8 +779,8 @@
         } catch (e) {}
         
         const db = firebaseInitialized ? firebase.database() : null;
-        let serverTimeOffset = 0;
 
+        // 💡 مزامنة الوقت تلقائياً مع السيرفر لتوحيد الساعة بين جميع الأجهزة
         if (db) {
             db.ref(".info/serverTimeOffset").on("value", (snapshot) => {
                 serverTimeOffset = snapshot.val() || 0;
@@ -784,7 +788,7 @@
         }
 
         function getUnifiedTime() {
-            return Date.now() + serverTimeOffset;
+            return Date.now() + serverTimeOffset; // الوقت الموحد الدقيق الذي يتطابق على كل الأجهزة
         }
 
         let devices = [
@@ -808,7 +812,8 @@
         let audioCtx = null;
         let adminPassword = "1234";
         let isSyncingFromCloud = false;
-
+let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوحيد الساعات بين الموبايل واللاب
+        
         function toggleAccordion(contentId, headerId) {
             let content = document.getElementById(contentId);
             let header = document.getElementById(headerId);
@@ -893,15 +898,12 @@
             }
 
             localStorage.setItem('activeTab', tabId);
-            
-            if (tabId === 'daily' || tabId === 'finance' || tabId === 'inventory') {
-                loadMonthDataToUI();
-            } else if (tabId === 'reports') {
+            if (tabId === 'reports') {
                 updateReports();
                 restoreAccordionsState();
             }
         }
-        
+
         function changeAdminPassword() {
             let currentPin = prompt("🔒 أدخل الرقم السري الحالي:");
             if (currentPin === null) return;
@@ -1109,6 +1111,7 @@
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
                         </div>
                         
+                        <!-- 💡 تم تغيير oninput إلى onchange لمنع التهييس والثقل أثناء الكتابة -->
                         <div class="item-inputs">
                             <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" onchange="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                             <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" onchange="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
@@ -1150,49 +1153,7 @@
                 updateLiveBill(devId);
             }
         }
-
-        function runInterval(devId) {
-            let t = timerData[devId];
-            if (t.interval) clearInterval(t.interval);
-
-            t.interval = setInterval(() => {
-                if (t.isPaused || t.isFinished) return;
-
-                let now = getUnifiedTime();
-
-                if (t.isCountdown) {
-                    let elapsed = Math.floor((now - t.startTime) / 1000);
-                    let rem = t.durationSecs - elapsed;
-
-                    if (rem > 0) {
-                        t.seconds = rem;
-                        updateDisplay(devId);
-                        updateLiveBill(devId);
-                    } else {
-                        clearInterval(t.interval);
-                        t.interval = null;
-                        t.seconds = 0;
-                        t.isFinished = true;
-                        t.lastActionTime = Date.now();
-                        saveDeviceSession(devId);
-                        
-                        let timeDisplay = document.getElementById("time-" + devId);
-                        if (timeDisplay) {
-                            timeDisplay.innerText = "00:00:00";
-                            timeDisplay.classList.add('finished');
-                        }
-                        setCardState(devId, 'finished');
-                        let devObj = devices.find(d => d.id === devId);
-                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
-                    }
-                } else {
-                    t.seconds = Math.floor((now - t.startTime) / 1000);
-                    updateDisplay(devId);
-                    updateLiveBill(devId);
-                }
-            }, 1000);
-        }
-
+    
         function saveDeviceSession(devId) {
             let t = timerData[devId];
             if (!t) return;
@@ -1205,32 +1166,22 @@
                 periodsLog: t.periodsLog || [],
                 setMinutes: t.setMinutes || 0,
                 seconds: t.seconds || 0,
-                durationSecs: t.durationSecs || 0,
+                durationSecs: t.durationSecs || 0, // 💡 حفظ إجمالي ثواني المؤقت بدقة لمنع التنبيه الوهمي
                 isCountdown: t.isCountdown || false,
                 isPaused: t.isPaused || false,
                 isFinished: t.isFinished || false,
                 alarmDismissed: t.alarmDismissed || false,
                 endTime: t.endTime || 0,
-                startTime: t.startTime || 0,
-                lastActionTime: t.lastActionTime || Date.now()
+                startTime: t.startTime || 0
             };
-            
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
-
-            let cloudStatus = document.getElementById('cloud-status');
-            if (db && navigator.onLine && !isSyncingFromCloud) {
-                db.ref(`ps_lounge_data/deviceSessions/${devId}`).set(sessionObj).then(() => {
-                    if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
-                }).catch(err => {
-                    if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
-                });
-            }
+            saveData();
         }
 
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: 0,
+                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
@@ -1241,17 +1192,14 @@
             }
             return defaultData;
         }
-
+                        
         function clearDeviceSession(devId) {
             localStorage.removeItem(`dev_session_${devId}`);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: Date.now(),
+                seconds: 0, setMinutes: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
-
-            if (db && navigator.onLine && !isSyncingFromCloud) {
-                db.ref(`ps_lounge_data/deviceSessions/${devId}`).remove();
-            }
+            saveData();
         }
 
         function quickAddCurrentDay(key) {
@@ -1357,30 +1305,12 @@
             }
         }
 
-        function startMasterAlarmMulti(descMessage) {
-            document.getElementById('alarm-desc').innerText = descMessage;
-            document.getElementById('alarm-modal').style.display = 'flex';
-            if (!masterAlarmInterval) {
-                playSingleBeep();
-                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
-            }
-        }
-
         function stopAlarmAndDismiss() {
             if (masterAlarmInterval) {
                 clearInterval(masterAlarmInterval);
                 masterAlarmInterval = null;
             }
             document.getElementById('alarm-modal').style.display = 'none';
-            
-            devices.forEach(dev => {
-                let t = timerData[dev.id];
-                if (t && t.isFinished && !t.alarmDismissed) {
-                    t.alarmDismissed = true;
-                    t.lastActionTime = Date.now();
-                    saveDeviceSession(dev.id);
-                }
-            });
         }
 
         function startStopwatch(devId) {
@@ -1389,17 +1319,16 @@
             if (t.interval) clearInterval(t.interval);
 
             t.seconds = 0;
-            t.startTime = getUnifiedTime();
+            t.startTime = getUnifiedTime(); // 💡 استخدام الوقت الموحد
             t.endTime = 0;
             t.isCountdown = false;
             t.isPaused = false;
             t.isFinished = false;
-            t.alarmDismissed = false;
-            t.lastActionTime = Date.now();
 
             saveDeviceSession(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            
             setCardState(devId, 'running');
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
@@ -1416,21 +1345,61 @@
             t.setMinutes = mins;
             t.seconds = mins * 60;
             t.durationSecs = t.seconds;
-            t.startTime = getUnifiedTime();
+            t.startTime = getUnifiedTime(); // 💡 استخدام الوقت الموحد
             t.isCountdown = true;
             t.isPaused = false;
             t.isFinished = false;
             t.alarmDismissed = false;
-            t.lastActionTime = Date.now();
 
             saveDeviceSession(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            
             setCardState(devId, 'running');
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
         }
 
+        function runInterval(devId) {
+            let t = timerData[devId];
+            if (t.interval) clearInterval(t.interval);
+
+            t.interval = setInterval(() => {
+                if (t.isPaused || t.isFinished) return;
+
+                let now = getUnifiedTime(); // 💡 استخدام الوقت الموحد في كل ثانية
+
+                if (t.isCountdown) {
+                    let elapsed = Math.floor((now - t.startTime) / 1000);
+                    let rem = t.durationSecs - elapsed;
+
+                    if (rem > 0) {
+                        t.seconds = rem;
+                        updateDisplay(devId);
+                        updateLiveBill(devId);
+                    } else {
+                        clearInterval(t.interval);
+                        t.interval = null;
+                        t.seconds = 0;
+                        t.isFinished = true;
+                        saveDeviceSession(devId);
+                        
+                        let timeDisplay = document.getElementById("time-" + devId);
+                        if (timeDisplay) {
+                            timeDisplay.innerText = "00:00:00";
+                            timeDisplay.classList.add('finished');
+                        }
+                        let devObj = devices.find(d => d.id === devId);
+                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
+                    }
+                } else {
+                    t.seconds = Math.floor((now - t.startTime) / 1000);
+                    updateDisplay(devId);
+                    updateLiveBill(devId);
+                }
+            }, 1000);
+        }
+         
         function setCardState(devId, state) {
             let cardElem = getDevCardElem(devId);
             if (!cardElem) return;
@@ -1457,9 +1426,10 @@
         function stopTimer(devId) {
             let t = timerData[devId];
             if (!t) return;
-            if (t.seconds === 0 && !t.startTime && !t.endTime && !t.isCountdown && t.accumulatedCost === 0 && !t.isPaused) return;
 
-            t.lastActionTime = Date.now();
+            if (t.seconds === 0 && !t.startTime && !t.endTime && !t.isCountdown && t.accumulatedCost === 0 && !t.isPaused) {
+                return;
+            }
 
             if (!t.isPaused) {
                 if (t.interval) {
@@ -1467,26 +1437,40 @@
                     t.interval = null;
                 }
                 if (t.isCountdown) {
-                    let elapsed = Math.floor((getUnifiedTime() - t.startTime) / 1000);
-                    t.seconds = Math.max(0, t.durationSecs - elapsed);
+                    t.seconds = Math.max(0, Math.round((t.endTime - Date.now()) / 1000));
                 } else {
-                    let calculatedSecs = Math.floor((getUnifiedTime() - t.startTime) / 1000);
+                    let calculatedSecs = Math.floor((Date.now() - t.startTime) / 1000);
                     t.seconds = (calculatedSecs > 0 && calculatedSecs < 86400) ? calculatedSecs : 0;
                 }
                 t.isPaused = true;
                 saveDeviceSession(devId);
                 updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                
                 if (!t.isFinished) setCardState(devId, 'paused');
             } else {
                 t.isPaused = false;
+                
                 if (t.isCountdown) {
-                    t.startTime = getUnifiedTime() - ((t.durationSecs - t.seconds) * 1000);
+                    if (t.seconds > 0 && t.seconds < 86400) {
+                        t.endTime = Date.now() + (t.seconds * 1000);
+                    } else {
+                        let inputElem = document.getElementById("input-mins-" + devId);
+                        let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
+                        t.setMinutes = mins;
+                        t.seconds = mins * 60;
+                        t.endTime = Date.now() + (t.seconds * 1000);
+                    }
                 } else {
-                    t.startTime = getUnifiedTime() - (t.seconds * 1000);
+                    if (!t.seconds || isNaN(t.seconds) || t.seconds < 0 || t.seconds > 86400) {
+                        t.seconds = 0;
+                    }
+                    t.startTime = Date.now() - (t.seconds * 1000);
                 }
+
                 saveDeviceSession(devId);
                 runInterval(devId);
                 updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                
                 if (!t.isFinished) setCardState(devId, 'running');
             }
         }
@@ -1508,7 +1492,9 @@
                     if (!t.alarmDismissed) {
                         anyFinished = true;
                         finishedCount++;
-                        if (finishedDeviceName === "") finishedDeviceName = dev.name;
+                        if (finishedDeviceName === "") {
+                            finishedDeviceName = dev.name;
+                        }
                     }
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
@@ -1534,10 +1520,27 @@
 
             if (anyFinished) {
                 let descText = finishedCount > 1 
-                    ? `⚠️ انتهى وقت عدة أجهزة! (مثل: ${finishedDeviceName} وآخرون)` 
+                    ? `⚠️ انتهت وقت عدة أجهزة! (مثل: ${finishedDeviceName} وآخرون)` 
                     : `انتهى وقت الجهاز: ${finishedDeviceName}!`;
                 startMasterAlarmMulti(descText);
             }
+        }
+
+        function startMasterAlarmMulti(descMessage) {
+            document.getElementById('alarm-desc').innerText = descMessage;
+            document.getElementById('alarm-modal').style.display = 'flex';
+            if (!masterAlarmInterval) {
+                playSingleBeep();
+                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
+            }
+        }
+
+        function stopAlarmAndDismiss() {
+            if (masterAlarmInterval) {
+                clearInterval(masterAlarmInterval);
+                masterAlarmInterval = null;
+            }
+            document.getElementById('alarm-modal').style.display = 'none';
         }
 
         function resetTimer(devId) {
@@ -1569,7 +1572,7 @@
         function updateDisplay(devId) {
             let t = timerData[devId];
             if (!t) return;
-            let s = Math.max(0, t.seconds || 0);
+            let s = t.seconds;
             let hrs = String(Math.floor(s / 3600)).padStart(2, '0');
             let mins = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
             let secs = String(s % 60).padStart(2, '0');
@@ -1591,6 +1594,7 @@
             let t = timerData[devId];
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
+            
             let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
             
             if (activeTimeCost <= 0 && t.seconds <= 0 && (t.accumulatedCost || 0) <= 0 && !t.isFinished) {
@@ -1616,7 +1620,6 @@
             t.customPrice = 0;
             t.isPaused = false;
             t.isFinished = false;
-            t.lastActionTime = Date.now();
 
             let customElem = document.getElementById("custom-" + devId);
             if (customElem) customElem.value = 0;
@@ -1628,7 +1631,7 @@
                 timeDisplay.classList.remove('finished');
             }
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-            setCardState(devId, 'normal');
+
             updateLiveBill(devId);
             alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
         }
@@ -1645,12 +1648,11 @@
             t.indomie = parseFloat(indomieInput ? indomieInput.value : 0) || 0;
             t.grocery = parseFloat(groceryInput ? groceryInput.value : 0) || 0;
             t.customPrice = parseFloat(customInput ? customInput.value : 0) || 0;
-            t.lastActionTime = Date.now();
 
             saveDeviceSession(devId);
             updateLiveBill(devId);
         }
-
+        
         function calculateTimeCost(devId) {
             let t = timerData[devId];
             if (!t) return 0;
@@ -1667,7 +1669,7 @@
             if (!t) return;
 
             let customInput = document.getElementById("custom-" + devId);
-            if (customInput && document.activeElement === customInput) {
+            if (customInput) {
                 t.customPrice = parseFloat(customInput.value) || 0;
             }
 
@@ -1675,6 +1677,15 @@
             let customPrice = t.customPrice || 0;
             
             let totalTimeCost = (customPrice > 0) ? customPrice : ((t.accumulatedCost || 0) + currentPeriodCost);
+
+            let drinkInput = document.getElementById("drink-" + devId);
+            let indomieInput = document.getElementById("indomie-" + devId);
+            let groceryInput = document.getElementById("grocery-" + devId);
+            
+            if (drinkInput) t.drinks = parseFloat(drinkInput.value) || 0;
+            if (indomieInput) t.indomie = parseFloat(indomieInput.value) || 0;
+            if (groceryInput) t.grocery = parseFloat(groceryInput.value) || 0;
+
             let itemsCost = (t.drinks || 0) + (t.indomie || 0) + (t.grocery || 0);
             let grandTotal = totalTimeCost + itemsCost;
 
@@ -1693,10 +1704,7 @@
             let devName = devObj ? devObj.name : 'الجهاز';
             let t = timerData[devId];
 
-            if (t && t.interval) {
-                clearInterval(t.interval);
-                t.interval = null;
-            }
+            stopTimer(devId);
 
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
@@ -1714,20 +1722,13 @@
 
             let descText = customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
             
-            // تفعيل قفل مؤقت لمنع السحابة من الكتابة فوق البيانات أثناء التصدير
-            isSyncingFromCloud = true;
-
+            // 🚀 إضافة البيانات محلياً دفعة واحدة بدون رفع متكرر للسحابة
             if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText, true, currentDay, true);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devName, true, currentDay, true);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay, true);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay, true);
 
-            // تصفير بيانات الجهاز محلياً
-            localStorage.removeItem(`dev_session_${devId}`);
-            timerData[devId] = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: Date.now(),
-                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
-            };
+            clearDeviceSession(devId);
 
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
@@ -1735,7 +1736,6 @@
                 timeDisplay.classList.remove('finished');
             }
             setCardState(devId, 'normal');
-            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
@@ -1743,26 +1743,12 @@
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
-            updateQuickTodayTotalView();
-
-            // فك القفل ورفع السجل المالي وحذف جلسة الجهاز في عملية سحابية واحدة متزامنة
-            isSyncingFromCloud = false;
+            loadMonthDataToUI();
             
-            const localBackup = {
-                allMonthsData: allMonthsData,
-                adminPassword: adminPassword,
-                devicesOrder: devices
-            };
-            localStorage.setItem('ps_local_backup', JSON.stringify(localBackup));
+            // ⚡ الحفظ الفردي النهائي للسحابة بسرعة البرق
+            saveData();
 
-            if (db && navigator.onLine) {
-                let updates = {};
-                updates[`ps_lounge_data/allMonthsData/${currentActiveMonthKey}`] = allMonthsData[currentActiveMonthKey];
-                updates[`ps_lounge_data/deviceSessions/${devId}`] = null; // حذف الجلسة في نفس اللحظة
-                db.ref().update(updates);
-            }
-
-            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
+            alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
         
         function initDailyTable() {
@@ -2228,24 +2214,27 @@
         function saveData() {
             if (isSyncingFromCloud) return;
 
+            let allSessions = {};
+            devices.forEach(dev => {
+                let saved = localStorage.getItem(`dev_session_${dev.id}`);
+                if (saved) {
+                    try { allSessions[dev.id] = JSON.parse(saved); } catch(e) {}
+                }
+            });
+
             const dataToSave = {
                 allMonthsData: allMonthsData || {},
                 adminPassword: adminPassword || "1234",
-                devicesOrder: devices || []
+                devicesOrder: devices || [],
+                deviceSessions: allSessions
             };
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
             let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
-                // تحديث الشهر النشط والإعدادات فقط بدلاً من رفع السنة كاملة في كل مرة
-                let updates = {};
-                updates[`ps_lounge_data/allMonthsData/${currentActiveMonthKey}`] = getActiveMonthData();
-                updates[`ps_lounge_data/adminPassword`] = adminPassword;
-                updates[`ps_lounge_data/devicesOrder`] = devices;
-
-                db.ref().update(updates).then(() => {
+                db.ref('ps_lounge_data').set(dataToSave).then(() => {
                     if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
-                }).catch(() => {
+                }).catch(err => {
                     if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
                 });
             }
@@ -2260,6 +2249,11 @@
                     if (parsed.adminPassword) adminPassword = parsed.adminPassword;
                     if (parsed.devicesOrder && Array.isArray(parsed.devicesOrder) && parsed.devicesOrder.length === devices.length) {
                         devices = parsed.devicesOrder;
+                    }
+                    if (parsed.deviceSessions) {
+                        for (let devId in parsed.deviceSessions) {
+                            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(parsed.deviceSessions[devId]));
+                        }
                     }
                 } catch(e) {}
             }
@@ -2284,41 +2278,20 @@
             let cloudStatus = document.getElementById('cloud-status');
             
             if (db && navigator.onLine) {
-                // 1. مستمع خفيف مخصص للبيانات المالية واليومية فقط
-                db.ref('ps_lounge_data/allMonthsData').on('value', (snapshot) => {
-                    const cloudMonths = snapshot.val();
-                    if (!cloudMonths || isSyncingFromCloud) return;
-                    
-                    allMonthsData = cloudMonths;
-                    localStorage.setItem('ps_local_backup', JSON.stringify({
-                        allMonthsData: allMonthsData,
-                        adminPassword: adminPassword,
-                        devicesOrder: devices
-                    }));
-                    
-                    updateQuickTodayTotalView();
-                    // إعادة بناء الجداول الثقيلة فقط إذا كان المستخدم يفتح تبويبها حالياً
-                    let activeTab = localStorage.getItem('activeTab') || 'timers';
-                    if (activeTab !== 'timers') {
-                        loadMonthDataToUI();
-                    }
-                });
-
-                // 2. مستمع خفيف ومنفصل لجلسات الأجهزة والمؤقتات فقط
-                db.ref('ps_lounge_data/deviceSessions').on('value', (snapshot) => {
-                    const sessions = snapshot.val() || {};
-                    if (isSyncingFromCloud) return;
+                db.ref('ps_lounge_data').on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) return;
 
                     isSyncingFromCloud = true;
+
+                    if (data.allMonthsData) allMonthsData = data.allMonthsData;
+                    if (data.adminPassword) adminPassword = data.adminPassword;
+                    
                     devices.forEach(dev => {
                         let devId = dev.id;
-                        let cloudSession = sessions[devId] || null;
+                        let cloudSession = data.deviceSessions && data.deviceSessions[devId] ? data.deviceSessions[devId] : null;
+                        
                         let t = timerData[devId];
-
-                        if (cloudSession && t && cloudSession.lastActionTime && t.lastActionTime && cloudSession.lastActionTime === t.lastActionTime) {
-                            return; 
-                        }
-
                         if (t && t.interval) {
                             clearInterval(t.interval);
                             t.interval = null;
@@ -2328,6 +2301,7 @@
                             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(cloudSession));
                             timerData[devId] = loadDeviceSession(devId);
                             
+                            // 💡 تحديث قيم الحقول على الشاشة (المشروبات، البقالة، المبلغ الثابت) فوراً لتتطابق بين الجهازين
                             let currentT = timerData[devId];
                             let drinkElem = document.getElementById("drink-" + devId);
                             let indomieElem = document.getElementById("indomie-" + devId);
@@ -2338,10 +2312,11 @@
                             if (indomieElem && document.activeElement !== indomieElem) indomieElem.value = currentT.indomie || 0;
                             if (groceryElem && document.activeElement !== groceryElem) groceryElem.value = currentT.grocery || 0;
                             if (customElem && document.activeElement !== customElem) customElem.value = currentT.customPrice || 0;
+
                         } else {
                             localStorage.removeItem(`dev_session_${devId}`);
                             timerData[devId] = { 
-                                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: 0,
+                                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
                                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
                             };
                             let timeDisplay = document.getElementById("time-" + devId);
@@ -2367,20 +2342,25 @@
                             if (timeDisplay) timeDisplay.classList.add('finished');
                             setCardState(devId, 'finished');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                            if (!currentT.alarmDismissed) startMasterAlarm(dev.name);
                         } else if (currentT.isPaused) {
                             updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                             setCardState(devId, 'paused');
-                        } else if (currentT.startTime > 0) {
+                        } else if (currentT.isCountdown && currentT.startTime > 0) {
+                            runInterval(devId);
+                            setCardState(devId, 'running');
+                            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                        } else if (!currentT.isCountdown && currentT.startTime > 0) {
                             runInterval(devId);
                             setCardState(devId, 'running');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                         }
                     });
+
+                    loadMonthDataToUI();
                     isSyncingFromCloud = false;
 
                     if (cloudStatus) { 
-                        cloudStatus.innerText = "☁️ متصل بالسحابة"; 
+                        cloudStatus.innerText = "☁️ متصل بالسحابة (مزامنة فورية)"; 
                         cloudStatus.style.background = "#22c55e"; 
                     }
                 });
