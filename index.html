@@ -2273,6 +2273,8 @@
 
             initMonthSelector();
             loadMonthDataToUI();
+            
+            // 💡 يتم بناء الكروت مرة واحدة فقط عند فتح الصفحة
             initDevices();
 
             let savedTab = localStorage.getItem('activeTab') || 'timers';
@@ -2280,58 +2282,50 @@
 
             let cloudStatus = document.getElementById('cloud-status');
             
-            // 💡 تفعيل المزامنة الفورية اللحظية (Real-time Listener) بين الموبايل واللاب توب
+            // 💡 التزامن اللحظي المحدث: يحدّث القيم والحالة فوراً بدون مسح الكروت أو التهييس
             if (db && navigator.onLine) {
                 db.ref('ps_lounge_data').on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (!data) return;
 
-                    isSyncingFromCloud = true; // بدء استقبال التحديث
+                    isSyncingFromCloud = true;
 
                     if (data.allMonthsData) allMonthsData = data.allMonthsData;
                     if (data.adminPassword) adminPassword = data.adminPassword;
-                    if (data.devicesOrder && Array.isArray(data.devicesOrder) && data.devicesOrder.length === devices.length) {
-                        devices = data.devicesOrder;
-                    }
-
+                    
                     if (data.deviceSessions) {
                         for (let devId in data.deviceSessions) {
                             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(data.deviceSessions[devId]));
                             timerData[devId] = loadDeviceSession(devId);
+                            
+                            // 🚀 تحديث عناصر الجهاز المحددة فقط على الشاشة بسلاسة وبدون إعادة بناء
+                            updateDisplay(devId);
+                            updateLiveBill(devId);
+
+                            let t = timerData[devId];
+                            if (t) {
+                                if (t.isFinished) {
+                                    let timeDisplay = document.getElementById("time-" + devId);
+                                    if (timeDisplay) timeDisplay.classList.add('finished');
+                                    setCardState(devId, 'finished');
+                                    updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                                } else if (t.isPaused) {
+                                    updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                                    setCardState(devId, 'paused');
+                                } else if ((t.isCountdown && t.endTime > Date.now()) || (!t.isCountdown && t.startTime > 0)) {
+                                    setCardState(devId, 'running');
+                                    updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                                } else {
+                                    setCardState(devId, 'normal');
+                                    let timeDisplay = document.getElementById("time-" + devId);
+                                    if (timeDisplay) timeDisplay.classList.remove('finished');
+                                }
+                            }
                         }
                     }
 
                     loadMonthDataToUI();
-
-                    // تحديث حالة الأجهزة على الشاشة فوراً (تشغيل، إيقاف، تصفير، إغلاق)
-                    devices.forEach(dev => {
-                        let devId = dev.id;
-                        let t = timerData[devId];
-                        if (t) {
-                            updateDisplay(devId);
-                            updateLiveBill(devId);
-                            if (t.isFinished) {
-                                let timeDisplay = document.getElementById("time-" + devId);
-                                if (timeDisplay) timeDisplay.classList.add('finished');
-                                setCardState(devId, 'finished');
-                                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                            } else if (t.isPaused) {
-                                updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
-                                setCardState(devId, 'paused');
-                            } else if ((t.isCountdown && t.endTime > Date.now()) || (!t.isCountdown && t.startTime > 0)) {
-                                setCardState(devId, 'running');
-                                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                            } else {
-                                setCardState(devId, 'normal');
-                                let timeDisplay = document.getElementById("time-" + devId);
-                                if (timeDisplay && !t.isFinished && t.seconds === 0 && !t.startTime) {
-                                    timeDisplay.innerText = "00:00:00";
-                                }
-                            }
-                        }
-                    });
-
-                    isSyncingFromCloud = false; // انتهاء الاستقبال
+                    isSyncingFromCloud = false;
 
                     if (cloudStatus) { 
                         cloudStatus.innerText = "☁️ متصل بالسحابة (مزامنة فورية)"; 
