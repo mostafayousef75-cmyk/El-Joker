@@ -1155,29 +1155,6 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
         }
     
         function saveDeviceSession(devId) {
-            let t = timerData[devId];
-            if (!t) return;
-            let sessionObj = {
-                drinks: t.drinks || 0,
-                indomie: t.indomie || 0,
-                grocery: t.grocery || 0,
-                customPrice: t.customPrice || 0,
-                accumulatedCost: t.accumulatedCost || 0,
-                periodsLog: t.periodsLog || [],
-                setMinutes: t.setMinutes || 0,
-                seconds: t.seconds || 0,
-                durationSecs: t.durationSecs || 0,
-                isCountdown: t.isCountdown || false,
-                isPaused: t.isPaused || false,
-                isFinished: t.isFinished || false,
-                alarmDismissed: t.alarmDismissed || false,
-                endTime: t.endTime || 0,
-                startTime: t.startTime || 0,
-                lastActionTime: t.lastActionTime || Date.now() // 💡 بصمة التعديل لمنع الثقل والتهييص
-            };
-            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
-            saveData();
-        }
 
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
