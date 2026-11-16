@@ -800,6 +800,7 @@
         let masterAlarmInterval = null; 
         let audioCtx = null;
         let adminPassword = "1234";
+        let isSyncingFromCloud = false; // 💡 لمنع التداخل الحلقي أثناء التزامن
 
         function toggleAccordion(contentId, headerId) {
             let content = document.getElementById(contentId);
@@ -2214,6 +2215,8 @@
         }
 
         function saveData() {
+            if (isSyncingFromCloud) return; // 🛑 إيقاف الحفظ المؤقت أثناء استقبال التحديثات من السحابة
+
             let allSessions = {};
             devices.forEach(dev => {
                 let saved = localStorage.getItem(`dev_session_${dev.id}`);
@@ -2276,33 +2279,71 @@
             switchTab(null, savedTab);
 
             let cloudStatus = document.getElementById('cloud-status');
+            
+            // 💡 تفعيل المزامنة الفورية اللحظية (Real-time Listener) بين الموبايل واللاب توب
             if (db && navigator.onLine) {
-                db.ref('ps_lounge_data').once('value').then((snapshot) => {
+                db.ref('ps_lounge_data').on('value', (snapshot) => {
                     const data = snapshot.val();
-                    if(data) {
-                        if(data.allMonthsData) allMonthsData = data.allMonthsData;
-                        if(data.adminPassword) adminPassword = data.adminPassword;
-                        if(data.devicesOrder && Array.isArray(data.devicesOrder) && data.devicesOrder.length === devices.length) {
-                            devices = data.devicesOrder;
-                            initDevices();
+                    if (!data) return;
+
+                    isSyncingFromCloud = true; // بدء استقبال التحديث
+
+                    if (data.allMonthsData) allMonthsData = data.allMonthsData;
+                    if (data.adminPassword) adminPassword = data.adminPassword;
+                    if (data.devicesOrder && Array.isArray(data.devicesOrder) && data.devicesOrder.length === devices.length) {
+                        devices = data.devicesOrder;
+                    }
+
+                    if (data.deviceSessions) {
+                        for (let devId in data.deviceSessions) {
+                            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(data.deviceSessions[devId]));
+                            timerData[devId] = loadDeviceSession(devId);
                         }
-                        if (data.deviceSessions) {
-                            for (let devId in data.deviceSessions) {
-                                localStorage.setItem(`dev_session_${devId}`, JSON.stringify(data.deviceSessions[devId]));
+                    }
+
+                    loadMonthDataToUI();
+
+                    // تحديث حالة الأجهزة على الشاشة فوراً (تشغيل، إيقاف، تصفير، إغلاق)
+                    devices.forEach(dev => {
+                        let devId = dev.id;
+                        let t = timerData[devId];
+                        if (t) {
+                            updateDisplay(devId);
+                            updateLiveBill(devId);
+                            if (t.isFinished) {
+                                let timeDisplay = document.getElementById("time-" + devId);
+                                if (timeDisplay) timeDisplay.classList.add('finished');
+                                setCardState(devId, 'finished');
+                                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                            } else if (t.isPaused) {
+                                updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                                setCardState(devId, 'paused');
+                            } else if ((t.isCountdown && t.endTime > Date.now()) || (!t.isCountdown && t.startTime > 0)) {
+                                setCardState(devId, 'running');
+                                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                            } else {
+                                setCardState(devId, 'normal');
+                                let timeDisplay = document.getElementById("time-" + devId);
+                                if (timeDisplay && !t.isFinished && t.seconds === 0 && !t.startTime) {
+                                    timeDisplay.innerText = "00:00:00";
+                                }
                             }
                         }
-                        loadMonthDataToUI();
-                        if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
+                    });
+
+                    isSyncingFromCloud = false; // انتهاء الاستقبال
+
+                    if (cloudStatus) { 
+                        cloudStatus.innerText = "☁️ متصل بالسحابة (مزامنة فورية)"; 
+                        cloudStatus.style.background = "#22c55e"; 
                     }
-                }).catch((err) => {
-                    if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
                 });
             } else if (cloudStatus) {
                 cloudStatus.innerText = "📴 يعمل محلياً (Offline)";
                 cloudStatus.style.background = "#f59e0b";
             }
         }
-
+        
         function exportData() {
             const dataToExport = { allMonthsData: allMonthsData, adminPassword: adminPassword, devicesOrder: devices };
             const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
