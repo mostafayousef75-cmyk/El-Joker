@@ -1166,13 +1166,14 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                 periodsLog: t.periodsLog || [],
                 setMinutes: t.setMinutes || 0,
                 seconds: t.seconds || 0,
-                durationSecs: t.durationSecs || 0, // 💡 حفظ إجمالي ثواني المؤقت بدقة لمنع التنبيه الوهمي
+                durationSecs: t.durationSecs || 0,
                 isCountdown: t.isCountdown || false,
                 isPaused: t.isPaused || false,
                 isFinished: t.isFinished || false,
                 alarmDismissed: t.alarmDismissed || false,
                 endTime: t.endTime || 0,
-                startTime: t.startTime || 0
+                startTime: t.startTime || 0,
+                lastActionTime: t.lastActionTime || Date.now() // 💡 بصمة التعديل لمنع الثقل والتهييص
             };
             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(sessionObj));
             saveData();
@@ -1181,7 +1182,7 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
+                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
@@ -1319,16 +1320,16 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
             if (t.interval) clearInterval(t.interval);
 
             t.seconds = 0;
-            t.startTime = getUnifiedTime(); // 💡 استخدام الوقت الموحد
+            t.startTime = getUnifiedTime();
             t.endTime = 0;
             t.isCountdown = false;
             t.isPaused = false;
             t.isFinished = false;
+            t.lastActionTime = Date.now(); // تحديث البصمة لتجاوز الصدى
 
             saveDeviceSession(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-            
             setCardState(devId, 'running');
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
@@ -1345,21 +1346,122 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
             t.setMinutes = mins;
             t.seconds = mins * 60;
             t.durationSecs = t.seconds;
-            t.startTime = getUnifiedTime(); // 💡 استخدام الوقت الموحد
+            t.startTime = getUnifiedTime();
             t.isCountdown = true;
             t.isPaused = false;
             t.isFinished = false;
             t.alarmDismissed = false;
+            t.lastActionTime = Date.now();
 
             saveDeviceSession(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-            
             setCardState(devId, 'running');
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
         }
 
+        function stopTimer(devId) {
+            let t = timerData[devId];
+            if (!t) return;
+            if (t.seconds === 0 && !t.startTime && !t.endTime && !t.isCountdown && t.accumulatedCost === 0 && !t.isPaused) return;
+
+            t.lastActionTime = Date.now(); // تحديث البصمة لتجاوز الصدى
+
+            if (!t.isPaused) {
+                if (t.interval) {
+                    clearInterval(t.interval);
+                    t.interval = null;
+                }
+                if (t.isCountdown) {
+                    let elapsed = Math.floor((getUnifiedTime() - t.startTime) / 1000);
+                    t.seconds = Math.max(0, t.durationSecs - elapsed);
+                } else {
+                    let calculatedSecs = Math.floor((getUnifiedTime() - t.startTime) / 1000);
+                    t.seconds = (calculatedSecs > 0 && calculatedSecs < 86400) ? calculatedSecs : 0;
+                }
+                t.isPaused = true;
+                saveDeviceSession(devId);
+                updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
+                if (!t.isFinished) setCardState(devId, 'paused');
+            } else {
+                t.isPaused = false;
+                if (t.isCountdown) {
+                    t.startTime = getUnifiedTime() - ((t.durationSecs - t.seconds) * 1000);
+                } else {
+                    t.startTime = getUnifiedTime() - (t.seconds * 1000);
+                }
+                saveDeviceSession(devId);
+                runInterval(devId);
+                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+                if (!t.isFinished) setCardState(devId, 'running');
+            }
+        }
+
+        function accumulateCurrentTime(devId) {
+            updateItems(devId);
+            let t = timerData[devId];
+            let currentPeriodCost = calculateTimeCost(devId);
+            let customPrice = t.customPrice || 0;
+            let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
+            
+            if (activeTimeCost <= 0 && t.seconds <= 0 && (t.accumulatedCost || 0) <= 0 && !t.isFinished) {
+                return alert("لا يوجد وقت أو مبلغ ثابت لتراكمه في الفاتورة!");
+            }
+
+            let periodLabel = "";
+            if (customPrice > 0) periodLabel = `${customPrice}ج (مبلغ ثابت)`;
+            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
+            else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د`;
+
+            if (t.interval) clearInterval(t.interval);
+            t.interval = null;
+
+            if (periodLabel) {
+                if (!t.periodsLog) t.periodsLog = [];
+                t.periodsLog.push(periodLabel);
+            }
+
+            t.accumulatedCost = (t.accumulatedCost || 0) + activeTimeCost;
+            t.seconds = 0;
+            t.setMinutes = 0;
+            t.customPrice = 0;
+            t.isPaused = false;
+            t.isFinished = false;
+            t.lastActionTime = Date.now();
+
+            let customElem = document.getElementById("custom-" + devId);
+            if (customElem) customElem.value = 0;
+
+            saveDeviceSession(devId);
+            let timeDisplay = document.getElementById("time-" + devId);
+            if (timeDisplay) {
+                timeDisplay.innerText = "00:00:00";
+                timeDisplay.classList.remove('finished');
+            }
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            updateLiveBill(devId);
+            alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
+        }
+
+        function updateItems(devId) {
+            let t = timerData[devId];
+            if (!t) return;
+            let drinkInput = document.getElementById("drink-" + devId);
+            let indomieInput = document.getElementById("indomie-" + devId);
+            let groceryInput = document.getElementById("grocery-" + devId);
+            let customInput = document.getElementById("custom-" + devId);
+
+            t.drinks = parseFloat(drinkInput ? drinkInput.value : 0) || 0;
+            t.indomie = parseFloat(indomieInput ? indomieInput.value : 0) || 0;
+            t.grocery = parseFloat(groceryInput ? groceryInput.value : 0) || 0;
+            t.customPrice = parseFloat(customInput ? customInput.value : 0) || 0;
+            t.lastActionTime = Date.now();
+
+            saveDeviceSession(devId);
+            updateLiveBill(devId);
+        }
+        
         function runInterval(devId) {
             let t = timerData[devId];
             if (t.interval) clearInterval(t.interval);
@@ -1422,59 +1524,7 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                 cardElem.style.backgroundColor = "var(--card-bg)";
             }
         }
-
-        function stopTimer(devId) {
-            let t = timerData[devId];
-            if (!t) return;
-
-            if (t.seconds === 0 && !t.startTime && !t.endTime && !t.isCountdown && t.accumulatedCost === 0 && !t.isPaused) {
-                return;
-            }
-
-            if (!t.isPaused) {
-                if (t.interval) {
-                    clearInterval(t.interval);
-                    t.interval = null;
-                }
-                if (t.isCountdown) {
-                    t.seconds = Math.max(0, Math.round((t.endTime - Date.now()) / 1000));
-                } else {
-                    let calculatedSecs = Math.floor((Date.now() - t.startTime) / 1000);
-                    t.seconds = (calculatedSecs > 0 && calculatedSecs < 86400) ? calculatedSecs : 0;
-                }
-                t.isPaused = true;
-                saveDeviceSession(devId);
-                updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                 
-                if (!t.isFinished) setCardState(devId, 'paused');
-            } else {
-                t.isPaused = false;
-                
-                if (t.isCountdown) {
-                    if (t.seconds > 0 && t.seconds < 86400) {
-                        t.endTime = Date.now() + (t.seconds * 1000);
-                    } else {
-                        let inputElem = document.getElementById("input-mins-" + devId);
-                        let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
-                        t.setMinutes = mins;
-                        t.seconds = mins * 60;
-                        t.endTime = Date.now() + (t.seconds * 1000);
-                    }
-                } else {
-                    if (!t.seconds || isNaN(t.seconds) || t.seconds < 0 || t.seconds > 86400) {
-                        t.seconds = 0;
-                    }
-                    t.startTime = Date.now() - (t.seconds * 1000);
-                }
-
-                saveDeviceSession(devId);
-                runInterval(devId);
-                updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                
-                if (!t.isFinished) setCardState(devId, 'running');
-            }
-        }
-        
         function restoreTimers() {
             let anyFinished = false;
             let finishedDeviceName = "";
@@ -1588,71 +1638,7 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                 btn.classList.add(className);
             }
         }
-
-        function accumulateCurrentTime(devId) {
-            updateItems(devId);
-            let t = timerData[devId];
-            let currentPeriodCost = calculateTimeCost(devId);
-            let customPrice = t.customPrice || 0;
-            
-            let activeTimeCost = customPrice > 0 ? customPrice : currentPeriodCost;
-            
-            if (activeTimeCost <= 0 && t.seconds <= 0 && (t.accumulatedCost || 0) <= 0 && !t.isFinished) {
-                return alert("لا يوجد وقت أو مبلغ ثابت لتراكمه في الفاتورة!");
-            }
-
-            let periodLabel = "";
-            if (customPrice > 0) periodLabel = `${customPrice}ج (مبلغ ثابت)`;
-            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
-            else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د`;
-
-            if (t.interval) clearInterval(t.interval);
-            t.interval = null;
-
-            if (periodLabel) {
-                if (!t.periodsLog) t.periodsLog = [];
-                t.periodsLog.push(periodLabel);
-            }
-
-            t.accumulatedCost = (t.accumulatedCost || 0) + activeTimeCost;
-            t.seconds = 0;
-            t.setMinutes = 0;
-            t.customPrice = 0;
-            t.isPaused = false;
-            t.isFinished = false;
-
-            let customElem = document.getElementById("custom-" + devId);
-            if (customElem) customElem.value = 0;
-
-            saveDeviceSession(devId);
-            let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) {
-                timeDisplay.innerText = "00:00:00";
-                timeDisplay.classList.remove('finished');
-            }
-            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-
-            updateLiveBill(devId);
-            alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
-        }
-
-        function updateItems(devId) {
-            let t = timerData[devId];
-            if (!t) return;
-            let drinkInput = document.getElementById("drink-" + devId);
-            let indomieInput = document.getElementById("indomie-" + devId);
-            let groceryInput = document.getElementById("grocery-" + devId);
-            let customInput = document.getElementById("custom-" + devId);
-
-            t.drinks = parseFloat(drinkInput ? drinkInput.value : 0) || 0;
-            t.indomie = parseFloat(indomieInput ? indomieInput.value : 0) || 0;
-            t.grocery = parseFloat(groceryInput ? groceryInput.value : 0) || 0;
-            t.customPrice = parseFloat(customInput ? customInput.value : 0) || 0;
-
-            saveDeviceSession(devId);
-            updateLiveBill(devId);
-        }
-        
+                        
         function calculateTimeCost(devId) {
             let t = timerData[devId];
             if (!t) return 0;
@@ -2290,8 +2276,13 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                     devices.forEach(dev => {
                         let devId = dev.id;
                         let cloudSession = data.deviceSessions && data.deviceSessions[devId] ? data.deviceSessions[devId] : null;
-                        
                         let t = timerData[devId];
+
+                        // 🚀 ذكاء المزامنة: لو البصمة الزمنية متطابقة، فهذا صدي جهازك ولا يعيد تحميل الشاشة أو يسبب أي ثقل!
+                        if (cloudSession && t && cloudSession.lastActionTime && t.lastActionTime && cloudSession.lastActionTime === t.lastActionTime) {
+                            return; 
+                        }
+
                         if (t && t.interval) {
                             clearInterval(t.interval);
                             t.interval = null;
@@ -2301,7 +2292,6 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                             localStorage.setItem(`dev_session_${devId}`, JSON.stringify(cloudSession));
                             timerData[devId] = loadDeviceSession(devId);
                             
-                            // 💡 تحديث قيم الحقول على الشاشة (المشروبات، البقالة، المبلغ الثابت) فوراً لتتطابق بين الجهازين
                             let currentT = timerData[devId];
                             let drinkElem = document.getElementById("drink-" + devId);
                             let indomieElem = document.getElementById("indomie-" + devId);
@@ -2316,7 +2306,7 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                         } else {
                             localStorage.removeItem(`dev_session_${devId}`);
                             timerData[devId] = { 
-                                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0,
+                                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: 0,
                                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
                             };
                             let timeDisplay = document.getElementById("time-" + devId);
