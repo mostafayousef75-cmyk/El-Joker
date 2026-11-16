@@ -780,6 +780,17 @@
         
         const db = firebaseInitialized ? firebase.database() : null;
 
+        // 💡 مزامنة الوقت تلقائياً مع السيرفر لتوحيد الساعة بين جميع الأجهزة
+        if (db) {
+            db.ref(".info/serverTimeOffset").on("value", (snapshot) => {
+                serverTimeOffset = snapshot.val() || 0;
+            });
+        }
+
+        function getUnifiedTime() {
+            return Date.now() + serverTimeOffset; // الوقت الموحد الدقيق الذي يتطابق على كل الأجهزة
+        }
+
         let devices = [
             { id: 0, name: "eljoker", rate: 20 },
             { id: 1, name: "salah", rate: 30 },
@@ -801,7 +812,8 @@
         let audioCtx = null;
         let adminPassword = "1234";
         let isSyncingFromCloud = false;
-
+let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوحيد الساعات بين الموبايل واللاب
+        
         function toggleAccordion(contentId, headerId) {
             let content = document.getElementById(contentId);
             let header = document.getElementById(headerId);
@@ -1179,71 +1191,7 @@
             }
             return defaultData;
         }
-
-        function startCountdown(devId) {
-            updateItems(devId);
-            let t = timerData[devId];
-            if (t.interval) clearInterval(t.interval);
-
-            let inputElem = document.getElementById("input-mins-" + devId);
-            let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
-            
-            t.setMinutes = mins;
-            t.seconds = mins * 60;
-            t.durationSecs = t.seconds; // إجمالي المدة بالثواني
-            t.startTime = Date.now();   // وقت البداية الحقيقي
-            t.isCountdown = true;
-            t.isPaused = false;
-            t.isFinished = false;
-            t.alarmDismissed = false;
-
-            saveDeviceSession(devId);
-            runInterval(devId);
-            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-            
-            setCardState(devId, 'running');
-            let timeDisplay = document.getElementById("time-" + devId);
-            if (timeDisplay) timeDisplay.classList.remove('finished');
-        }
-
-        function runInterval(devId) {
-            let t = timerData[devId];
-            if (t.interval) clearInterval(t.interval);
-
-            t.interval = setInterval(() => {
-                if (t.isPaused || t.isFinished) return;
-
-                if (t.isCountdown) {
-                    let elapsed = Math.floor((Date.now() - t.startTime) / 1000);
-                    let rem = t.durationSecs - elapsed;
-
-                    if (rem > 0) {
-                        t.seconds = rem;
-                        updateDisplay(devId);
-                        updateLiveBill(devId);
-                    } else {
-                        clearInterval(t.interval);
-                        t.interval = null;
-                        t.seconds = 0;
-                        t.isFinished = true;
-                        saveDeviceSession(devId);
                         
-                        let timeDisplay = document.getElementById("time-" + devId);
-                        if (timeDisplay) {
-                            timeDisplay.innerText = "00:00:00";
-                            timeDisplay.classList.add('finished');
-                        }
-                        let devObj = devices.find(d => d.id === devId);
-                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
-                    }
-                } else {
-                    t.seconds = Math.floor((Date.now() - t.startTime) / 1000);
-                    updateDisplay(devId);
-                    updateLiveBill(devId);
-                }
-            }, 1000);
-        }
-        
         function clearDeviceSession(devId) {
             localStorage.removeItem(`dev_session_${devId}`);
             timerData[devId] = { 
@@ -1370,7 +1318,7 @@
             if (t.interval) clearInterval(t.interval);
 
             t.seconds = 0;
-            t.startTime = Date.now();
+            t.startTime = getUnifiedTime(); // 💡 استخدام الوقت الموحد
             t.endTime = 0;
             t.isCountdown = false;
             t.isPaused = false;
@@ -1383,6 +1331,72 @@
             setCardState(devId, 'running');
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
+        }
+
+        function startCountdown(devId) {
+            updateItems(devId);
+            let t = timerData[devId];
+            if (t.interval) clearInterval(t.interval);
+
+            let inputElem = document.getElementById("input-mins-" + devId);
+            let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
+            
+            t.setMinutes = mins;
+            t.seconds = mins * 60;
+            t.durationSecs = t.seconds;
+            t.startTime = getUnifiedTime(); // 💡 استخدام الوقت الموحد
+            t.isCountdown = true;
+            t.isPaused = false;
+            t.isFinished = false;
+            t.alarmDismissed = false;
+
+            saveDeviceSession(devId);
+            runInterval(devId);
+            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
+            
+            setCardState(devId, 'running');
+            let timeDisplay = document.getElementById("time-" + devId);
+            if (timeDisplay) timeDisplay.classList.remove('finished');
+        }
+
+        function runInterval(devId) {
+            let t = timerData[devId];
+            if (t.interval) clearInterval(t.interval);
+
+            t.interval = setInterval(() => {
+                if (t.isPaused || t.isFinished) return;
+
+                let now = getUnifiedTime(); // 💡 استخدام الوقت الموحد في كل ثانية
+
+                if (t.isCountdown) {
+                    let elapsed = Math.floor((now - t.startTime) / 1000);
+                    let rem = t.durationSecs - elapsed;
+
+                    if (rem > 0) {
+                        t.seconds = rem;
+                        updateDisplay(devId);
+                        updateLiveBill(devId);
+                    } else {
+                        clearInterval(t.interval);
+                        t.interval = null;
+                        t.seconds = 0;
+                        t.isFinished = true;
+                        saveDeviceSession(devId);
+                        
+                        let timeDisplay = document.getElementById("time-" + devId);
+                        if (timeDisplay) {
+                            timeDisplay.innerText = "00:00:00";
+                            timeDisplay.classList.add('finished');
+                        }
+                        let devObj = devices.find(d => d.id === devId);
+                        startMasterAlarm(devObj ? devObj.name : 'الجهاز');
+                    }
+                } else {
+                    t.seconds = Math.floor((now - t.startTime) / 1000);
+                    updateDisplay(devId);
+                    updateLiveBill(devId);
+                }
+            }, 1000);
         }
          
         function setCardState(devId, state) {
