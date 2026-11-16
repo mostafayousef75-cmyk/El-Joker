@@ -1111,11 +1111,12 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                             <button class="btn btn-add" onclick="checkout(${dev.id})">إغلاق وتصدير</button>
                         </div>
                         
+                        <!-- 💡 تم تغيير oninput إلى onchange لمنع التهييس والثقل أثناء الكتابة -->
                         <div class="item-inputs">
-                            <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
-                            <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
-                            <label>بقالة: <input type="number" min="0" id="grocery-${dev.id}" value="${t.grocery || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
-                            <label style="color: var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${dev.id}" value="${t.customPrice || 0}" oninput="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label>مشروبات: <input type="number" min="0" id="drink-${dev.id}" value="${t.drinks || 0}" onchange="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label>أندومي: <input type="number" min="0" id="indomie-${dev.id}" value="${t.indomie || 0}" onchange="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label>بقالة: <input type="number" min="0" id="grocery-${dev.id}" value="${t.grocery || 0}" onchange="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
+                            <label style="color: var(--accent);">مبلغ ثابت: <input type="number" min="0" id="custom-${dev.id}" value="${t.customPrice || 0}" onchange="updateItems(${dev.id})" onkeydown="if(event.key==='Enter') confirmAndCheckout(${dev.id})"></label>
                         </div>
 
                         <div class="bill-preview" id="bill-total-${dev.id}">
@@ -1621,10 +1622,10 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
             t.grocery = parseFloat(groceryInput ? groceryInput.value : 0) || 0;
             t.customPrice = parseFloat(customInput ? customInput.value : 0) || 0;
 
-            saveDeviceSession(devId); // 🚀 يرفع التعديلات فوراً للسحابة لتظهر على الجهازين معاً
+            saveDeviceSession(devId);
             updateLiveBill(devId);
         }
-
+        
         function calculateTimeCost(devId) {
             let t = timerData[devId];
             if (!t) return 0;
