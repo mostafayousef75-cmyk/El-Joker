@@ -1149,7 +1149,10 @@
                 if (t.isPaused || t.isFinished) return;
 
                 if (t.isCountdown) {
-                    let rem = Math.round((t.endTime - Date.now()) / 1000);
+                    // 💡 حساب الثواني المنقضية بدقة من وقت البداية بغض النظر عن فروق ساعات اللاب والموبايل
+                    let elapsed = Math.floor((Date.now() - t.startTime) / 1000);
+                    let rem = t.durationSecs - elapsed;
+
                     if (rem > 0) {
                         t.seconds = rem;
                         updateDisplay(devId);
@@ -1364,8 +1367,9 @@
             let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
             t.setMinutes = mins;
             t.seconds = mins * 60;
-            t.endTime = Date.now() + (t.seconds * 1000);
-            t.startTime = 0;
+            // 💡 اعتماد وقت موحد بدقة
+            t.startTime = Date.now();
+            t.durationSecs = t.seconds;
             t.isCountdown = true;
             t.isPaused = false;
             t.isFinished = false;
