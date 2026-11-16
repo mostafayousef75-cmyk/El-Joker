@@ -893,12 +893,15 @@
             }
 
             localStorage.setItem('activeTab', tabId);
-            if (tabId === 'reports') {
+            
+            if (tabId === 'daily' || tabId === 'finance' || tabId === 'inventory') {
+                loadMonthDataToUI();
+            } else if (tabId === 'reports') {
                 updateReports();
                 restoreAccordionsState();
             }
         }
-
+        
         function changeAdminPassword() {
             let currentPin = prompt("🔒 أدخل الرقم السري الحالي:");
             if (currentPin === null) return;
@@ -1711,12 +1714,20 @@
 
             let descText = customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
             
+            // تفعيل قفل مؤقت لمنع السحابة من الكتابة فوق البيانات أثناء التصدير
+            isSyncingFromCloud = true;
+
             if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText, true, currentDay, true);
             if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devName, true, currentDay, true);
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay, true);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay, true);
 
-            clearDeviceSession(devId);
+            // تصفير بيانات الجهاز محلياً
+            localStorage.removeItem(`dev_session_${devId}`);
+            timerData[devId] = { 
+                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, endTime: 0, startTime: 0, lastActionTime: Date.now(),
+                drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
+            };
 
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
@@ -1732,10 +1743,26 @@
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
-            loadMonthDataToUI();
-            saveData();
+            updateQuickTodayTotalView();
 
-            alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
+            // فك القفل ورفع السجل المالي وحذف جلسة الجهاز في عملية سحابية واحدة متزامنة
+            isSyncingFromCloud = false;
+            
+            const localBackup = {
+                allMonthsData: allMonthsData,
+                adminPassword: adminPassword,
+                devicesOrder: devices
+            };
+            localStorage.setItem('ps_local_backup', JSON.stringify(localBackup));
+
+            if (db && navigator.onLine) {
+                let updates = {};
+                updates[`ps_lounge_data/allMonthsData/${currentActiveMonthKey}`] = allMonthsData[currentActiveMonthKey];
+                updates[`ps_lounge_data/deviceSessions/${devId}`] = null; // حذف الجلسة في نفس اللحظة
+                db.ref().update(updates);
+            }
+
+            alert(`✅ تم إغلاق وتصدير الفاتورة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
         
         function initDailyTable() {
@@ -2201,27 +2228,24 @@
         function saveData() {
             if (isSyncingFromCloud) return;
 
-            let allSessions = {};
-            devices.forEach(dev => {
-                let saved = localStorage.getItem(`dev_session_${dev.id}`);
-                if (saved) {
-                    try { allSessions[dev.id] = JSON.parse(saved); } catch(e) {}
-                }
-            });
-
             const dataToSave = {
                 allMonthsData: allMonthsData || {},
                 adminPassword: adminPassword || "1234",
-                devicesOrder: devices || [],
-                deviceSessions: allSessions
+                devicesOrder: devices || []
             };
             localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
 
             let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
-                db.ref('ps_lounge_data').set(dataToSave).then(() => {
+                // تحديث الشهر النشط والإعدادات فقط بدلاً من رفع السنة كاملة في كل مرة
+                let updates = {};
+                updates[`ps_lounge_data/allMonthsData/${currentActiveMonthKey}`] = getActiveMonthData();
+                updates[`ps_lounge_data/adminPassword`] = adminPassword;
+                updates[`ps_lounge_data/devicesOrder`] = devices;
+
+                db.ref().update(updates).then(() => {
                     if (cloudStatus) { cloudStatus.innerText = "☁️ متصل بالسحابة"; cloudStatus.style.background = "#22c55e"; }
-                }).catch(err => {
+                }).catch(() => {
                     if (cloudStatus) { cloudStatus.innerText = "📴 يعمل محلياً (Offline)"; cloudStatus.style.background = "#f59e0b"; }
                 });
             }
@@ -2236,11 +2260,6 @@
                     if (parsed.adminPassword) adminPassword = parsed.adminPassword;
                     if (parsed.devicesOrder && Array.isArray(parsed.devicesOrder) && parsed.devicesOrder.length === devices.length) {
                         devices = parsed.devicesOrder;
-                    }
-                    if (parsed.deviceSessions) {
-                        for (let devId in parsed.deviceSessions) {
-                            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(parsed.deviceSessions[devId]));
-                        }
                     }
                 } catch(e) {}
             }
@@ -2265,18 +2284,35 @@
             let cloudStatus = document.getElementById('cloud-status');
             
             if (db && navigator.onLine) {
-                db.ref('ps_lounge_data').on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (!data) return;
+                // 1. مستمع خفيف مخصص للبيانات المالية واليومية فقط
+                db.ref('ps_lounge_data/allMonthsData').on('value', (snapshot) => {
+                    const cloudMonths = snapshot.val();
+                    if (!cloudMonths || isSyncingFromCloud) return;
+                    
+                    allMonthsData = cloudMonths;
+                    localStorage.setItem('ps_local_backup', JSON.stringify({
+                        allMonthsData: allMonthsData,
+                        adminPassword: adminPassword,
+                        devicesOrder: devices
+                    }));
+                    
+                    updateQuickTodayTotalView();
+                    // إعادة بناء الجداول الثقيلة فقط إذا كان المستخدم يفتح تبويبها حالياً
+                    let activeTab = localStorage.getItem('activeTab') || 'timers';
+                    if (activeTab !== 'timers') {
+                        loadMonthDataToUI();
+                    }
+                });
+
+                // 2. مستمع خفيف ومنفصل لجلسات الأجهزة والمؤقتات فقط
+                db.ref('ps_lounge_data/deviceSessions').on('value', (snapshot) => {
+                    const sessions = snapshot.val() || {};
+                    if (isSyncingFromCloud) return;
 
                     isSyncingFromCloud = true;
-
-                    if (data.allMonthsData) allMonthsData = data.allMonthsData;
-                    if (data.adminPassword) adminPassword = data.adminPassword;
-                    
                     devices.forEach(dev => {
                         let devId = dev.id;
-                        let cloudSession = data.deviceSessions && data.deviceSessions[devId] ? data.deviceSessions[devId] : null;
+                        let cloudSession = sessions[devId] || null;
                         let t = timerData[devId];
 
                         if (cloudSession && t && cloudSession.lastActionTime && t.lastActionTime && cloudSession.lastActionTime === t.lastActionTime) {
@@ -2302,7 +2338,6 @@
                             if (indomieElem && document.activeElement !== indomieElem) indomieElem.value = currentT.indomie || 0;
                             if (groceryElem && document.activeElement !== groceryElem) groceryElem.value = currentT.grocery || 0;
                             if (customElem && document.activeElement !== customElem) customElem.value = currentT.customPrice || 0;
-
                         } else {
                             localStorage.removeItem(`dev_session_${devId}`);
                             timerData[devId] = { 
@@ -2332,28 +2367,20 @@
                             if (timeDisplay) timeDisplay.classList.add('finished');
                             setCardState(devId, 'finished');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                            if (!currentT.alarmDismissed) {
-                                startMasterAlarm(dev.name);
-                            }
+                            if (!currentT.alarmDismissed) startMasterAlarm(dev.name);
                         } else if (currentT.isPaused) {
                             updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                             setCardState(devId, 'paused');
-                        } else if (currentT.isCountdown && currentT.startTime > 0) {
-                            runInterval(devId);
-                            setCardState(devId, 'running');
-                            updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
-                        } else if (!currentT.isCountdown && currentT.startTime > 0) {
+                        } else if (currentT.startTime > 0) {
                             runInterval(devId);
                             setCardState(devId, 'running');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                         }
                     });
-
-                    loadMonthDataToUI();
                     isSyncingFromCloud = false;
 
                     if (cloudStatus) { 
-                        cloudStatus.innerText = "☁️ متصل بالسحابة (مزامنة فورية)"; 
+                        cloudStatus.innerText = "☁️ متصل بالسحابة"; 
                         cloudStatus.style.background = "#22c55e"; 
                     }
                 });
