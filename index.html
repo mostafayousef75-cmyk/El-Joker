@@ -1476,6 +1476,10 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
         }
         
         function restoreTimers() {
+            let anyFinished = false;
+            let finishedDeviceName = "";
+            let finishedCount = 0;
+
             devices.forEach((dev) => {
                 let devId = dev.id;
                 let t = timerData[devId];
@@ -1485,6 +1489,13 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                 updateLiveBill(devId);
 
                 if (t.isFinished) {
+                    if (!t.alarmDismissed) {
+                        anyFinished = true;
+                        finishedCount++;
+                        if (finishedDeviceName === "") {
+                            finishedDeviceName = dev.name;
+                        }
+                    }
                     let timeDisplay = document.getElementById("time-" + devId);
                     if (timeDisplay) timeDisplay.classList.add('finished');
                     setCardState(devId, 'finished');
@@ -1493,7 +1504,7 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                     updateStopBtnState(devId, "▶️ استكمال", "btn-resume");
                     setCardState(devId, 'paused');
                 } else {
-                    if (t.isCountdown && t.endTime > Date.now()) {
+                    if (t.isCountdown && t.startTime > 0) {
                         runInterval(devId);
                         updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                         setCardState(devId, 'running');
@@ -1506,6 +1517,22 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
                     }
                 }
             });
+
+            if (anyFinished) {
+                let descText = finishedCount > 1 
+                    ? `⚠️ انتهت وقت عدة أجهزة! (مثل: ${finishedDeviceName} وآخرون)` 
+                    : `انتهى وقت الجهاز: ${finishedDeviceName}!`;
+                startMasterAlarmMulti(descText);
+            }
+        }
+
+        function startMasterAlarmMulti(descMessage) {
+            document.getElementById('alarm-desc').innerText = descMessage;
+            document.getElementById('alarm-modal').style.display = 'flex';
+            if (!masterAlarmInterval) {
+                playSingleBeep();
+                masterAlarmInterval = setInterval(() => { playSingleBeep(); }, 1000);
+            }
         }
 
         function stopAlarmAndDismiss() {
@@ -1681,7 +1708,6 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
 
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
-            
             let finalTimeCost = (customPrice > 0) ? customPrice : ((t.accumulatedCost || 0) + currentPeriodCost);
 
             let drinksCost = t.drinks || 0;
@@ -1696,10 +1722,11 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
 
             let descText = customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
             
-            if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText, true, currentDay);
-            if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devName, true, currentDay);
-            if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay);
-            if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay);
+            // 🚀 إضافة البيانات محلياً دفعة واحدة بدون رفع متكرر للسحابة
+            if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText, true, currentDay, true);
+            if (drinksCost > 0) addValueToDailyAndFinance(currentDay, 'drink', drinksCost, 'مشروبات جهاز ' + devName, true, currentDay, true);
+            if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay, true);
+            if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay, true);
 
             clearDeviceSession(devId);
 
@@ -1716,7 +1743,11 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
-            updateQuickTodayTotalView();
+            loadMonthDataToUI();
+            
+            // ⚡ الحفظ الفردي النهائي للسحابة بسرعة البرق
+            saveData();
+
             alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
         
@@ -1796,7 +1827,7 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
             inputField.value = '';
         }
 
-        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true, customRecordDay = null) {
+        function addValueToDailyAndFinance(day, key, val, desc, isAdd = true, customRecordDay = null, skipSave = false) {
             let monthData = getActiveMonthData();
             if(!monthData.dailyData[day]) monthData.dailyData[day] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
             if(!monthData.financeRecords) monthData.financeRecords = [];
@@ -1821,9 +1852,11 @@ let serverTimeOffset = 0; // 💡 لتخزين فارق التوقيت وتوح�
             let totalCell = document.getElementById(`total-day-${day}`);
             if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
 
-            updateFinanceUI();
-            updateQuickTodayTotalView();
-            saveData();
+            if (!skipSave) {
+                updateFinanceUI();
+                updateQuickTodayTotalView();
+                saveData();
+            }
         }
 
         function addFinance(type) {
