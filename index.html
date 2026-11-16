@@ -1149,7 +1149,7 @@
                 if (t.isPaused || t.isFinished) return;
 
                 if (t.isCountdown) {
-                    // 💡 حساب الثواني المنقضية بدقة من وقت البداية بغض النظر عن فروق ساعات اللاب والموبايل
+                    // حساب الثواني المتبقية بناءً على الوقت المنقضي الفعلي
                     let elapsed = Math.floor((Date.now() - t.startTime) / 1000);
                     let rem = t.durationSecs - elapsed;
 
@@ -1163,6 +1163,7 @@
                         t.seconds = 0;
                         t.isFinished = true;
                         saveDeviceSession(devId);
+                        
                         let timeDisplay = document.getElementById("time-" + devId);
                         if (timeDisplay) {
                             timeDisplay.innerText = "00:00:00";
@@ -1365,14 +1366,15 @@
 
             let inputElem = document.getElementById("input-mins-" + devId);
             let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
+            
             t.setMinutes = mins;
             t.seconds = mins * 60;
-            // 💡 اعتماد وقت موحد بدقة
-            t.startTime = Date.now();
-            t.durationSecs = t.seconds;
+            t.durationSecs = t.seconds; // حفظ إجمالي ثواني العد التنازلي بدقة
+            t.startTime = Date.now();   // تسجيل وقت البداية الحالي بدقة
             t.isCountdown = true;
             t.isPaused = false;
             t.isFinished = false;
+            t.alarmDismissed = false;
 
             saveDeviceSession(devId);
             runInterval(devId);
