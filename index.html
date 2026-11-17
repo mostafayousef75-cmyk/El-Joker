@@ -1688,7 +1688,11 @@
 
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
-            let totalTimeCost = (customPrice > 0) ? customPrice : ((t.accumulatedCost || 0) + currentPeriodCost);
+            
+            // 💡 تصحيح دمج التراكم السابق مع المبلغ الثابت أو الوقت الحالي في العرض
+            let activeTimeCost = (customPrice > 0) ? customPrice : currentPeriodCost;
+            let totalTimeCost = (t.accumulatedCost || 0) + activeTimeCost;
+            
             let itemsCost = (t.drinks || 0) + (t.indomie || 0) + (t.grocery || 0);
             let grandTotal = totalTimeCost + itemsCost;
 
@@ -1700,7 +1704,7 @@
                 if (logElem) logElem.innerText = logText;
             }
         }
-
+        
         function checkout(devId) {
             syncInputsMemoryOnly(devId);
             let devObj = devices.find(d => d.id === devId);
