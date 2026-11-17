@@ -876,29 +876,53 @@
             }
         }
 
+        let dirtyTabs = { daily: true, inventory: true, finance: true, reports: true };
+
+        function markAllTabsDirty() {
+            dirtyTabs = { daily: true, inventory: true, finance: true, reports: true };
+        }
+
         function switchTab(evt, tabId) {
             if (tabId === 'finance' || tabId === 'reports') {
                 if (!verifyAdminPassword()) return;
             }
 
+            // 1. التبديل البصري الفوري للتاب (قبل أي حسابات)
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
             
-            if (evt && evt.target) {
-                evt.target.classList.add('active');
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.add('active');
+            
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
             } else {
                 let btnId = 'tab-' + tabId;
-                if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
+                if (document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
             }
 
-            localStorage.setItem('activeTab', tabId);
-            if (tabId === 'daily' || tabId === 'finance' || tabId === 'inventory') {
-                loadMonthDataToUI();
-            } else if (tabId === 'reports') {
-                updateReports();
-                restoreAccordionsState();
-            }
+            // 2. بناء محتوى التاب المفتوح فقط إذا كان يحتاج تحديثاً، وفي الإطار التالي للشاشة
+            requestAnimationFrame(() => {
+                localStorage.setItem('activeTab', tabId);
+
+                if (tabId === 'daily' && dirtyTabs.daily) {
+                    initDailyTable();
+                    dirtyTabs.daily = false;
+                } else if (tabId === 'inventory' && dirtyTabs.inventory) {
+                    renderPurchasedItems('ps');
+                    renderPurchasedItems('drink');
+                    renderPurchasedItems('indomie');
+                    renderPurchasedItems('grocery');
+                    dirtyTabs.inventory = false;
+                } else if (tabId === 'finance' && dirtyTabs.finance) {
+                    updateFinanceUI();
+                    dirtyTabs.finance = false;
+                } else if (tabId === 'reports' && dirtyTabs.reports) {
+                    updateReports();
+                    restoreAccordionsState();
+                    dirtyTabs.reports = false;
+                }
+            });
         }
 
         function changeAdminPassword() {
@@ -2178,12 +2202,7 @@
         }
 
         function loadMonthDataToUI() {
-            initDailyTable();
-            updateFinanceUI();
-            renderPurchasedItems('ps');
-            renderPurchasedItems('drink');
-            renderPurchasedItems('indomie');
-            renderPurchasedItems('grocery');
+            markAllTabsDirty();
             updateQuickTodayTotalView();
 
             let monthSelectElem = document.getElementById('month-select');
@@ -2191,11 +2210,24 @@
             
             let dailyTitleText = document.getElementById('daily-title-text');
             if (dailyTitleText) dailyTitleText.innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
-            
-            let reportsTab = document.getElementById('reports');
-            if(reportsTab && reportsTab.classList.contains('active')) {
+
+            let activeTab = localStorage.getItem('activeTab') || 'timers';
+            if (activeTab === 'daily') {
+                initDailyTable();
+                dirtyTabs.daily = false;
+            } else if (activeTab === 'finance') {
+                updateFinanceUI();
+                dirtyTabs.finance = false;
+            } else if (activeTab === 'inventory') {
+                renderPurchasedItems('ps');
+                renderPurchasedItems('drink');
+                renderPurchasedItems('indomie');
+                renderPurchasedItems('grocery');
+                dirtyTabs.inventory = false;
+            } else if (activeTab === 'reports') {
                 updateReports();
                 restoreAccordionsState();
+                dirtyTabs.reports = false;
             }
         }
 
