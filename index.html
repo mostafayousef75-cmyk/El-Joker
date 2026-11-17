@@ -1712,9 +1712,11 @@
                 t.interval = null;
             }
 
+            // 💡 تحديث الحساب لضم أي مبلغ ثابت أو وقت حالي لم يتم عمل تراكم له بعد
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
-            let finalTimeCost = (customPrice > 0) ? customPrice : ((t.accumulatedCost || 0) + currentPeriodCost);
+            let activeTimeCost = (customPrice > 0) ? customPrice : currentPeriodCost;
+            let finalTimeCost = (t.accumulatedCost || 0) + activeTimeCost;
 
             let drinksCost = t.drinks || 0;
             let indomieCost = t.indomie || 0;
@@ -1757,7 +1759,6 @@
             updateLiveBill(devId);
             updateQuickTodayTotalView();
 
-            // ✅ تعليم كافة التابات (ومنها الجرد والخزينة) بأنها تحتاج تحديث فور زيارتها
             markAllTabsDirty();
             isSyncingFromCloud = false;
 
