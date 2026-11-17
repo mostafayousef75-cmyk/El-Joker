@@ -77,7 +77,7 @@
             color: var(--text-color);
             margin: 0;
             padding: 20px;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         input[type=number]::-webkit-inner-spin-button, 
@@ -189,7 +189,6 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             position: relative;
-            transition: border 0.2s, box-shadow 0.2s;
         }
         
         .device-title { font-size: 1.4rem; color: var(--accent); text-align: center; font-weight: bold; }
@@ -808,7 +807,17 @@
         let audioCtx = null;
         let adminPassword = "1234";
         let isSyncingFromCloud = false;
+        let activeTabId = 'timers';
         
+        let dirtyTabs = { daily: true, inventory: true, finance: true, reports: true };
+
+        function markAllTabsDirty() {
+            dirtyTabs.daily = true;
+            dirtyTabs.inventory = true;
+            dirtyTabs.finance = true;
+            dirtyTabs.reports = true;
+        }
+
         function toggleAccordion(contentId, headerId) {
             let content = document.getElementById(contentId);
             let header = document.getElementById(headerId);
@@ -876,18 +885,14 @@
             }
         }
 
-        let dirtyTabs = { daily: true, inventory: true, finance: true, reports: true };
-
-        function markAllTabsDirty() {
-            dirtyTabs = { daily: true, inventory: true, finance: true, reports: true };
-        }
-
         function switchTab(evt, tabId) {
             if (tabId === 'finance' || tabId === 'reports') {
                 if (!verifyAdminPassword()) return;
             }
 
-            // 1. التبديل البصري الفوري للتاب (قبل أي حسابات)
+            activeTabId = tabId;
+
+            // إظهار الصفحة فوراً بدون أي تأخير
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
@@ -901,28 +906,28 @@
                 if (document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
             }
 
-            // 2. بناء محتوى التاب المفتوح فقط إذا كان يحتاج تحديثاً، وفي الإطار التالي للشاشة
-            requestAnimationFrame(() => {
-                localStorage.setItem('activeTab', tabId);
+            // تحديث محتوى التاب المفتوح مباشرة
+            if (tabId === 'daily' && dirtyTabs.daily) {
+                initDailyTable();
+                dirtyTabs.daily = false;
+            } else if (tabId === 'inventory' && dirtyTabs.inventory) {
+                renderPurchasedItems('ps');
+                renderPurchasedItems('drink');
+                renderPurchasedItems('indomie');
+                renderPurchasedItems('grocery');
+                dirtyTabs.inventory = false;
+            } else if (tabId === 'finance' && dirtyTabs.finance) {
+                updateFinanceUI();
+                dirtyTabs.finance = false;
+            } else if (tabId === 'reports' && dirtyTabs.reports) {
+                updateReports();
+                restoreAccordionsState();
+                dirtyTabs.reports = false;
+            }
 
-                if (tabId === 'daily' && dirtyTabs.daily) {
-                    initDailyTable();
-                    dirtyTabs.daily = false;
-                } else if (tabId === 'inventory' && dirtyTabs.inventory) {
-                    renderPurchasedItems('ps');
-                    renderPurchasedItems('drink');
-                    renderPurchasedItems('indomie');
-                    renderPurchasedItems('grocery');
-                    dirtyTabs.inventory = false;
-                } else if (tabId === 'finance' && dirtyTabs.finance) {
-                    updateFinanceUI();
-                    dirtyTabs.finance = false;
-                } else if (tabId === 'reports' && dirtyTabs.reports) {
-                    updateReports();
-                    restoreAccordionsState();
-                    dirtyTabs.reports = false;
-                }
-            });
+            setTimeout(() => {
+                localStorage.setItem('activeTab', tabId);
+            }, 0);
         }
 
         function changeAdminPassword() {
@@ -1078,13 +1083,13 @@
         function initDevices() {
             const container = document.getElementById('devices-grid');
             if (!container) return;
-            container.innerHTML = '';
             
             const todayNum = new Date().getDate();
             if(document.getElementById('quick-panel-title')) {
                 document.getElementById('quick-panel-title').innerText = `⚡ حاسبة إيراد اليوم الشامل (يوم ${todayNum})`;
             }
 
+            let html = '';
             devices.forEach((dev, idx) => {
                 if (!timerData[dev.id]) {
                     timerData[dev.id] = loadDeviceSession(dev.id);
@@ -1093,7 +1098,7 @@
                 let stopBtnClass = t.isPaused ? "btn-resume" : "btn-pause";
                 let stopBtnText = t.isPaused ? "▶️ استكمال" : "⏹️ إيقاف مؤقت";
 
-                container.innerHTML += `
+                html += `
                     <div class="card" id="card-${idx}" data-idx="${idx}" data-devid="${dev.id}">
                         <div class="device-title" style="display:flex; justify-content:space-between; align-items:center;">
                             <span class="drag-handle" draggable="true" ondragstart="drag(event)" title="اسحب من هنا لتحريك الكارت">⠿ اسحب</span>
@@ -1135,6 +1140,8 @@
                 `;
             });
 
+            container.innerHTML = html;
+
             document.querySelectorAll('.card').forEach((card) => {
                 card.addEventListener('dragover', allowDrop);
                 card.addEventListener('drop', drop);
@@ -1162,7 +1169,6 @@
             }
         }
     
-        // 🚀 حفظ بيانات الجلسة في مسار الجهاز فقط (سريع جداً بدون رفع بيانات السنة)
         function saveDeviceSession(devId) {
             let t = timerData[devId];
             if (!t) return;
@@ -1280,7 +1286,6 @@
             let totalCell = document.getElementById(`total-day-${day}`);
             if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
 
-            updateFinanceUI();
             updateQuickTodayTotalView();
             saveData();
         }
@@ -1478,7 +1483,6 @@
             }
         }
 
-        // ✅ إصلاح الإيقاف المؤقت والاستكمال بحيث يخصم مدة التوقف بدقة ولا يكمل في الخلفية
         function stopTimer(devId) {
             let t = timerData[devId];
             if (!t) return;
@@ -1490,7 +1494,6 @@
             let now = getUnifiedTime();
 
             if (!t.isPaused) {
-                // إيقاف مؤقت: تجميد الثواني المتبقية أو المنقضية عند هذه اللحظة
                 if (t.interval) {
                     clearInterval(t.interval);
                     t.interval = null;
@@ -1508,7 +1511,6 @@
                 if (!t.isFinished) setCardState(devId, 'paused');
                 saveDeviceSession(devId);
             } else {
-                // استكمال: إزاحة وقت البداية (startTime) ليتجاهل مدة التوقف تماماً
                 t.isPaused = false;
                 if (t.isCountdown) {
                     let alreadyElapsed = t.durationSecs - t.seconds;
@@ -1699,7 +1701,6 @@
             }
         }
 
-        // 🚀 إغلاق وتصدير سريع جداً ومضمون بدون تعارض مع السحابة
         function checkout(devId) {
             syncInputsMemoryOnly(devId);
             let devObj = devices.find(d => d.id === devId);
@@ -1756,13 +1757,17 @@
             updateLiveBill(devId);
             updateQuickTodayTotalView();
 
+            // ✅ تعليم كافة التابات (ومنها الجرد والخزينة) بأنها تحتاج تحديث فور زيارتها
+            markAllTabsDirty();
             isSyncingFromCloud = false;
 
-            localStorage.setItem('ps_local_backup', JSON.stringify({
-                allMonthsData: allMonthsData,
-                adminPassword: adminPassword,
-                devicesOrder: devices
-            }));
+            setTimeout(() => {
+                localStorage.setItem('ps_local_backup', JSON.stringify({
+                    allMonthsData: allMonthsData,
+                    adminPassword: adminPassword,
+                    devicesOrder: devices
+                }));
+            }, 0);
 
             if (db && navigator.onLine) {
                 let updates = {};
@@ -1774,10 +1779,10 @@
             alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
         
+        // 🚀 بناء جدول الـ 31 يوماً دفعة واحدة بدون تقطيع
         function initDailyTable() {
             const tbody = document.getElementById('daily-table-body');
             if (!tbody) return;
-            tbody.innerHTML = '';
 
             let monthData = getActiveMonthData();
             if (!monthData.dailyData) monthData.dailyData = {};
@@ -1788,6 +1793,7 @@
             let currentRealMonth = todayObj.getMonth() + 1;
             let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
 
+            let rowsHTML = '';
             for (let i = 1; i <= 31; i++) {
                 if(!monthData.dailyData[i]) monthData.dailyData[i] = { ps: 0, drink: 0, indomie: 0, grocery: 0 };
                 let d = monthData.dailyData[i];
@@ -1795,7 +1801,7 @@
                 let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
                 let rowClass = isToday ? 'today-highlight' : '';
 
-                tbody.innerHTML += `
+                rowsHTML += `
                     <tr class="${rowClass}">
                         <td style="font-weight:bold;">
                             يوم ${i}
@@ -1815,6 +1821,7 @@
                     </tr>
                 `;
             }
+            tbody.innerHTML = rowsHTML;
         }
 
         function createCellHTML(day, key, val, labelName) {
@@ -1876,7 +1883,6 @@
             if(totalCell) totalCell.innerText = rowTotal + ' ج.م';
 
             if (!skipSave) {
-                updateFinanceUI();
                 updateQuickTodayTotalView();
                 saveData();
             }
@@ -1905,8 +1911,8 @@
 
             descInput.value = '';
             amountInput.value = '';
-            updateFinanceUI();
             saveData();
+            updateFinanceUI();
         }
 
         function updateFinanceUI() {
@@ -1926,12 +1932,12 @@
 
             let tbody = document.getElementById('finance-table-body');
             if (!tbody) return;
-            tbody.innerHTML = '';
             
             let records = monthData.financeRecords || [];
+            let rowsHTML = '';
             records.forEach(rec => {
                 let dayText = rec.day ? `يوم ${rec.day}` : '-';
-                tbody.innerHTML += `
+                rowsHTML += `
                     <tr>
                         <td style="font-weight:bold; color:var(--accent);">${dayText}</td>
                         <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
@@ -1940,6 +1946,7 @@
                     </tr>
                 `;
             });
+            tbody.innerHTML = rowsHTML;
         }
 
         function payInventoryItem(categoryKey, sectionName) {
@@ -1978,7 +1985,6 @@
             nameInput.value = '';
             priceInput.value = '';
             renderPurchasedItems(categoryKey);
-            updateFinanceUI();
             saveData();
             alert(`✅ تم شراء (${itemName}) بمبلغ ${itemPrice} ج.م بنجاح وخصمها من خزينة الشهر!`);
         }
@@ -1994,9 +2000,9 @@
                 return;
             }
 
-            container.innerHTML = '';
+            let html = '';
             items.forEach((item, index) => {
-                container.innerHTML += `
+                html += `
                     <div class="purchased-item-card">
                         <div class="purchased-item-info">
                             🔹 ${item.name} <span style="color:var(--accent);">(${item.price} ج.م)</span>
@@ -2008,6 +2014,7 @@
                     </div>
                 `;
             });
+            container.innerHTML = html;
         }
 
         function editPurchasedItem(categoryKey, index) {
@@ -2043,7 +2050,6 @@
             }
 
             renderPurchasedItems(categoryKey);
-            updateFinanceUI();
             saveData();
             alert("✅ تم تعديل الصنف بنجاح!");
         }
@@ -2067,7 +2073,6 @@
 
             monthData.purchasedItems[categoryKey].splice(index, 1);
             renderPurchasedItems(categoryKey);
-            updateFinanceUI();
             saveData();
             alert("✅ تم حذف الصنف واسترجاع قيمته للخزينة بنجاح.");
         }
@@ -2131,20 +2136,20 @@
 
             let breakdownBody = document.getElementById('report-daily-breakdown-body');
             if (breakdownBody) {
-                breakdownBody.innerHTML = '';
                 let todayObj = new Date();
                 let currentRealDay = todayObj.getDate();
                 let currentRealYear = todayObj.getFullYear();
                 let currentRealMonth = todayObj.getMonth() + 1;
                 let [activeYear, activeMonth] = currentActiveMonthKey.split('-').map(Number);
 
+                let breakdownHTML = '';
                 for (let i = 1; i <= 31; i++) {
                     let d = monthData.dailyData && monthData.dailyData[i] ? monthData.dailyData[i] : { ps: 0, drink: 0, indomie: 0, grocery: 0 };
                     let dayTotal = (d.ps || 0) + (d.drink || 0) + (d.indomie || 0) + (d.grocery || 0);
                     let isToday = (i === currentRealDay && activeYear === currentRealYear && activeMonth === currentRealMonth);
                     let rowClass = isToday ? 'today-highlight' : '';
 
-                    breakdownBody.innerHTML += `
+                    breakdownHTML += `
                         <tr class="${rowClass}">
                             <td><b>يوم ${i}</b> ${isToday ? '<span style="color:var(--accent); font-size:0.75rem;">(اليوم)</span>' : ''}</td>
                             <td style="color:var(--accent);">${d.ps || 0} ج.م</td>
@@ -2155,12 +2160,13 @@
                         </tr>
                     `;
                 }
+                breakdownBody.innerHTML = breakdownHTML;
             }
 
             let yearTotalProfit = 0;
             let summaryBody = document.getElementById('yearly-summary-body');
             if (summaryBody) {
-                summaryBody.innerHTML = '';
+                let summaryHTML = '';
                 for (let m = 1; m <= 12; m++) {
                     let mKey = `2026-${m}`;
                     let mObj = allMonthsData[mKey] || { dailyData: {}, expensesCount: 0, financeRecords: [] };
@@ -2183,7 +2189,7 @@
                     let mNet = mIncome - mExpenses;
                     yearTotalProfit += mNet;
 
-                    summaryBody.innerHTML += `
+                    summaryHTML += `
                         <tr>
                             <td><b>${monthNames[m-1]} 2026</b></td>
                             <td style="color:var(--accent); font-weight:bold;">${mIncome} ج.م</td>
@@ -2192,6 +2198,7 @@
                         </tr>
                     `;
                 }
+                summaryBody.innerHTML = summaryHTML;
             }
 
             let yearTotalProfitElem = document.getElementById('year-total-profit');
@@ -2211,20 +2218,19 @@
             let dailyTitleText = document.getElementById('daily-title-text');
             if (dailyTitleText) dailyTitleText.innerText = `سجل الإيرادات اليومية لشهر: ${selectedMonthText}`;
 
-            let activeTab = localStorage.getItem('activeTab') || 'timers';
-            if (activeTab === 'daily') {
+            if (activeTabId === 'daily') {
                 initDailyTable();
                 dirtyTabs.daily = false;
-            } else if (activeTab === 'finance') {
+            } else if (activeTabId === 'finance') {
                 updateFinanceUI();
                 dirtyTabs.finance = false;
-            } else if (activeTab === 'inventory') {
+            } else if (activeTabId === 'inventory') {
                 renderPurchasedItems('ps');
                 renderPurchasedItems('drink');
                 renderPurchasedItems('indomie');
                 renderPurchasedItems('grocery');
                 dirtyTabs.inventory = false;
-            } else if (activeTab === 'reports') {
+            } else if (activeTabId === 'reports') {
                 updateReports();
                 restoreAccordionsState();
                 dirtyTabs.reports = false;
@@ -2234,12 +2240,24 @@
         function saveData() {
             if (isSyncingFromCloud) return;
 
-            const dataToSave = {
-                allMonthsData: allMonthsData || {},
-                adminPassword: adminPassword || "1234",
-                devicesOrder: devices || []
-            };
-            localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
+            // ✅ تحديث التابات الأخرى فوراً عند أي تعديل مالي أو يومي
+            markAllTabsDirty();
+            if (activeTabId === 'reports') {
+                updateReports();
+                dirtyTabs.reports = false;
+            } else if (activeTabId === 'finance') {
+                updateFinanceUI();
+                dirtyTabs.finance = false;
+            }
+
+            setTimeout(() => {
+                const dataToSave = {
+                    allMonthsData: allMonthsData || {},
+                    adminPassword: adminPassword || "1234",
+                    devicesOrder: devices || []
+                };
+                localStorage.setItem('ps_local_backup', JSON.stringify(dataToSave));
+            }, 0);
 
             let cloudStatus = document.getElementById('cloud-status');
             if (db && navigator.onLine) {
@@ -2288,26 +2306,23 @@
             let cloudStatus = document.getElementById('cloud-status');
             
             if (db && navigator.onLine) {
-                // 1. مستمع خفيف مخصص للسجل المالي واليومي فقط
                 db.ref('ps_lounge_data/allMonthsData').on('value', (snapshot) => {
                     const cloudMonths = snapshot.val();
                     if (!cloudMonths || isSyncingFromCloud) return;
                     
                     allMonthsData = cloudMonths;
-                    localStorage.setItem('ps_local_backup', JSON.stringify({
-                        allMonthsData: allMonthsData,
-                        adminPassword: adminPassword,
-                        devicesOrder: devices
-                    }));
+                    setTimeout(() => {
+                        localStorage.setItem('ps_local_backup', JSON.stringify({
+                            allMonthsData: allMonthsData,
+                            adminPassword: adminPassword,
+                            devicesOrder: devices
+                        }));
+                    }, 0);
                     
-                    updateQuickTodayTotalView();
-                    let activeTab = localStorage.getItem('activeTab') || 'timers';
-                    if (activeTab !== 'timers') {
-                        loadMonthDataToUI();
-                    }
+                    // ✅ دائماً علّم التابات أنها تحتاج تحديث حتى لو كنت في صفحة الأجهزة
+                    loadMonthDataToUI();
                 });
 
-                // 2. مستمع منفصل وخفيف لجلسات الأجهزة والمؤقتات
                 db.ref('ps_lounge_data/deviceSessions').on('value', (snapshot) => {
                     const sessions = snapshot.val() || {};
                     if (isSyncingFromCloud) return;
@@ -2318,7 +2333,6 @@
                         let cloudSession = sessions[devId] || null;
                         let t = timerData[devId];
 
-                        // تجاهل الصدى المحلي لمنع التهنيج
                         if (cloudSession && t && cloudSession.lastActionTime && t.lastActionTime && cloudSession.lastActionTime === t.lastActionTime) {
                             return; 
                         }
