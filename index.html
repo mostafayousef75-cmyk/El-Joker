@@ -1114,6 +1114,7 @@
                             <input type="number" min="1" id="input-mins-${dev.id}" value="${t.presetMinutes || 60}" oninput="updatePresetMinutes(${dev.id}, this.value)" onchange="updatePresetMinutes(${dev.id}, this.value)" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
                             <button class="btn btn-timer" onclick="startCountdown(${dev.id})">بدء مؤقت</button>
                             <button class="btn btn-open-time" onclick="startStopwatch(${dev.id})">⏱️ مفتوح</button>
+                            <span id="booked-badge-${dev.id}" style="display:none; background:rgba(212,175,55,0.18); color:var(--accent); border:1px solid var(--accent); padding:3px 8px; border-radius:999px; font-size:0.8rem; font-weight:bold;"></span>
                         </div>
 
                         <div class="timer-display ${t.isFinished ? 'finished' : ''}" id="time-${dev.id}">00:00:00</div>
@@ -1169,6 +1170,27 @@
             }
         }
     
+        function updateBookedBadge(devId) {
+            let badge = document.getElementById("booked-badge-" + devId);
+            if (!badge) return;
+            let t = timerData[devId];
+            if (!t) {
+                badge.style.display = "none";
+                badge.innerText = "";
+                return;
+            }
+            if (t.isCountdown && (t.setMinutes || 0) > 0 && (t.seconds > 0 || t.isFinished)) {
+                badge.innerText = `📌 محجوز: ${t.setMinutes} د`;
+                badge.style.display = "inline-block";
+            } else if (!t.isCountdown && (t.startTime > 0 || (t.seconds || 0) > 0 || t.isPaused)) {
+                badge.innerText = `⏱️ وقت مفتوح`;
+                badge.style.display = "inline-block";
+            } else {
+                badge.style.display = "none";
+                badge.innerText = "";
+            }
+        }
+
         function updatePresetMinutes(devId, minsVal) {
             let t = timerData[devId];
             if (!t) return;
@@ -1411,6 +1433,7 @@
 
             updateDisplay(devId);
             updateLiveBill(devId);
+            updateBookedBadge(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             setCardState(devId, 'running');
@@ -1441,6 +1464,7 @@
 
             updateDisplay(devId);
             updateLiveBill(devId);
+            updateBookedBadge(devId);
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             setCardState(devId, 'running');
@@ -1575,6 +1599,7 @@
                 }
                 updateDisplay(devId);
                 updateLiveBill(devId);
+                updateBookedBadge(devId);
 
                 if (t.isFinished) {
                     if (!t.alarmDismissed) {
@@ -1614,6 +1639,7 @@
             if (t && t.interval) clearInterval(t.interval);
             
             clearDeviceSession(devId);
+            updateBookedBadge(devId);
 
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
@@ -1697,6 +1723,7 @@
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             setCardState(devId, 'normal');
             updateLiveBill(devId);
+            updateBookedBadge(devId);
             saveDeviceSession(devId);
 
             alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
@@ -1769,18 +1796,14 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            // حساب إجمالي الوقت الفعلي أو المحجوز للفاتورة لعرضه في سجل الحركات المالية
+            // صياغة مختصرة وواضحة للوقت في وصف حركة البلايستيشن
             let playedParts = [];
             if (t.periodsLog && t.periodsLog.length > 0) {
                 playedParts.push(t.periodsLog.join(" + "));
             }
             if (currentPeriodCost > 0 || (t.seconds || 0) > 0 || (t.setMinutes || 0) > 0 || t.isFinished) {
                 if (t.isCountdown && (t.setMinutes || 0) > 0) {
-                    let actualElapsedSecs = t.isFinished
-                        ? (t.durationSecs || (t.setMinutes * 60))
-                        : Math.max(0, Math.min(t.durationSecs || (t.setMinutes * 60), (t.durationSecs || (t.setMinutes * 60)) - (t.seconds || 0)));
-                    let elapsedMins = Math.round(actualElapsedSecs / 60);
-                    playedParts.push(elapsedMins > 0 ? `${elapsedMins} دقيقة (محجوز ${t.setMinutes} د)` : `${t.setMinutes} دقيقة`);
+                    playedParts.push(`${t.setMinutes} د`);
                 } else {
                     let secsCount = t.seconds || 0;
                     if (secsCount > 0) {
@@ -1794,9 +1817,9 @@
                     }
                 }
             }
-            let playedSummary = playedParts.length > 0 ? ` — الوقت: ${playedParts.join(" + ")}` : "";
-
-            let descText = (customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName) + playedSummary;
+            let timeSuffix = playedParts.length > 0 ? ` (${playedParts.join(" + ")})` : "";
+            let baseLabel = customPrice > 0 ? `عرض ${devName}` : `بلايستيشن ${devName}`;
+            let descText = `${baseLabel}${timeSuffix}`;
             
             isSyncingFromCloud = true;
 
@@ -1826,6 +1849,7 @@
             if(document.getElementById("custom-" + devId)) document.getElementById("custom-" + devId).value = 0;
             
             updateLiveBill(devId);
+            updateBookedBadge(devId);
             updateQuickTodayTotalView();
 
             markAllTabsDirty();
@@ -2459,6 +2483,7 @@
                         let currentT = timerData[devId];
                         updateDisplay(devId);
                         updateLiveBill(devId);
+                        updateBookedBadge(devId);
 
                         if (currentT.isFinished) {
                             let timeDisplay = document.getElementById("time-" + devId);
