@@ -1717,7 +1717,8 @@
                     let timeLabel = hrs > 0
                         ? `${hrs} س ${mins} د`
                         : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
-                    periodParts.push(`مفتوح ${timeLabel}`);
+                    let openCost = customPrice > 0 ? customPrice : currentPeriodCost;
+                    periodParts.push(`مفتوح ${timeLabel}${openCost > 0 ? ' بمبلغ ' + openCost + 'ج' : ''}`);
                 }
             }
             let periodLabel = periodParts.length > 0 ? `(${periodParts.join(" ")})` : "";
@@ -1848,7 +1849,8 @@
                         let timeLabel = hrs > 0
                             ? `${hrs} س ${mins} د`
                             : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
-                        currentParts.push(`مفتوح ${timeLabel}`);
+                        let openCost = customPrice > 0 ? customPrice : currentPeriodCost;
+                        currentParts.push(`مفتوح ${timeLabel}${openCost > 0 ? ' بمبلغ ' + openCost + 'ج' : ''}`);
                     }
                 }
             }
