@@ -1703,9 +1703,13 @@
             }
 
             let periodLabel = "";
-            if (customPrice > 0) periodLabel = `${customPrice}ج (مبلغ ثابت)`;
-            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
-            else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د`;
+            if (customPrice > 0) periodLabel = `(ثابت ${customPrice}ج)`;
+            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `(${t.setMinutes} د (${activeTimeCost}ج))`;
+            else if (t.seconds > 0) {
+                let minsCount = Math.ceil(t.seconds / 60);
+                let modeLabel = t.isCountdown ? `${minsCount} د` : `مفتوح ${minsCount}د`;
+                periodLabel = `(${modeLabel} (${activeTimeCost}ج))`;
+            }
 
             if (t.interval) clearInterval(t.interval);
             t.interval = null;
@@ -1808,14 +1812,18 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            // صياغة مختصرة وواضحة للوقت في وصف حركة البلايستيشن
+            // صياغة تفصيلية وواضحة للفترات والمبالغ الثابتة والأوقات في وصف حركة البلايستيشن
             let playedParts = [];
             if (t.periodsLog && t.periodsLog.length > 0) {
-                playedParts.push(t.periodsLog.join(" + "));
+                playedParts.push(t.periodsLog.join(""));
             }
-            if (currentPeriodCost > 0 || (t.seconds || 0) > 0 || (t.setMinutes || 0) > 0 || t.isFinished) {
+
+            let currentPart = "";
+            if (customPrice > 0) {
+                currentPart = `(ثابت ${customPrice}ج)`;
+            } else if (currentPeriodCost > 0 || (t.seconds || 0) > 0 || (t.setMinutes || 0) > 0 || t.isFinished) {
                 if (t.isCountdown && (t.setMinutes || 0) > 0) {
-                    playedParts.push(`${t.setMinutes} د`);
+                    currentPart = `(${t.setMinutes} د)`;
                 } else {
                     let secsCount = t.seconds || 0;
                     if (secsCount > 0) {
@@ -1825,13 +1833,16 @@
                         let timeLabel = hrs > 0
                             ? `${hrs} س ${mins} د`
                             : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
-                        playedParts.push(timeLabel);
+                        currentPart = `(${timeLabel})`;
                     }
                 }
             }
-            let timeSuffix = playedParts.length > 0 ? ` (${playedParts.join(" + ")})` : "";
-            let baseLabel = `بلايستيشن ${devName}`;
-            let descText = customPrice > 0 ? `${baseLabel}${timeSuffix} مبلغ ثابت` : `${baseLabel}${timeSuffix}`;
+            if (currentPart) {
+                playedParts.push(currentPart);
+            }
+
+            let suffixText = playedParts.length > 0 ? ` ${playedParts.join("")}` : "";
+            let descText = `بلايستيشن ${devName}${suffixText}`;
             
             isSyncingFromCloud = true;
 
