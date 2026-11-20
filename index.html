@@ -71,6 +71,12 @@
             font-weight: bold !important;
         }
 
+        body.theme-light [id^="booked-badge-"] {
+            color: #0f172a !important;
+            background: rgba(15, 23, 42, 0.08) !important;
+            border-color: rgba(15, 23, 42, 0.35) !important;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
@@ -863,6 +869,7 @@
             else if (themeName === 'dark-blue') document.body.classList.add('theme-dark-blue');
             else if (themeName === 'light') document.body.classList.add('theme-light');
             localStorage.setItem('ps_theme', themeName);
+            devices.forEach(dev => updateBookedBadge(dev.id));
         }
 
         function changeDevicesLayout(layoutType) {
@@ -1174,9 +1181,10 @@
             let badge = document.getElementById("booked-badge-" + devId);
             if (!badge) return;
             let t = timerData[devId];
-            badge.style.color = "#ffffff";
-            badge.style.background = "rgba(255, 255, 255, 0.08)";
-            badge.style.borderColor = "rgba(255, 255, 255, 0.35)";
+            let isLight = document.body.classList.contains("theme-light");
+            badge.style.color = isLight ? "#0f172a" : "#ffffff";
+            badge.style.background = isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.08)";
+            badge.style.borderColor = isLight ? "rgba(15, 23, 42, 0.35)" : "rgba(255, 255, 255, 0.35)";
 
             if (!t) {
                 badge.style.display = "none";
