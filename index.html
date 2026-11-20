@@ -1830,8 +1830,8 @@
                 }
             }
             let timeSuffix = playedParts.length > 0 ? ` (${playedParts.join(" + ")})` : "";
-            let baseLabel = customPrice > 0 ? `عرض ${devName}` : `بلايستيشن ${devName}`;
-            let descText = `${baseLabel}${timeSuffix}`;
+            let baseLabel = `بلايستيشن ${devName}`;
+            let descText = customPrice > 0 ? `${baseLabel}${timeSuffix} مبلغ ثابت` : `${baseLabel}${timeSuffix}`;
             
             isSyncingFromCloud = true;
 
