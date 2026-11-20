@@ -244,14 +244,13 @@
         }
 
         .controls-box input {
-            width: 55px;
+            width: 50px;
             padding: 4px;
             text-align: center;
             background: var(--card-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            font-weight: bold;
         }
 
         .item-inputs {
@@ -665,8 +664,8 @@
             <thead>
                 <tr>
                     <th style="width: 15%;">اليوم</th>
-                    <th style="width: 18%;">النوع</th>
-                    <th style="width: 47%;">البيان / الوصف والوقت</th>
+                    <th style="width: 20%;">النوع</th>
+                    <th style="width: 45%;">البيان / الوصف</th>
                     <th style="width: 20%;">المبلغ</th>
                 </tr>
             </thead>
@@ -893,6 +892,7 @@
 
             activeTabId = tabId;
 
+            // إظهار الصفحة فوراً بدون أي تأخير
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
@@ -906,6 +906,7 @@
                 if (document.getElementById(btnId)) document.getElementById(btnId).classList.add('active');
             }
 
+            // تحديث محتوى التاب المفتوح مباشرة
             if (tabId === 'daily' && dirtyTabs.daily) {
                 initDailyTable();
                 dirtyTabs.daily = false;
@@ -1037,9 +1038,7 @@
                 }
             } 
             else if (val === "all") {
-                if (confirm("⚠️ تحذير شديد:
-سيتم مسح بيانات جميع الشهور وتصفير النظام بالكامل!
-هل أنت متأكد؟")) {
+                if (confirm("⚠️ تحذير شديد:\nسيتم مسح بيانات جميع الشهور وتصفير النظام بالكامل!\nهل أنت متأكد؟")) {
                     allMonthsData = {};
                     saveData();
                     loadMonthDataToUI();
@@ -1081,17 +1080,6 @@
             return document.querySelector(`.card[data-devid="${devId}"]`);
         }
 
-        function saveBookedMinutes(devId, val) {
-            let t = timerData[devId];
-            if (!t) return;
-            let parsed = parseInt(val);
-            if (!isNaN(parsed) && parsed > 0) {
-                t.setMinutes = parsed;
-                t.lastBookedMinutes = parsed;
-                saveDeviceSession(devId);
-            }
-        }
-
         function initDevices() {
             const container = document.getElementById('devices-grid');
             if (!container) return;
@@ -1109,7 +1097,6 @@
                 let t = timerData[dev.id];
                 let stopBtnClass = t.isPaused ? "btn-resume" : "btn-pause";
                 let stopBtnText = t.isPaused ? "▶️ استكمال" : "⏹️ إيقاف مؤقت";
-                let bookedMinsValue = t.lastBookedMinutes || t.setMinutes || 60;
 
                 html += `
                     <div class="card" id="card-${idx}" data-idx="${idx}" data-devid="${dev.id}">
@@ -1124,7 +1111,7 @@
                         
                         <div class="controls-box">
                             <span>حجز وقت (دقائق):</span>
-                            <input type="number" min="1" id="input-mins-${dev.id}" value="${bookedMinsValue}" oninput="saveBookedMinutes(${dev.id}, this.value)" onchange="saveBookedMinutes(${dev.id}, this.value)" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
+                            <input type="number" min="1" id="input-mins-${dev.id}" value="60" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
                             <button class="btn btn-timer" onclick="startCountdown(${dev.id})">بدء مؤقت</button>
                             <button class="btn btn-open-time" onclick="startStopwatch(${dev.id})">⏱️ مفتوح</button>
                         </div>
@@ -1186,7 +1173,6 @@
             let t = timerData[devId];
             if (!t) return;
             t.lastActionTime = Date.now();
-            let bookedMins = t.lastBookedMinutes || t.setMinutes || 60;
             let sessionObj = {
                 drinks: t.drinks || 0,
                 indomie: t.indomie || 0,
@@ -1195,7 +1181,6 @@
                 accumulatedCost: t.accumulatedCost || 0,
                 periodsLog: t.periodsLog || [],
                 setMinutes: t.setMinutes || 0,
-                lastBookedMinutes: bookedMins,
                 seconds: t.seconds || 0,
                 durationSecs: t.durationSecs || 0,
                 isCountdown: t.isCountdown || false,
@@ -1215,7 +1200,7 @@
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, lastBookedMinutes: 60, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: 0,
+                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
@@ -1227,20 +1212,14 @@
             return defaultData;
         }
                         
-        function clearDeviceSession(devId, keepBookedMins = null) {
-            let prevMins = keepBookedMins !== null ? keepBookedMins : (timerData[devId]?.lastBookedMinutes || timerData[devId]?.setMinutes || 60);
+        function clearDeviceSession(devId) {
             localStorage.removeItem(`dev_session_${devId}`);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, lastBookedMinutes: prevMins, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
+                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
-            let persistedMinsObj = { lastBookedMinutes: prevMins, lastActionTime: timerData[devId].lastActionTime };
-            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(persistedMinsObj));
-            let minsInput = document.getElementById("input-mins-" + devId);
-            if (minsInput) minsInput.value = prevMins;
-
             if (db && navigator.onLine && !isSyncingFromCloud) {
-                db.ref(`ps_lounge_data/deviceSessions/${devId}`).set(persistedMinsObj);
+                db.ref(`ps_lounge_data/deviceSessions/${devId}`).remove();
             }
         }
 
@@ -1378,10 +1357,6 @@
             t.indomie = parseFloat(document.getElementById("indomie-" + devId)?.value || 0) || 0;
             t.grocery = parseFloat(document.getElementById("grocery-" + devId)?.value || 0) || 0;
             t.customPrice = parseFloat(document.getElementById("custom-" + devId)?.value || 0) || 0;
-            let minsVal = parseInt(document.getElementById("input-mins-" + devId)?.value || 0);
-            if (!isNaN(minsVal) && minsVal > 0) {
-                t.lastBookedMinutes = minsVal;
-            }
         }
 
         function previewBillOnly(devId) {
@@ -1420,11 +1395,9 @@
             if (t.interval) clearInterval(t.interval);
 
             let inputElem = document.getElementById("input-mins-" + devId);
-            let mins = parseInt(inputElem ? inputElem.value : 0) || t.lastBookedMinutes || 60;
-            if (inputElem) inputElem.value = mins;
+            let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
             
             t.setMinutes = mins;
-            t.lastBookedMinutes = mins;
             t.seconds = mins * 60;
             t.durationSecs = t.seconds;
             t.startTime = getUnifiedTime();
@@ -1563,12 +1536,6 @@
                 let t = timerData[devId];
                 if (!t) return;
 
-                let minsInput = document.getElementById("input-mins-" + devId);
-                let bookedVal = t.lastBookedMinutes || t.setMinutes || 60;
-                if (minsInput && document.activeElement !== minsInput) {
-                    minsInput.value = bookedVal;
-                }
-
                 updateDisplay(devId);
                 updateLiveBill(devId);
 
@@ -1608,9 +1575,8 @@
 
             let t = timerData[devId];
             if (t && t.interval) clearInterval(t.interval);
-            let keepMins = parseInt(document.getElementById("input-mins-" + devId)?.value || 0) || t?.lastBookedMinutes || t?.setMinutes || 60;
             
-            clearDeviceSession(devId, keepMins);
+            clearDeviceSession(devId);
 
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
@@ -1663,8 +1629,8 @@
 
             let periodLabel = "";
             if (customPrice > 0) periodLabel = `${customPrice}ج (مبلغ ثابت)`;
-            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د (${currentPeriodCost}ج)`;
-            else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د (${currentPeriodCost}ج)`;
+            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `${t.setMinutes}د`;
+            else if (t.seconds > 0) periodLabel = `${Math.ceil(t.seconds / 60)}د`;
 
             if (t.interval) clearInterval(t.interval);
             t.interval = null;
@@ -1696,8 +1662,7 @@
             updateLiveBill(devId);
             saveDeviceSession(devId);
 
-            alert(`➕ تم التراكم بنجاح!
-إجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
+            alert(`➕ تم التراكم بنجاح!\nإجمالي وقت الفاتورة الآن: ${t.accumulatedCost} ج.م`);
         }
 
         function updateItems(devId) {
@@ -1717,21 +1682,6 @@
             else return Math.round((t.seconds / 3600) * currentRate);
         }
 
-        function getFormattedTimeSummary(devId, t, currentPeriodCost) {
-            let parts = [];
-            if (t.periodsLog && t.periodsLog.length > 0) {
-                parts.push(t.periodsLog.join(" + "));
-            }
-            if (t.customPrice > 0) {
-                parts.push(`${t.customPrice}ج (مبلغ ثابت)`);
-            } else if (t.isCountdown && t.setMinutes > 0) {
-                parts.push(`${t.setMinutes}د (${currentPeriodCost}ج)`);
-            } else if (t.seconds > 0) {
-                parts.push(`${Math.ceil(t.seconds / 60)}د (${currentPeriodCost}ج)`);
-            }
-            return parts.join(" + ");
-        }
-
         function updateLiveBill(devId) {
             let t = timerData[devId];
             if (!t) return;
@@ -1739,6 +1689,7 @@
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
             
+            // 💡 تصحيح دمج التراكم السابق مع المبلغ الثابت أو الوقت الحالي في العرض
             let activeTimeCost = (customPrice > 0) ? customPrice : currentPeriodCost;
             let totalTimeCost = (t.accumulatedCost || 0) + activeTimeCost;
             
@@ -1753,7 +1704,7 @@
                 if (logElem) logElem.innerText = logText;
             }
         }
-
+        
         function checkout(devId) {
             syncInputsMemoryOnly(devId);
             let devObj = devices.find(d => d.id === devId);
@@ -1765,6 +1716,7 @@
                 t.interval = null;
             }
 
+            // 💡 تحديث الحساب لضم أي مبلغ ثابت أو وقت حالي لم يتم عمل تراكم له بعد
             let currentPeriodCost = calculateTimeCost(devId);
             let customPrice = t.customPrice || 0;
             let activeTimeCost = (customPrice > 0) ? customPrice : currentPeriodCost;
@@ -1780,13 +1732,8 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            let timeSummaryText = getFormattedTimeSummary(devId, t, currentPeriodCost);
-            let descText = customPrice > 0
-                ? `مبلغ ثابت/عرض جهاز ${devName}${timeSummaryText ? ' | الوقت: ' + timeSummaryText : ''}`
-                : `إيراد بلايستيشن جهاز ${devName}${timeSummaryText ? ' | الوقت: ' + timeSummaryText : ''}`;
+            let descText = customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
             
-            let keepMins = t.lastBookedMinutes || t.setMinutes || 60;
-
             isSyncingFromCloud = true;
 
             if (finalTimeCost > 0) addValueToDailyAndFinance(currentDay, 'ps', finalTimeCost, descText, true, currentDay, true);
@@ -1794,13 +1741,11 @@
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay, true);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay, true);
 
-            let resetTime = Date.now();
+            localStorage.removeItem(`dev_session_${devId}`);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, lastBookedMinutes: keepMins, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: resetTime,
+                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
-            let persistedMinsObj = { lastBookedMinutes: keepMins, lastActionTime: resetTime };
-            localStorage.setItem(`dev_session_${devId}`, JSON.stringify(persistedMinsObj));
 
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) {
@@ -1810,8 +1755,6 @@
             setCardState(devId, 'normal');
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
-            let minsInput = document.getElementById("input-mins-" + devId);
-            if (minsInput) minsInput.value = keepMins;
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
             if(document.getElementById("grocery-" + devId)) document.getElementById("grocery-" + devId).value = 0;
@@ -1834,15 +1777,14 @@
             if (db && navigator.onLine) {
                 let updates = {};
                 updates[`ps_lounge_data/allMonthsData/${currentActiveMonthKey}`] = allMonthsData[currentActiveMonthKey];
-                updates[`ps_lounge_data/deviceSessions/${devId}`] = persistedMinsObj;
+                updates[`ps_lounge_data/deviceSessions/${devId}`] = null;
                 db.ref().update(updates);
             }
 
-            alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!
-إجمالي الفاتورة: ${grandTotal} ج.م${timeSummaryText ? '
-الوقت: ' + timeSummaryText : ''}`);
+            alert(`✅ تم إغلاق وتصدير الفاتورة الكاملة بنجاح!\nإجمالي الفاتورة: ${grandTotal} ج.م`);
         }
         
+        // 🚀 بناء جدول الـ 31 يوماً دفعة واحدة بدون تقطيع
         function initDailyTable() {
             const tbody = document.getElementById('daily-table-body');
             if (!tbody) return;
@@ -2303,6 +2245,7 @@
         function saveData() {
             if (isSyncingFromCloud) return;
 
+            // ✅ تحديث التابات الأخرى فوراً عند أي تعديل مالي أو يومي
             markAllTabsDirty();
             if (activeTabId === 'reports') {
                 updateReports();
@@ -2381,6 +2324,7 @@
                         }));
                     }, 0);
                     
+                    // ✅ دائماً علّم التابات أنها تحتاج تحديث حتى لو كنت في صفحة الأجهزة
                     loadMonthDataToUI();
                 });
 
@@ -2408,23 +2352,19 @@
                             timerData[devId] = loadDeviceSession(devId);
                             
                             let currentT = timerData[devId];
-                            let minsElem = document.getElementById("input-mins-" + devId);
                             let drinkElem = document.getElementById("drink-" + devId);
                             let indomieElem = document.getElementById("indomie-" + devId);
                             let groceryElem = document.getElementById("grocery-" + devId);
                             let customElem = document.getElementById("custom-" + devId);
 
-                            let bookedMinsVal = currentT.lastBookedMinutes || currentT.setMinutes || 60;
-                            if (minsElem && document.activeElement !== minsElem) minsElem.value = bookedMinsVal;
                             if (drinkElem && document.activeElement !== drinkElem) drinkElem.value = currentT.drinks || 0;
                             if (indomieElem && document.activeElement !== indomieElem) indomieElem.value = currentT.indomie || 0;
                             if (groceryElem && document.activeElement !== groceryElem) groceryElem.value = currentT.grocery || 0;
                             if (customElem && document.activeElement !== customElem) customElem.value = currentT.customPrice || 0;
                         } else {
-                            let prevMins = t?.lastBookedMinutes || t?.setMinutes || 60;
                             localStorage.removeItem(`dev_session_${devId}`);
                             timerData[devId] = { 
-                                seconds: 0, setMinutes: 0, lastBookedMinutes: prevMins, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: 0,
+                                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: 0,
                                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
                             };
                             let timeDisplay = document.getElementById("time-" + devId);
@@ -2435,8 +2375,6 @@
                             setCardState(devId, 'normal');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                             
-                            let minsElem = document.getElementById("input-mins-" + devId);
-                            if (minsElem && document.activeElement !== minsElem) minsElem.value = prevMins;
                             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
                             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
                             if(document.getElementById("grocery-" + devId)) document.getElementById("grocery-" + devId).value = 0;
