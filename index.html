@@ -1703,12 +1703,21 @@
             }
 
             let periodLabel = "";
-            if (customPrice > 0) periodLabel = `(ثابت ${customPrice}ج)`;
-            else if (t.isCountdown && t.setMinutes > 0) periodLabel = `(${t.setMinutes} د (${activeTimeCost}ج))`;
-            else if (t.seconds > 0) {
-                let minsCount = Math.ceil(t.seconds / 60);
-                let modeLabel = t.isCountdown ? `${minsCount} د` : `مفتوح ${minsCount}د`;
-                periodLabel = `(${modeLabel} (${activeTimeCost}ج))`;
+            if (customPrice > 0) {
+                periodLabel = `(تراكمي ثابت ${customPrice}ج)`;
+            } else if (t.seconds > 0 || (t.isCountdown && t.setMinutes > 0) || t.isFinished) {
+                if (t.isCountdown && (t.setMinutes || 0) > 0) {
+                    periodLabel = `(تراكمي الوقت ${t.setMinutes} د)`;
+                } else {
+                    let secsCount = t.seconds || 0;
+                    let hrs = Math.floor(secsCount / 3600);
+                    let mins = Math.floor((secsCount % 3600) / 60);
+                    let remSecs = secsCount % 60;
+                    let timeLabel = hrs > 0
+                        ? `${hrs} س ${mins} د`
+                        : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
+                    periodLabel = `(تراكمي الوقت ${timeLabel})`;
+                }
             }
 
             if (t.interval) clearInterval(t.interval);
@@ -1812,18 +1821,21 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            // صياغة تفصيلية وواضحة للفترات والمبالغ الثابتة والأوقات في وصف حركة البلايستيشن
+            // صياغة منظمة وواضحة لكل إجراء داخل قوس مستقل: (ثابت 10ج) (الوقت 15 د) (تراكمي 15 د) (تراكمي ثابت 10ج)
             let playedParts = [];
             if (t.periodsLog && t.periodsLog.length > 0) {
-                playedParts.push(t.periodsLog.join(""));
+                t.periodsLog.forEach(p => {
+                    if (p) playedParts.push(p);
+                });
             }
 
-            let currentPart = "";
             if (customPrice > 0) {
-                currentPart = `(ثابت ${customPrice}ج)`;
-            } else if (currentPeriodCost > 0 || (t.seconds || 0) > 0 || (t.setMinutes || 0) > 0 || t.isFinished) {
+                playedParts.push(`(ثابت ${customPrice}ج)`);
+            }
+
+            if (currentPeriodCost > 0 || (t.seconds || 0) > 0 || (t.setMinutes || 0) > 0 || t.isFinished) {
                 if (t.isCountdown && (t.setMinutes || 0) > 0) {
-                    currentPart = `(${t.setMinutes} د)`;
+                    playedParts.push(`(الوقت ${t.setMinutes} د)`);
                 } else {
                     let secsCount = t.seconds || 0;
                     if (secsCount > 0) {
@@ -1833,15 +1845,12 @@
                         let timeLabel = hrs > 0
                             ? `${hrs} س ${mins} د`
                             : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
-                        currentPart = `(${timeLabel})`;
+                        playedParts.push(`(الوقت ${timeLabel})`);
                     }
                 }
             }
-            if (currentPart) {
-                playedParts.push(currentPart);
-            }
 
-            let suffixText = playedParts.length > 0 ? ` ${playedParts.join("")}` : "";
+            let suffixText = playedParts.length > 0 ? ` ${playedParts.join(" ")}` : "";
             let descText = `بلايستيشن ${devName}${suffixText}`;
             
             isSyncingFromCloud = true;
