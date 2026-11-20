@@ -1716,7 +1716,7 @@
                     let timeLabel = hrs > 0
                         ? `${hrs} س ${mins} د`
                         : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
-                    periodLabel = `(تراكمي الوقت ${timeLabel})`;
+                    periodLabel = `(تراكمي مفتوح ${timeLabel})`;
                 }
             }
 
@@ -1845,7 +1845,7 @@
                         let timeLabel = hrs > 0
                             ? `${hrs} س ${mins} د`
                             : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
-                        playedParts.push(`(الوقت ${timeLabel})`);
+                        playedParts.push(`(مفتوح ${timeLabel})`);
                     }
                 }
             }
