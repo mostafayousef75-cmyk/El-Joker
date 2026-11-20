@@ -1111,7 +1111,7 @@
                         
                         <div class="controls-box">
                             <span>حجز وقت (دقائق):</span>
-                            <input type="number" min="1" id="input-mins-${dev.id}" value="60" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
+                            <input type="number" min="1" id="input-mins-${dev.id}" value="${t.presetMinutes || 60}" oninput="updatePresetMinutes(${dev.id}, this.value)" onchange="updatePresetMinutes(${dev.id}, this.value)" onkeydown="if(event.key==='Enter') startCountdown(${dev.id})">
                             <button class="btn btn-timer" onclick="startCountdown(${dev.id})">بدء مؤقت</button>
                             <button class="btn btn-open-time" onclick="startStopwatch(${dev.id})">⏱️ مفتوح</button>
                         </div>
@@ -1169,10 +1169,27 @@
             }
         }
     
+        function updatePresetMinutes(devId, minsVal) {
+            let t = timerData[devId];
+            if (!t) return;
+            let parsed = parseInt(minsVal, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                t.presetMinutes = parsed;
+                saveDeviceSession(devId);
+            }
+        }
+
         function saveDeviceSession(devId) {
             let t = timerData[devId];
             if (!t) return;
             t.lastActionTime = Date.now();
+            let inputMinsElem = document.getElementById("input-mins-" + devId);
+            let currentInputMins = inputMinsElem ? parseInt(inputMinsElem.value, 10) : NaN;
+            let presetMins = (!isNaN(currentInputMins) && currentInputMins > 0)
+                ? currentInputMins
+                : (t.presetMinutes || t.setMinutes || 60);
+            t.presetMinutes = presetMins;
+
             let sessionObj = {
                 drinks: t.drinks || 0,
                 indomie: t.indomie || 0,
@@ -1180,6 +1197,7 @@
                 customPrice: t.customPrice || 0,
                 accumulatedCost: t.accumulatedCost || 0,
                 periodsLog: t.periodsLog || [],
+                presetMinutes: presetMins,
                 setMinutes: t.setMinutes || 0,
                 seconds: t.seconds || 0,
                 durationSecs: t.durationSecs || 0,
@@ -1200,26 +1218,40 @@
         function loadDeviceSession(devId) {
             let saved = localStorage.getItem(`dev_session_${devId}`);
             let defaultData = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: 0,
+                seconds: 0, presetMinutes: 60, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: 0,
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (saved) {
                 try {
                     let parsed = JSON.parse(saved);
-                    return { ...defaultData, ...parsed };
+                    let merged = { ...defaultData, ...parsed };
+                    if (!merged.presetMinutes) {
+                        merged.presetMinutes = merged.setMinutes > 0 ? merged.setMinutes : 60;
+                    }
+                    return merged;
                 } catch(e) {}
             }
             return defaultData;
         }
                         
         function clearDeviceSession(devId) {
+            let prevT = timerData[devId];
+            let inputMinsElem = document.getElementById("input-mins-" + devId);
+            let currentInputMins = inputMinsElem ? parseInt(inputMinsElem.value, 10) : NaN;
+            let keepPreset = (!isNaN(currentInputMins) && currentInputMins > 0)
+                ? currentInputMins
+                : ((prevT && prevT.presetMinutes) ? prevT.presetMinutes : 60);
+
             localStorage.removeItem(`dev_session_${devId}`);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
+                seconds: 0, presetMinutes: keepPreset, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
             if (db && navigator.onLine && !isSyncingFromCloud) {
-                db.ref(`ps_lounge_data/deviceSessions/${devId}`).remove();
+                db.ref(`ps_lounge_data/deviceSessions/${devId}`).set({
+                    seconds: 0, presetMinutes: keepPreset, setMinutes: 0, durationSecs: 0, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: timerData[devId].lastActionTime,
+                    drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: []
+                });
             }
         }
 
@@ -1395,8 +1427,9 @@
             if (t.interval) clearInterval(t.interval);
 
             let inputElem = document.getElementById("input-mins-" + devId);
-            let mins = parseInt(inputElem ? inputElem.value : 60) || 60;
+            let mins = parseInt(inputElem ? inputElem.value : (t.presetMinutes || 60)) || 60;
             
+            t.presetMinutes = mins;
             t.setMinutes = mins;
             t.seconds = mins * 60;
             t.durationSecs = t.seconds;
@@ -1536,6 +1569,10 @@
                 let t = timerData[devId];
                 if (!t) return;
 
+                let inputMinsElem = document.getElementById("input-mins-" + devId);
+                if (inputMinsElem && document.activeElement !== inputMinsElem) {
+                    inputMinsElem.value = t.presetMinutes || t.setMinutes || 60;
+                }
                 updateDisplay(devId);
                 updateLiveBill(devId);
 
@@ -1732,7 +1769,34 @@
             let currentDay = new Date().getDate();
             if(currentDay > 31) currentDay = 31;
 
-            let descText = customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName;
+            // حساب إجمالي الوقت الفعلي أو المحجوز للفاتورة لعرضه في سجل الحركات المالية
+            let playedParts = [];
+            if (t.periodsLog && t.periodsLog.length > 0) {
+                playedParts.push(t.periodsLog.join(" + "));
+            }
+            if (currentPeriodCost > 0 || (t.seconds || 0) > 0 || (t.setMinutes || 0) > 0 || t.isFinished) {
+                if (t.isCountdown && (t.setMinutes || 0) > 0) {
+                    let actualElapsedSecs = t.isFinished
+                        ? (t.durationSecs || (t.setMinutes * 60))
+                        : Math.max(0, Math.min(t.durationSecs || (t.setMinutes * 60), (t.durationSecs || (t.setMinutes * 60)) - (t.seconds || 0)));
+                    let elapsedMins = Math.round(actualElapsedSecs / 60);
+                    playedParts.push(elapsedMins > 0 ? `${elapsedMins} دقيقة (محجوز ${t.setMinutes} د)` : `${t.setMinutes} دقيقة`);
+                } else {
+                    let secsCount = t.seconds || 0;
+                    if (secsCount > 0) {
+                        let hrs = Math.floor(secsCount / 3600);
+                        let mins = Math.floor((secsCount % 3600) / 60);
+                        let remSecs = secsCount % 60;
+                        let timeLabel = hrs > 0
+                            ? `${hrs} س ${mins} د`
+                            : (mins > 0 ? `${mins} د ${remSecs > 0 ? remSecs + ' ث' : ''}`.trim() : `${remSecs} ث`);
+                        playedParts.push(timeLabel);
+                    }
+                }
+            }
+            let playedSummary = playedParts.length > 0 ? ` — الوقت: ${playedParts.join(" + ")}` : "";
+
+            let descText = (customPrice > 0 ? 'مبلغ ثابت/عرض جهاز ' + devName : 'إيراد بلايستيشن جهاز ' + devName) + playedSummary;
             
             isSyncingFromCloud = true;
 
@@ -1741,9 +1805,10 @@
             if (indomieCost > 0) addValueToDailyAndFinance(currentDay, 'indomie', indomieCost, 'أندومي جهاز ' + devName, true, currentDay, true);
             if (groceryCost > 0) addValueToDailyAndFinance(currentDay, 'grocery', groceryCost, 'بقالة جهاز ' + devName, true, currentDay, true);
 
+            let keepPresetOnCheckout = (t && t.presetMinutes) ? t.presetMinutes : 60;
             localStorage.removeItem(`dev_session_${devId}`);
             timerData[devId] = { 
-                seconds: 0, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
+                seconds: 0, presetMinutes: keepPresetOnCheckout, setMinutes: 0, durationSecs: 0, interval: null, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: Date.now(),
                 drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: [] 
             };
 
@@ -1777,7 +1842,10 @@
             if (db && navigator.onLine) {
                 let updates = {};
                 updates[`ps_lounge_data/allMonthsData/${currentActiveMonthKey}`] = allMonthsData[currentActiveMonthKey];
-                updates[`ps_lounge_data/deviceSessions/${devId}`] = null;
+                updates[`ps_lounge_data/deviceSessions/${devId}`] = {
+                    seconds: 0, presetMinutes: keepPresetOnCheckout, setMinutes: 0, durationSecs: 0, isCountdown: false, isPaused: false, isFinished: false, alarmDismissed: false, startTime: 0, lastActionTime: timerData[devId].lastActionTime,
+                    drinks: 0, indomie: 0, grocery: 0, customPrice: 0, accumulatedCost: 0, periodsLog: []
+                };
                 db.ref().update(updates);
             }
 
@@ -2357,6 +2425,9 @@
                             let groceryElem = document.getElementById("grocery-" + devId);
                             let customElem = document.getElementById("custom-" + devId);
 
+                            let minsElem = document.getElementById("input-mins-" + devId);
+                            let savedPreset = currentT.presetMinutes || currentT.setMinutes || 60;
+                            if (minsElem && document.activeElement !== minsElem) minsElem.value = savedPreset;
                             if (drinkElem && document.activeElement !== drinkElem) drinkElem.value = currentT.drinks || 0;
                             if (indomieElem && document.activeElement !== indomieElem) indomieElem.value = currentT.indomie || 0;
                             if (groceryElem && document.activeElement !== groceryElem) groceryElem.value = currentT.grocery || 0;
@@ -2375,6 +2446,10 @@
                             setCardState(devId, 'normal');
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                             
+                            let keepPresetMins = (t && t.presetMinutes) ? t.presetMinutes : 60;
+                            timerData[devId].presetMinutes = keepPresetMins;
+                            let minsInp = document.getElementById("input-mins-" + devId);
+                            if (minsInp && document.activeElement !== minsInp) minsInp.value = keepPresetMins;
                             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
                             if(document.getElementById("indomie-" + devId)) document.getElementById("indomie-" + devId).value = 0;
                             if(document.getElementById("grocery-" + devId)) document.getElementById("grocery-" + devId).value = 0;
