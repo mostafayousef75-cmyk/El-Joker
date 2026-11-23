@@ -669,10 +669,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 15%;">اليوم</th>
+                    <th style="width: 24%;">اليوم والتوقيت</th>
                     <th style="width: 20%;">النوع</th>
-                    <th style="width: 45%;">البيان / الوصف</th>
-                    <th style="width: 20%;">المبلغ</th>
+                    <th style="width: 38%;">البيان / الوصف</th>
+                    <th style="width: 18%;">المبلغ</th>
                 </tr>
             </thead>
             <tbody id="finance-table-body"></tbody>
@@ -1010,7 +1010,7 @@
                         if (dayTotalIncome > 0) {
                             monthData.totalCash = (monthData.totalCash || 0) - dayTotalIncome;
                             if (!monthData.financeRecords) monthData.financeRecords = [];
-                            monthData.financeRecords.unshift({
+                            pushFinanceRecord(monthData, {
                                 day: day,
                                 type: 'منصرف (تصفير يوم)',
                                 desc: `تصفير كامل إيرادات يوم ${day} وإزالتها من الخزينة`,
@@ -1336,7 +1336,7 @@
             if (groceryDiff !== 0) {
                 if(!monthData.financeRecords) monthData.financeRecords = [];
                 let currentDay = new Date().getDate();
-                monthData.financeRecords.unshift({
+                pushFinanceRecord(monthData, {
                     day: currentDay,
                     type: groceryDiff > 0 ? 'وارد (تعديل بقالة)' : 'منصرف (تعديل بقالة)',
                     desc: `تعديل بقالة يوم ${day} بناءً على إيراد اليوم الشامل ${targetTotal} ج.م`,
@@ -2005,11 +2005,11 @@
             if(isAdd) {
                 monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) + val;
                 monthData.totalCash = (monthData.totalCash || 0) + val;
-                monthData.financeRecords.unshift({ day: recordDay, type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
+                pushFinanceRecord(monthData, { day: recordDay, type: 'وارد (سجل يومي)', desc: desc, amount: val, color: '#22c55e' });
             } else {
                 monthData.dailyData[day][key] = (monthData.dailyData[day][key] || 0) - val;
                 monthData.totalCash = (monthData.totalCash || 0) - val;
-                monthData.financeRecords.unshift({ day: recordDay, type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
+                pushFinanceRecord(monthData, { day: recordDay, type: 'منصرف (سجل يومي)', desc: desc, amount: val, color: '#ef4444' });
             }
 
             let span = document.getElementById(`val-${day}-${key}`);
@@ -2040,17 +2040,50 @@
 
             if(type === 'in') {
                 monthData.totalCash = (monthData.totalCash || 0) + amount;
-                monthData.financeRecords.unshift({ day: currentDay, type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
+                pushFinanceRecord(monthData, { day: currentDay, type: 'وارد يدوياً', desc: desc, amount: amount, color: '#22c55e' });
             } else {
                 monthData.totalCash = (monthData.totalCash || 0) - amount;
                 monthData.expensesCount = (monthData.expensesCount || 0) + amount;
-                monthData.financeRecords.unshift({ day: currentDay, type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
+                pushFinanceRecord(monthData, { day: currentDay, type: 'منصرف', desc: desc, amount: amount, color: '#ef4444' });
             }
 
             descInput.value = '';
             amountInput.value = '';
             saveData();
             updateFinanceUI();
+        }
+
+        function formatTransactionTimestamp(timestampMs, fallbackDay) {
+            const dateObj = new Date(timestampMs || Date.now());
+            const day = fallbackDay || dateObj.getDate();
+            const month = dateObj.getMonth() + 1;
+            const year = dateObj.getFullYear();
+
+            let hours = dateObj.getHours();
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+            const period = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12 || 12;
+
+            return `يوم ${day} (${day}/${month}/${year}) - ${hours}:${minutes}:${seconds} ${period}`;
+        }
+
+        function pushFinanceRecord(monthData, { day, type, desc, amount, color, timestamp }) {
+            if (!monthData.financeRecords) {
+                monthData.financeRecords = [];
+            }
+            const nowMs = timestamp || (typeof getUnifiedTime === 'function' ? getUnifiedTime() : Date.now());
+            const recordDay = day || new Date(nowMs).getDate();
+
+            monthData.financeRecords.unshift({
+                day: recordDay,
+                timestamp: nowMs,
+                timeLabel: formatTransactionTimestamp(nowMs, recordDay),
+                type: type,
+                desc: desc,
+                amount: amount,
+                color: color
+            });
         }
 
         function updateFinanceUI() {
@@ -2074,10 +2107,12 @@
             let records = monthData.financeRecords || [];
             let rowsHTML = '';
             records.forEach(rec => {
-                let dayText = rec.day ? `يوم ${rec.day}` : '-';
+                let dayText = rec.timestamp
+                    ? formatTransactionTimestamp(rec.timestamp, rec.day)
+                    : (rec.timeLabel || (rec.day ? `يوم ${rec.day}` : '-'));
                 rowsHTML += `
                     <tr>
-                        <td style="font-weight:bold; color:var(--accent);">${dayText}</td>
+                        <td style="font-weight:bold; color:var(--accent); font-size:0.85rem;">${dayText}</td>
                         <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
                         <td>${rec.desc}</td>
                         <td style="font-weight:bold;">${rec.amount} ج.م</td>
@@ -2112,7 +2147,7 @@
             monthData.expensesCount = (monthData.expensesCount || 0) + itemPrice;
 
             let currentDay = new Date().getDate();
-            monthData.financeRecords.unshift({ 
+            pushFinanceRecord(monthData, { 
                 day: currentDay,
                 type: 'منصرف (خامات)', 
                 desc: `شراء خامات (${sectionName}): ${itemName}`, 
@@ -2178,7 +2213,7 @@
                 monthData.totalCash -= priceDiff;
                 monthData.expensesCount += priceDiff;
                 if(!monthData.financeRecords) monthData.financeRecords = [];
-                monthData.financeRecords.unshift({ 
+                pushFinanceRecord(monthData, { 
                     day: currentDay,
                     type: 'تعديل خامات', 
                     desc: `تعديل بند خامات: ${newName} (فرق السعر)`, 
@@ -2201,7 +2236,7 @@
             monthData.expensesCount = (monthData.expensesCount || 0) - item.price;
             let currentDay = new Date().getDate();
             if(!monthData.financeRecords) monthData.financeRecords = [];
-            monthData.financeRecords.unshift({ 
+            pushFinanceRecord(monthData, { 
                 day: currentDay,
                 type: 'إلغاء خامات (وارد)', 
                 desc: `إلغاء واسترجاع صنف خامات: ${item.name}`, 
