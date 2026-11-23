@@ -2056,9 +2056,6 @@
         function formatTransactionTimestamp(timestampMs, fallbackDay) {
             const dateObj = new Date(timestampMs || Date.now());
             const day = fallbackDay || dateObj.getDate();
-            const monthLabel = typeof monthNames !== 'undefined' && monthNames[dateObj.getMonth()]
-                ? monthNames[dateObj.getMonth()]
-                : (dateObj.getMonth() + 1);
 
             let hours = dateObj.getHours();
             const minutes = String(dateObj.getMinutes()).padStart(2, '0');
@@ -2066,15 +2063,11 @@
             hours = String(hours % 12 || 12).padStart(2, '0');
 
             return `
-                <div style="display:inline-flex; align-items:stretch; gap:8px; text-align:right; direction:rtl;">
-                    <div style="display:flex; flex-direction:column; align-items:center; padding-top:3px;">
-                        <span style="width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 6px var(--accent); flex-shrink:0;"></span>
-                        <span style="width:1px; flex:1; min-height:18px; background:rgba(212,175,55,0.28); margin-top:2px;"></span>
-                    </div>
-                    <div style="line-height:1.25;">
-                        <div style="font-weight:bold; font-size:0.88rem; color:var(--text-color);">${day} ${monthLabel}</div>
-                        <div style="font-size:0.75rem; color:var(--accent); font-family:monospace; margin-top:2px;">${hours}:${minutes} ${period}</div>
-                    </div>
+                <div style="display:inline-flex; align-items:center; justify-content:center; gap:8px; direction:rtl; white-space:nowrap;">
+                    <span style="font-size:0.85rem; font-weight:800; color:var(--accent);">يوم ${day}</span>
+                    <span style="width:1px; height:14px; background:var(--border-color); opacity:0.85; display:inline-block;"></span>
+                    <span style="font-size:0.82rem; font-weight:700; color:var(--text-color); font-family:monospace;">${hours}:${minutes}</span>
+                    <span style="font-size:0.74rem; font-weight:700; color:#94a3b8;">${period}</span>
                 </div>
             `;
         }
