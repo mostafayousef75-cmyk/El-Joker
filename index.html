@@ -2059,11 +2059,10 @@
 
             let hours = dateObj.getHours();
             const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-            const seconds = String(dateObj.getSeconds()).padStart(2, '0');
             const period = hours >= 12 ? 'م' : 'ص';
             hours = String(hours % 12 || 12).padStart(2, '0');
 
-            return `<div>يوم ${day}</div><div style="font-size:0.78rem; color:#94a3b8; font-weight:normal; margin-top:2px; font-family:monospace;">${hours}:${minutes}:${seconds} ${period}</div>`;
+            return `<div style="font-weight:bold; font-size:1rem; color:var(--accent); line-height:1.15;">${day}</div><div style="font-size:0.76rem; color:#94a3b8; font-family:monospace; margin-top:2px;">${hours}:${minutes} ${period}</div>`;
         }
 
         function pushFinanceRecord(monthData, { day, type, desc, amount, color, timestamp }) {
@@ -2076,7 +2075,7 @@
             monthData.financeRecords.unshift({
                 day: recordDay,
                 timestamp: nowMs,
-                timeLabel: `يوم ${recordDay} - ${String(new Date(nowMs).getHours() % 12 || 12).padStart(2, '0')}:${String(new Date(nowMs).getMinutes()).padStart(2, '0')}:${String(new Date(nowMs).getSeconds()).padStart(2, '0')} ${new Date(nowMs).getHours() >= 12 ? 'م' : 'ص'}`,
+                timeLabel: `${recordDay} - ${String(new Date(nowMs).getHours() % 12 || 12).padStart(2, '0')}:${String(new Date(nowMs).getMinutes()).padStart(2, '0')} ${new Date(nowMs).getHours() >= 12 ? 'م' : 'ص'}`,
                 type: type,
                 desc: desc,
                 amount: amount,
@@ -2110,7 +2109,7 @@
                     : (rec.timeLabel || (rec.day ? `يوم ${rec.day}` : '-'));
                 rowsHTML += `
                     <tr>
-                        <td style="font-weight:bold; color:var(--accent); font-size:0.9rem; line-height:1.25;">${dayText}</td>
+                        <td style="font-weight:bold; color:var(--accent); font-size:0.9rem; line-height:1.2; padding:8px 6px;">${dayText}</td>
                         <td style="color:${rec.color}; font-weight:bold;">${rec.type}</td>
                         <td>${rec.desc}</td>
                         <td style="font-weight:bold;">${rec.amount} ج.م</td>
