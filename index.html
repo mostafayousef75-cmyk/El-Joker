@@ -1449,6 +1449,7 @@
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             setCardState(devId, 'running');
+            sortDeviceCards();
             
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
@@ -1480,6 +1481,7 @@
             runInterval(devId);
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             setCardState(devId, 'running');
+            sortDeviceCards();
             
             let timeDisplay = document.getElementById("time-" + devId);
             if (timeDisplay) timeDisplay.classList.remove('finished');
@@ -1550,6 +1552,26 @@
                 cardElem.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
                 cardElem.style.backgroundColor = "var(--card-bg)";
             }
+        }
+
+        function sortDeviceCards() {
+            const container = document.getElementById('devices-grid');
+            if (!container) return;
+
+            devices.forEach((dev, baseIdx) => {
+                let cardElem = getDevCardElem(dev.id);
+                if (!cardElem) return;
+
+                let t = timerData[dev.id];
+                let isActive = t && (t.startTime > 0 || t.seconds > 0 || t.isPaused || t.isFinished);
+
+                if (isActive) {
+                    let activeRank = t.startTime ? Math.floor(t.startTime / 1000) : 1;
+                    cardElem.style.order = -2000000000 + activeRank;
+                } else {
+                    cardElem.style.order = baseIdx;
+                }
+            });
         }
 
         function stopTimer(devId) {
@@ -1635,6 +1657,8 @@
                 }
             });
 
+            sortDeviceCards();
+
             if (anyFinished) {
                 let descText = finishedCount > 1 
                     ? `⚠️ انتهى وقت عدة أجهزة! (مثل: ${finishedDeviceName} وآخرون)` 
@@ -1660,6 +1684,7 @@
             }
             
             setCardState(devId, 'normal');
+            sortDeviceCards();
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
@@ -1750,6 +1775,7 @@
             }
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
             setCardState(devId, 'normal');
+            sortDeviceCards();
             updateLiveBill(devId);
             updateBookedBadge(devId);
             saveDeviceSession(devId);
@@ -1882,6 +1908,7 @@
                 timeDisplay.classList.remove('finished');
             }
             setCardState(devId, 'normal');
+            sortDeviceCards();
             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
 
             if(document.getElementById("drink-" + devId)) document.getElementById("drink-" + devId).value = 0;
@@ -2580,6 +2607,7 @@
                             updateStopBtnState(devId, "⏹️ إيقاف مؤقت", "btn-pause");
                         }
                     });
+                    sortDeviceCards();
                     isSyncingFromCloud = false;
 
                     if (cloudStatus) { 
